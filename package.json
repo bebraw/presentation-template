@@ -8,7 +8,11 @@
     "build:pdf": "npm run build && node slides/export-pdf.js",
     "build:all": "npm run build:pdf",
     "validate:geometry": "node slides/validate-geometry.js",
-    "validate:text": "node slides/validate-text.js"
+    "validate:text": "node slides/validate-text.js",
+    "validate": "npm run validate:geometry && npm run validate:text",
+    "baseline:render": "npm run build:pdf && node slides/update-render-baseline.js",
+    "validate:render": "npm run build:pdf && node slides/validate-render.js",
+    "validate:all": "npm run validate && npm run validate:render"
   },
   "dependencies": {
     "pptxgenjs": "^3.12.0"

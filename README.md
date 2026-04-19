@@ -9,6 +9,7 @@ The project is set up around the skill's "create from scratch" workflow:
 - `slides/theme.js` centralizes the theme object expected by the slides.
 - `slides/compile.js` assembles the modules into a PowerPoint file.
 - `slides/export-pdf.js` converts the generated PPTX into PDF when a supported local converter is installed.
+- `slides/validation.js` records layout geometry and powers the slide validators.
 
 ## Demo deck
 
@@ -49,6 +50,24 @@ Supported local converters:
 - LibreOffice via `soffice` or `/Applications/LibreOffice.app`
 - Keynote via AppleScript on macOS
 
+Run the code-level validators:
+
+```bash
+npm run validate
+```
+
+Run the rendered-output validator against the committed image baseline:
+
+```bash
+npm run validate:render
+```
+
+Refresh the committed render baseline after intentionally changing the deck design:
+
+```bash
+npm run baseline:render
+```
+
 ## Project structure
 
 ```text
@@ -62,11 +81,18 @@ Supported local converters:
     ├── compile.js
     ├── export-pdf.js
     ├── helpers.js
+    ├── render-baseline/
+    ├── render-utils.js
     ├── slide-01.js
     ├── slide-02.js
     ├── slide-03.js
     ├── slide-04.js
     ├── theme.js
+    ├── update-render-baseline.js
+    ├── validate-geometry.js
+    ├── validate-render.js
+    ├── validate-text.js
+    ├── validation.js
     └── output/
 ```
 
@@ -76,3 +102,4 @@ Supported local converters:
 - `slides/output/` is git-ignored so generated binaries stay local.
 - If you want to extend the deck, duplicate one of the existing slide modules and add it to `slides/compile.js`.
 - PDF export depends on a locally installed converter. The repository does not bundle one.
+- Render validation compares rasterized PDF pages against the committed baseline in `slides/render-baseline/`.

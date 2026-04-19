@@ -1,5 +1,6 @@
 const { addPageBadge, addSectionTitle } = require("./helpers");
 const { fontFace } = require("./theme");
+const { createSlideCanvas } = require("./validation");
 
 const slideConfig = {
   type: "toc",
@@ -7,12 +8,12 @@ const slideConfig = {
   title: "Demo outline"
 };
 
-function createAgendaCard(slide, pres, theme, x, title, text, index) {
-  slide.addShape(pres.ShapeType.roundRect, {
+function createAgendaCard(canvas, pres, theme, x, title, text, index, group) {
+  canvas.addShape(`${group}-card`, pres.ShapeType.roundRect, {
     x,
-    y: 2.1,
+    y: 2.05,
     w: 2.65,
-    h: 2.15,
+    h: 1.86,
     rectRadius: 0.08,
     line: { color: theme.light, pt: 1.2 },
     fill: { color: "FFFFFF" },
@@ -24,20 +25,24 @@ function createAgendaCard(slide, pres, theme, x, title, text, index) {
       distance: 1,
       opacity: 0.12
     }
+  }, {
+    group
   });
 
-  slide.addShape(pres.ShapeType.ellipse, {
+  canvas.addShape(`${group}-badge`, pres.ShapeType.ellipse, {
     x: x + 0.22,
-    y: 2.32,
+    y: 2.22,
     w: 0.44,
     h: 0.44,
     line: { color: theme.accent, transparency: 100 },
     fill: { color: theme.accent }
+  }, {
+    group
   });
 
-  slide.addText(String(index).padStart(2, "0"), {
+  canvas.addText(`${group}-index`, String(index).padStart(2, "0"), {
     x: x + 0.22,
-    y: 2.32,
+    y: 2.22,
     w: 0.44,
     h: 0.44,
     fontFace,
@@ -47,50 +52,57 @@ function createAgendaCard(slide, pres, theme, x, title, text, index) {
     align: "center",
     valign: "middle",
     margin: 0
+  }, {
+    group
   });
 
-  slide.addText(title, {
+  canvas.addText(`${group}-title`, title, {
     x: x + 0.22,
-    y: 2.95,
+    y: 2.82,
     w: 2.05,
-    h: 0.38,
+    h: 0.28,
     fontFace,
-    fontSize: 16,
+    fontSize: 14,
     bold: true,
     color: theme.primary,
     margin: 0
+  }, {
+    group
   });
 
-  slide.addText(text, {
+  canvas.addText(`${group}-body`, text, {
     x: x + 0.22,
-    y: 3.42,
+    y: 3.2,
     w: 2.08,
-    h: 0.55,
+    h: 0.42,
     fontFace,
-    fontSize: 11.5,
+    fontSize: 10.5,
     color: "5f7690",
     margin: 0
+  }, {
+    group
   });
 }
 
-function createSlide(pres, theme) {
-  const slide = pres.addSlide();
+function createSlide(pres, theme, options = {}) {
+  const canvas = createSlideCanvas(pres, slideConfig, options);
+  const { slide } = canvas;
   slide.background = { color: theme.bg };
 
   addSectionTitle(
-    slide,
+    canvas,
     theme,
     "Contents",
     slideConfig.title,
     "This sample keeps the structure close to the imported skill: a cover slide, a plan slide, one data slide, and a closing summary."
   );
 
-  createAgendaCard(slide, pres, theme, 0.6, "Structure", "Each slide lives in its own module and exports createSlide(pres, theme).", 1);
-  createAgendaCard(slide, pres, theme, 3.35, "Theme", "Shared colors and typography come from slides/theme.js.", 2);
-  createAgendaCard(slide, pres, theme, 6.1, "Output", "A compile script assembles the modules into one PPTX file.", 3);
+  createAgendaCard(canvas, pres, theme, 0.6, "Structure", "Each slide exports createSlide and keeps its layout self-contained.", 1, "agenda-structure");
+  createAgendaCard(canvas, pres, theme, 3.35, "Theme", "Colors and typography flow from one theme object shared across slides.", 2, "agenda-theme");
+  createAgendaCard(canvas, pres, theme, 6.1, "Output", "A compile step assembles the modules into one presentation file.", 3, "agenda-output");
 
-  addPageBadge(slide, pres, theme, slideConfig.index);
-  return slide;
+  addPageBadge(canvas, pres, theme, slideConfig.index);
+  return canvas.finalize();
 }
 
 module.exports = { createSlide, slideConfig };

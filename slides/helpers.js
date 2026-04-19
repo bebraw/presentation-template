@@ -1,16 +1,18 @@
 const { fontFace } = require("./theme");
 
-function addPageBadge(slide, pres, theme, number) {
-  slide.addShape(pres.ShapeType.ellipse, {
+function addPageBadge(canvas, pres, theme, number) {
+  canvas.addShape("page-badge-circle", pres.ShapeType.ellipse, {
     x: 9.28,
     y: 5.03,
     w: 0.42,
     h: 0.42,
     line: { color: theme.accent, transparency: 100 },
     fill: { color: theme.accent }
+  }, {
+    group: "page-badge"
   });
 
-  slide.addText(String(number).padStart(2, "0"), {
+  canvas.addText("page-badge-label", String(number).padStart(2, "0"), {
     x: 9.28,
     y: 5.03,
     w: 0.42,
@@ -22,11 +24,13 @@ function addPageBadge(slide, pres, theme, number) {
     align: "center",
     valign: "middle",
     margin: 0
+  }, {
+    group: "page-badge"
   });
 }
 
-function addSectionTitle(slide, theme, eyebrow, title, body) {
-  slide.addText(eyebrow, {
+function addSectionTitle(canvas, theme, eyebrow, title, body) {
+  canvas.addText("section-eyebrow", eyebrow, {
     x: 0.6,
     y: 0.45,
     w: 3.2,
@@ -38,31 +42,37 @@ function addSectionTitle(slide, theme, eyebrow, title, body) {
     charSpace: 1.2,
     allCaps: true,
     margin: 0
+  }, {
+    group: "section-header"
   });
 
-  slide.addText(title, {
+  canvas.addText("section-title", title, {
     x: 0.6,
-    y: 0.8,
-    w: 5.4,
-    h: 0.7,
+    y: 0.82,
+    w: 5.2,
+    h: 0.52,
     fontFace,
-    fontSize: 28,
+    fontSize: 24,
     bold: true,
     color: theme.primary,
     margin: 0
+  }, {
+    group: "section-header"
   });
 
   if (body) {
-    slide.addText(body, {
+    canvas.addText("section-body", body, {
       x: 0.6,
-      y: 1.55,
-      w: 4.9,
-      h: 0.6,
+      y: 1.45,
+      w: 5.2,
+      h: 0.42,
       fontFace,
-      fontSize: 13,
+      fontSize: 11.5,
       color: "47627f",
       breakLine: false,
       margin: 0
+    }, {
+      group: "section-header"
     });
   }
 }

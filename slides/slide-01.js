@@ -1,4 +1,5 @@
 const { fontFace } = require("./theme");
+const { createSlideCanvas } = require("./validation");
 
 const slideConfig = {
   type: "cover",
@@ -6,11 +7,12 @@ const slideConfig = {
   title: "Presentation Template Demo"
 };
 
-function createSlide(pres, theme) {
-  const slide = pres.addSlide();
+function createSlide(pres, theme, options = {}) {
+  const canvas = createSlideCanvas(pres, slideConfig, options);
+  const { slide } = canvas;
   slide.background = { color: "f4f8fc" };
 
-  slide.addShape(pres.ShapeType.rect, {
+  canvas.addShape("cover-background", pres.ShapeType.rect, {
     x: 0,
     y: 0,
     w: 10,
@@ -20,27 +22,39 @@ function createSlide(pres, theme) {
       color: theme.bg,
       transparency: 0
     }
+  }, {
+    group: "background",
+    skipBounds: true,
+    skipOverlap: true
   });
 
-  slide.addShape(pres.ShapeType.rect, {
+  canvas.addShape("cover-right-panel", pres.ShapeType.rect, {
     x: 6.45,
     y: 0,
     w: 3.55,
     h: 5.625,
     line: { color: theme.secondary, transparency: 100 },
     fill: { color: theme.secondary }
+  }, {
+    group: "background",
+    skipBounds: true,
+    skipOverlap: true
   });
 
-  slide.addShape(pres.ShapeType.rect, {
+  canvas.addShape("cover-overlay-panel", pres.ShapeType.rect, {
     x: 5.95,
     y: 0.4,
     w: 3.55,
     h: 4.85,
     line: { color: theme.primary, transparency: 100 },
     fill: { color: theme.primary, transparency: 6 }
+  }, {
+    group: "background",
+    skipBounds: true,
+    skipOverlap: true
   });
 
-  slide.addShape(pres.ShapeType.arc, {
+  canvas.addShape("cover-accent-arc", pres.ShapeType.arc, {
     x: 6.15,
     y: 1.2,
     w: 2.6,
@@ -48,9 +62,13 @@ function createSlide(pres, theme) {
     line: { color: theme.accent, pt: 2.5 },
     fill: { color: theme.accent, transparency: 100 },
     adjustPoint: 0.21
+  }, {
+    group: "background",
+    skipBounds: true,
+    skipOverlap: true
   });
 
-  slide.addText("pptx-generator skill", {
+  canvas.addText("cover-eyebrow", "pptx-generator skill", {
     x: 0.7,
     y: 0.7,
     w: 2.8,
@@ -62,34 +80,39 @@ function createSlide(pres, theme) {
     charSpace: 1.4,
     allCaps: true,
     margin: 0
+  }, {
+    group: "cover-header"
   });
 
-  slide.addText(slideConfig.title, {
+  canvas.addText("cover-title", slideConfig.title, {
     x: 0.7,
     y: 1.15,
-    w: 4.9,
-    h: 1.45,
+    w: 4.6,
+    h: 0.88,
     fontFace,
-    fontSize: 27,
+    fontSize: 24,
     bold: true,
     color: theme.primary,
-    fit: "shrink",
     margin: 0
+  }, {
+    group: "cover-header"
   });
 
-  slide.addText("A four-slide example deck that shows the skill workflow, theme contract, and output structure in a form you can compile locally.", {
+  canvas.addText("cover-summary", "A compact deck that shows the imported skill, a shared theme, and the compile flow used to emit presentation files locally.", {
     x: 0.72,
-    y: 2.8,
-    w: 4.5,
-    h: 0.85,
+    y: 2.35,
+    w: 4.4,
+    h: 0.62,
     fontFace,
-    fontSize: 14,
+    fontSize: 12.5,
     color: "4d657d",
     valign: "mid",
     margin: 0
+  }, {
+    group: "cover-summary"
   });
 
-  slide.addText("Slides are authored as CommonJS modules and assembled by slides/compile.js into a final PPTX.", {
+  canvas.addText("cover-footnote", "Slides are authored as CommonJS modules and assembled by slides/compile.js into a final PPTX.", {
     x: 0.72,
     y: 4.55,
     w: 4.9,
@@ -98,9 +121,11 @@ function createSlide(pres, theme) {
     fontSize: 10.5,
     color: "6b8096",
     margin: 0
+  }, {
+    group: "cover-footer"
   });
 
-  slide.addText("01", {
+  canvas.addText("cover-index", "01", {
     x: 6.6,
     y: 4.62,
     w: 2.3,
@@ -110,9 +135,11 @@ function createSlide(pres, theme) {
     bold: true,
     color: "FFFFFF",
     margin: 0
+  }, {
+    group: "cover-side-panel"
   });
 
-  slide.addText("Demo deck", {
+  canvas.addText("cover-side-label", "Demo deck", {
     x: 6.62,
     y: 5.02,
     w: 2.1,
@@ -121,10 +148,11 @@ function createSlide(pres, theme) {
     fontSize: 11,
     color: "d7e6f5",
     margin: 0
+  }, {
+    group: "cover-side-panel"
   });
 
-  return slide;
+  return canvas.finalize();
 }
 
 module.exports = { createSlide, slideConfig };
-

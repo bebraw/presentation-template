@@ -74,7 +74,7 @@ function createAgendaCard(canvas, pres, theme, x, title, text, index, group) {
     x: x + 0.22,
     y: 3.2,
     w: 2.08,
-    h: 0.42,
+    h: 0.62,
     fontFace,
     fontSize: 10.5,
     color: "5f7690",
@@ -97,9 +97,9 @@ function createSlide(pres, theme, options = {}) {
     "This sample keeps the structure close to the imported skill: a cover slide, a plan slide, one data slide, and a closing summary."
   );
 
-  createAgendaCard(canvas, pres, theme, 0.6, "Structure", "Each slide exports createSlide and keeps its layout self-contained.", 1, "agenda-structure");
-  createAgendaCard(canvas, pres, theme, 3.35, "Theme", "Colors and typography flow from one theme object shared across slides.", 2, "agenda-theme");
-  createAgendaCard(canvas, pres, theme, 6.1, "Output", "A compile step assembles the modules into one presentation file.", 3, "agenda-output");
+  createAgendaCard(canvas, pres, theme, 0.6, "Structure", "Each slide exports createSlide and owns the layout.", 1, "agenda-structure");
+  createAgendaCard(canvas, pres, theme, 3.35, "Theme", "One theme object carries the color and type choices.", 2, "agenda-theme");
+  createAgendaCard(canvas, pres, theme, 6.1, "Output", "The compile step assembles one presentation file.", 3, "agenda-output");
 
   addPageBadge(canvas, pres, theme, slideConfig.index);
   return canvas.finalize();

@@ -38,7 +38,7 @@ function createChecklistItem(canvas, pres, theme, y, title, text, group) {
     x: 1.08,
     y: y + 0.28,
     w: 4.2,
-    h: 0.32,
+    h: 0.42,
     fontFace,
     fontSize: 11,
     color: "5e7691",
@@ -58,12 +58,12 @@ function createSlide(pres, theme, options = {}) {
     theme,
     "Summary",
     slideConfig.title,
-    "The repository now contains a complete starter path: imported skill guidance, a runnable demo deck, and project-level documentation."
+    "The repository now has a complete starter path: imported skill guidance, a runnable deck, and project documentation."
   );
 
   createChecklistItem(canvas, pres, theme, 2, "Install dependencies", "Run npm install once to pull in pptxgenjs locally.", "checklist-install");
-  createChecklistItem(canvas, pres, theme, 2.9, "Build the deck", "Run npm run build to emit slides/output/demo-presentation.pptx.", "checklist-build");
-  createChecklistItem(canvas, pres, theme, 3.8, "Extend slide modules", "Duplicate the demo pattern for real covers, content pages, and summaries.", "checklist-extend");
+  createChecklistItem(canvas, pres, theme, 2.9, "Build the deck", "Run npm run build to emit the demo presentation.", "checklist-build");
+  createChecklistItem(canvas, pres, theme, 3.8, "Extend slide modules", "Duplicate the pattern for real cover, content, and summary slides.", "checklist-extend");
 
   canvas.addShape("summary-output-panel", pres.ShapeType.roundRect, {
     x: 6.15,
@@ -107,11 +107,11 @@ function createSlide(pres, theme, options = {}) {
     group: "summary-output-panel"
   });
 
-  canvas.addText("summary-output-body", "The output directory is ignored by git so the generated binary stays local.", {
+  canvas.addText("summary-output-body", "The output directory is git-ignored, so generated binaries stay local.", {
     x: 6.45,
     y: 3.48,
     w: 2.25,
-    h: 0.42,
+    h: 0.6,
     fontFace,
     fontSize: 10.5,
     color: "607894",

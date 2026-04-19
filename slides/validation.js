@@ -70,6 +70,49 @@ function outOfBounds(box, bounds, bleed = 0) {
   );
 }
 
+function estimateWrappedLines(text, charsPerLine) {
+  const safeCharsPerLine = Math.max(charsPerLine, 1);
+  const paragraphs = String(text).split("\n");
+  let lines = 0;
+
+  for (const paragraph of paragraphs) {
+    const words = paragraph.trim().split(/\s+/).filter(Boolean);
+    if (!words.length) {
+      lines += 1;
+      continue;
+    }
+
+    let currentLength = 0;
+
+    for (const word of words) {
+      const wordLength = word.length;
+      if (wordLength > safeCharsPerLine) {
+        if (currentLength > 0) {
+          lines += 1;
+          currentLength = 0;
+        }
+
+        lines += Math.ceil(wordLength / safeCharsPerLine);
+        continue;
+      }
+
+      const separator = currentLength > 0 ? 1 : 0;
+      if (currentLength + separator + wordLength > safeCharsPerLine) {
+        lines += 1;
+        currentLength = wordLength;
+      } else {
+        currentLength += separator + wordLength;
+      }
+    }
+
+    if (currentLength > 0) {
+      lines += 1;
+    }
+  }
+
+  return lines;
+}
+
 function createSlideCanvas(pres, slideConfig, options = {}) {
   const slide = pres.addSlide();
   const trackLayout = options.trackLayout !== false;
@@ -190,10 +233,53 @@ function validateGeometry(reports, options = {}) {
   return issues;
 }
 
+function validateTextFit(reports) {
+  const issues = [];
+
+  for (const report of reports) {
+    for (const element of report.elements) {
+      if (element.type !== "text" || !element.box || !element.meta.text) {
+        continue;
+      }
+
+      const fontSize = element.meta.options && element.meta.options.fontSize;
+      if (typeof fontSize !== "number" || fontSize <= 0) {
+        continue;
+      }
+
+      const averageWidthFactor = 0.5
+        + (element.meta.options.bold ? 0.03 : 0)
+        + (element.meta.options.allCaps ? 0.04 : 0);
+      const charsPerLine = (element.box.w * 72) / (fontSize * averageWidthFactor);
+      const estimatedLines = estimateWrappedLines(element.meta.text, charsPerLine);
+      const availableLines = (element.box.h * 72) / (fontSize * 1.18);
+      const utilization = estimatedLines / Math.max(availableLines, 1);
+
+      if (utilization > 1.05) {
+        issues.push({
+          level: "error",
+          slide: report.slide.index,
+          rule: "text-overflow",
+          message: `Text box "${element.id}" is likely to overflow (${estimatedLines.toFixed(1)} lines for ${availableLines.toFixed(1)} available)`
+        });
+      } else if (utilization > 0.92) {
+        issues.push({
+          level: "warn",
+          slide: report.slide.index,
+          rule: "text-tight",
+          message: `Text box "${element.id}" is close to its limit (${estimatedLines.toFixed(1)} lines for ${availableLines.toFixed(1)} available)`
+        });
+      }
+    }
+  }
+
+  return issues;
+}
+
 module.exports = {
   SLIDE_BOUNDS,
   createSlideCanvas,
   normalizeText,
-  validateGeometry
+  validateGeometry,
+  validateTextFit
 };
-

@@ -65,7 +65,7 @@ function addSectionTitle(canvas, theme, eyebrow, title, body) {
       x: 0.6,
       y: 1.45,
       w: 5.2,
-      h: 0.42,
+      h: 0.54,
       fontFace,
       fontSize: 11.5,
       color: "47627f",

@@ -47,7 +47,7 @@ function createSlide(pres, theme, options = {}) {
     theme,
     "Signals",
     slideConfig.title,
-    "The demo emphasizes repeatability over decoration: local dependencies, explicit slide modules, and a compile command that can be wired into CI."
+    "The demo emphasizes repeatability: local dependencies, explicit slide modules, and a compile command that fits CI."
   );
 
   canvas.addShape("content-chart-panel", pres.ShapeType.roundRect, {

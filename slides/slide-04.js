@@ -1,6 +1,6 @@
-const { addPageBadge, addSectionTitle } = require("./helpers");
-const { fontFace } = require("./theme");
-const { createSlideCanvas } = require("./validation");
+const { addPageBadge, addSectionTitle } = require("../generator/helpers");
+const { fontFace } = require("../generator/theme");
+const { createSlideCanvas } = require("../generator/validation");
 
 const slideConfig = {
   type: "summary",
@@ -58,12 +58,12 @@ function createSlide(pres, theme, options = {}) {
     theme,
     "Summary",
     slideConfig.title,
-    "The repository now has a complete starter path: imported skill guidance, a runnable deck, and project documentation."
+    "The repository now has a complete starter path: imported PDF skill guidance, a runnable deck, and validation built around rendered output."
   );
 
-  createChecklistItem(canvas, pres, theme, 2, "Install dependencies", "Run npm install once to pull in pptxgenjs locally.", "checklist-install");
-  createChecklistItem(canvas, pres, theme, 2.9, "Build the deck", "Run npm run build to emit the demo presentation.", "checklist-build");
-  createChecklistItem(canvas, pres, theme, 3.8, "Extend slide modules", "Duplicate the pattern for real cover, content, and summary slides.", "checklist-extend");
+  createChecklistItem(canvas, pres, theme, 2, "Install dependencies", "Run npm install once to pull in pdfkit, qrcode, and pptxgenjs locally.", "checklist-install");
+  createChecklistItem(canvas, pres, theme, 2.9, "Build the deck", "Run npm run build to emit the demo presentation as a PDF.", "checklist-build");
+  createChecklistItem(canvas, pres, theme, 3.8, "Validate visual changes", "Run npm run quality:gate after intentional design edits.", "checklist-extend");
 
   canvas.addShape("summary-output-panel", pres.ShapeType.roundRect, {
     x: 6.15,
@@ -92,7 +92,7 @@ function createSlide(pres, theme, options = {}) {
     group: "summary-output-panel"
   });
 
-  canvas.addText("summary-output-path", "slides/output/\ndemo-presentation.pptx", {
+  canvas.addText("summary-output-path", "slides/output/\ndemo-presentation.pdf", {
     x: 6.45,
     y: 2.66,
     w: 2.25,
@@ -107,11 +107,11 @@ function createSlide(pres, theme, options = {}) {
     group: "summary-output-panel"
   });
 
-  canvas.addText("summary-output-body", "The output directory is git-ignored, so generated binaries stay local.", {
+  canvas.addText("summary-output-body", "Output stays local. Approved render snapshots live in generator/render-baseline/.", {
     x: 6.45,
     y: 3.48,
     w: 2.25,
-    h: 0.6,
+    h: 0.72,
     fontFace,
     fontSize: 10.5,
     color: "607894",

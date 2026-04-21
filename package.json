@@ -2,19 +2,21 @@
   "name": "presentation-template",
   "version": "0.1.0",
   "private": true,
-  "description": "Demo PowerPoint deck generator built around the imported pptx-generator skill.",
+  "description": "Demo presentation generator built around the imported pdf-slide-generator skill.",
   "scripts": {
-    "build": "node slides/compile.js",
-    "build:pdf": "npm run build && node slides/export-pdf.js",
-    "build:all": "npm run build:pdf",
-    "validate:geometry": "node slides/validate-geometry.js",
-    "validate:text": "node slides/validate-text.js",
+    "build": "node generator/compile.js",
+    "build:all": "npm run build",
+    "validate:geometry": "node generator/validate-geometry.js",
+    "validate:text": "node generator/validate-text.js",
     "validate": "npm run validate:geometry && npm run validate:text",
-    "baseline:render": "npm run build:pdf && node slides/update-render-baseline.js",
-    "validate:render": "npm run build:pdf && node slides/validate-render.js",
-    "validate:all": "npm run validate && npm run validate:render"
+    "baseline:render": "npm run build && node generator/update-render-baseline.js",
+    "validate:render": "npm run build && node generator/validate-render.js",
+    "validate:all": "npm run validate && npm run validate:render",
+    "quality:gate": "npm run validate:render"
   },
   "dependencies": {
-    "pptxgenjs": "^3.12.0"
+    "pdfkit": "0.18.0",
+    "pptxgenjs": "^3.12.0",
+    "qrcode": "1.5.4"
   }
 }

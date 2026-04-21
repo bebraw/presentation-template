@@ -1,5 +1,5 @@
-const { fontFace } = require("./theme");
-const { createSlideCanvas } = require("./validation");
+const { fontFace } = require("../generator/theme");
+const { createSlideCanvas } = require("../generator/validation");
 
 const slideConfig = {
   type: "cover",
@@ -68,7 +68,7 @@ function createSlide(pres, theme, options = {}) {
     skipOverlap: true
   });
 
-  canvas.addText("cover-eyebrow", "pptx-generator skill", {
+  canvas.addText("cover-eyebrow", "pdf-slide-generator skill", {
     x: 0.7,
     y: 0.7,
     w: 2.8,
@@ -98,7 +98,7 @@ function createSlide(pres, theme, options = {}) {
     group: "cover-header"
   });
 
-  canvas.addText("cover-summary", "A compact deck that shows the imported skill, a shared theme, and the compile flow used to emit presentation files locally.", {
+  canvas.addText("cover-summary", "A compact deck that shows the imported skill, a shared theme, and the native PDF compile flow used to emit presentation files locally.", {
     x: 0.72,
     y: 2.35,
     w: 4.4,
@@ -112,7 +112,7 @@ function createSlide(pres, theme, options = {}) {
     group: "cover-summary"
   });
 
-  canvas.addText("cover-footnote", "Slides are authored as CommonJS modules and assembled by slides/compile.js into a final PPTX.", {
+  canvas.addText("cover-footnote", "Slides are authored as CommonJS modules and assembled by generator/compile.js into a final PDF.", {
     x: 0.72,
     y: 4.55,
     w: 4.9,
@@ -139,7 +139,7 @@ function createSlide(pres, theme, options = {}) {
     group: "cover-side-panel"
   });
 
-  canvas.addText("cover-side-label", "Demo deck", {
+  canvas.addText("cover-side-label", "PDF deck", {
     x: 6.62,
     y: 5.02,
     w: 2.1,

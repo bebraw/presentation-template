@@ -1,6 +1,6 @@
-const { addPageBadge, addSectionTitle } = require("./helpers");
-const { fontFace } = require("./theme");
-const { createSlideCanvas } = require("./validation");
+const { addPageBadge, addSectionTitle } = require("../generator/helpers");
+const { fontFace } = require("../generator/theme");
+const { createSlideCanvas } = require("../generator/validation");
 
 const slideConfig = {
   type: "toc",
@@ -94,12 +94,12 @@ function createSlide(pres, theme, options = {}) {
     theme,
     "Contents",
     slideConfig.title,
-    "This sample keeps the structure close to the imported skill: a cover slide, a plan slide, one data slide, and a closing summary."
+    "This sample now mirrors the imported PDF workflow: content stays in slides/, while generator/ owns build and validation."
   );
 
   createAgendaCard(canvas, pres, theme, 0.6, "Structure", "Each slide exports createSlide and owns the layout.", 1, "agenda-structure");
-  createAgendaCard(canvas, pres, theme, 3.35, "Theme", "One theme object carries the color and type choices.", 2, "agenda-theme");
-  createAgendaCard(canvas, pres, theme, 6.1, "Output", "The compile step assembles one presentation file.", 3, "agenda-output");
+  createAgendaCard(canvas, pres, theme, 3.35, "Theme", "One shared theme object drives both rendering and validation.", 2, "agenda-theme");
+  createAgendaCard(canvas, pres, theme, 6.1, "Output", "The build step writes slides/output/demo-presentation.pdf.", 3, "agenda-output");
 
   addPageBadge(canvas, pres, theme, slideConfig.index);
   return canvas.finalize();

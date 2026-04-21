@@ -1,12 +1,11 @@
 const fs = require("fs");
 const path = require("path");
 const { spawnSync } = require("child_process");
+const { outputDir, pdfFile } = require("./output-config");
 
 const baselineDir = path.join(__dirname, "render-baseline");
-const outputDir = path.join(__dirname, "output");
 const renderedDir = path.join(outputDir, "rendered-pages");
 const diffDir = path.join(outputDir, "render-diff");
-const pdfFile = path.join(outputDir, "demo-presentation.pdf");
 
 function run(command, args) {
   const result = spawnSync(command, args, {

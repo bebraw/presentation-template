@@ -8,17 +8,20 @@ const theme = {
 
 const deckMeta = {
   title: "Presentation Template Demo",
-  subtitle: "A small runnable deck built from the pptx-generator skill",
+  subtitle: "A small runnable deck built around the pdf-slide-generator skill",
   author: "OpenAI Codex",
   company: "presentation-template",
   subject: "Demonstration presentation"
 };
 
-const fontFace = "Avenir Next";
+const displayFont = "Avenir Next";
+const bodyFont = "Avenir Next";
+const fontFace = bodyFont;
 
 module.exports = {
+  bodyFont,
   deckMeta,
+  displayFont,
   fontFace,
   theme
 };
-

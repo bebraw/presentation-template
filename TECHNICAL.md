@@ -3,6 +3,7 @@
 This document contains the development-facing details for the presentation template repository.
 
 For the system-level view of how build, rendering, validation, and archival fit together, see [ARCHITECTURE.md](ARCHITECTURE.md).
+For future packaging thoughts about the runtime layer, see the "Future Option: Extract A Runtime Package" section in [ARCHITECTURE.md](ARCHITECTURE.md).
 
 ## Usage
 

@@ -151,6 +151,62 @@ If you change the deck, these are the normal entry points:
 - Expand validation behavior in [`generator/validation.js`](</Users/juhovepsalainen/Projects/presentation-template/generator/validation.js>) or the dedicated validator entry points.
 - Change output file naming in [`generator/output-config.js`](</Users/juhovepsalainen/Projects/presentation-template/generator/output-config.js>).
 
+## Future Option: Extract A Runtime Package
+
+If this repository becomes the first of several decks using the same runtime, it would make sense to extract part of `generator/` into a small package. The important distinction is that the current directory contains both reusable runtime code and repo-specific deck wiring.
+
+### Good Candidates For Extraction
+
+- [`generator/pdf-renderer.js`](</Users/juhovepsalainen/Projects/presentation-template/generator/pdf-renderer.js>) for the PDF presentation implementation
+- [`generator/validation.js`](</Users/juhovepsalainen/Projects/presentation-template/generator/validation.js>) for geometry and text-fit validation
+- [`generator/render-utils.js`](</Users/juhovepsalainen/Projects/presentation-template/generator/render-utils.js>) for rasterization and diff support
+- small shared abstractions around build and validation entry points
+
+### Keep Local To The Deck Repo
+
+- [`generator/deck.js`](</Users/juhovepsalainen/Projects/presentation-template/generator/deck.js>) because it imports local slides and defines deck order
+- [`generator/theme.js`](</Users/juhovepsalainen/Projects/presentation-template/generator/theme.js>) because it carries this deck's palette, fonts, and metadata
+- [`generator/helpers.js`](</Users/juhovepsalainen/Projects/presentation-template/generator/helpers.js>) because it encodes the current visual language
+- [`generator/output-config.js`](</Users/juhovepsalainen/Projects/presentation-template/generator/output-config.js>) because it knows local artifact paths and naming
+
+### Recommended Boundary
+
+If extraction happens, the package should be the runtime layer, not the entire `generator/` directory. A consuming deck repo should still own:
+
+- slide modules
+- deck composition and ordering
+- theme and presentation metadata
+- output file naming
+- archive policy
+
+### When It Starts Making Sense
+
+Extraction becomes worthwhile if at least one of these is true:
+
+- a second deck repository needs the same renderer and validators
+- the runtime needs to be tested independently from any one deck
+- a stable slide API is needed across multiple decks
+
+If this stays a single-deck repository, keeping the code local is simpler and avoids package-versioning overhead.
+
+### Recommended Path
+
+If this is pursued later, start with a local workspace package before publishing to npm. That would let the boundary harden before committing to a public API surface.
+
+An eventual package should likely export things like:
+
+- `createPdfPresentation`
+- `createSlideCanvas`
+- `validateGeometry`
+- `validateTextFit`
+- render-baseline utilities
+
+### Current Constraints Blocking A Clean Extraction
+
+- the PDF renderer currently bakes in macOS font paths
+- the rendering contract is intentionally narrow and only supports the operations this deck uses
+- the build and validation scripts are still organized around this repository's filesystem layout
+
 ## Constraints
 
 - The production artifact is PDF, not PPTX.

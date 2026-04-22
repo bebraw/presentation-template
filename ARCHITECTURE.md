@@ -95,13 +95,13 @@ The repository uses a shared presentation contract so the same slide modules can
 
 - `generator/deck.js` uses `PptxGenJS` to build an in-memory presentation model for geometry and text validation.
 - `generator/pdf-renderer.js` defines a custom `PdfPresentation`/`PdfSlide` implementation with the same slide-writing surface needed by the current deck.
-- `populatePresentation(...)` in [`generator/deck.js`](</Users/juhovepsalainen/Projects/presentation-template/generator/deck.js>) is the adapter point that lets both implementations reuse the same slide files.
+- `populatePresentation(...)` in [`generator/deck.js`](generator/deck.js) is the adapter point that lets both implementations reuse the same slide files.
 
 This is why `pptxgenjs` still exists as a dependency even though the production output is PDF-only.
 
 ### Theme, Helper, And Layout Layer
 
-[`generator/theme.js`](</Users/juhovepsalainen/Projects/presentation-template/generator/theme.js>) defines the shared color palette, fonts, and deck metadata. [`generator/helpers.js`](</Users/juhovepsalainen/Projects/presentation-template/generator/helpers.js>) provides reusable slide-level primitives such as section titles, cards, panels, and the deck progress indicator. [`generator/layout.js`](</Users/juhovepsalainen/Projects/presentation-template/generator/layout.js>) adds geometry helpers for frames, column splits, stacked items, and text-driven centering.
+[`generator/theme.js`](generator/theme.js) defines the shared color palette, fonts, and deck metadata. [`generator/helpers.js`](generator/helpers.js) provides reusable slide-level primitives such as section titles, cards, panels, and the deck progress indicator. [`generator/layout.js`](generator/layout.js) adds geometry helpers for frames, column splits, stacked items, and text-driven centering.
 
 Slides depend on those files so styling and spacing decisions stay centralized rather than drifting slide by slide.
 
@@ -109,41 +109,41 @@ Slides depend on those files so styling and spacing decisions stay centralized r
 
 The build path is intentionally small:
 
-1. `npm run build` first runs [`generator/render-diagrams.js`](</Users/juhovepsalainen/Projects/presentation-template/generator/render-diagrams.js>) to regenerate any Graphviz-authored diagram assets from `slides/assets/diagrams/*.dot`.
-2. `npm run build` then runs [`generator/compile.js`](</Users/juhovepsalainen/Projects/presentation-template/generator/compile.js>).
-3. `compile.js` asks [`generator/pdf-renderer.js`](</Users/juhovepsalainen/Projects/presentation-template/generator/pdf-renderer.js>) for a PDF presentation.
-4. `pdf-renderer.js` calls `populatePresentation(...)` from [`generator/deck.js`](</Users/juhovepsalainen/Projects/presentation-template/generator/deck.js>) to let the slide modules populate a `PdfPresentation`.
-5. The renderer writes the final PDF to the path from [`generator/output-config.js`](</Users/juhovepsalainen/Projects/presentation-template/generator/output-config.js>), currently [`slides/output/demo-presentation.pdf`](</Users/juhovepsalainen/Projects/presentation-template/slides/output/demo-presentation.pdf>).
+1. `npm run build` first runs [`generator/render-diagrams.js`](generator/render-diagrams.js) to regenerate any Graphviz-authored diagram assets from `slides/assets/diagrams/*.dot`.
+2. `npm run build` then runs [`generator/compile.js`](generator/compile.js).
+3. `compile.js` asks [`generator/pdf-renderer.js`](generator/pdf-renderer.js) for a PDF presentation.
+4. `pdf-renderer.js` calls `populatePresentation(...)` from [`generator/deck.js`](generator/deck.js) to let the slide modules populate a `PdfPresentation`.
+5. The renderer writes the final PDF to the path from [`generator/output-config.js`](generator/output-config.js), currently [`slides/output/demo-presentation.pdf`](slides/output/demo-presentation.pdf).
 
 ## Validation Flow
 
 There are three validation layers, each checking a different kind of failure.
 
-Before those slide-level validators run, `npm run validate` also executes [`generator/render-diagrams.js`](</Users/juhovepsalainen/Projects/presentation-template/generator/render-diagrams.js>) to enforce that any PNG diagram assets under `slides/assets/diagrams/` have matching Graphviz `.dot` sources.
+Before those slide-level validators run, `npm run validate` also executes [`generator/render-diagrams.js`](generator/render-diagrams.js) to enforce that any PNG diagram assets under `slides/assets/diagrams/` have matching Graphviz `.dot` sources.
 
 ### Geometry Validation
 
-[`generator/validate-geometry.js`](</Users/juhovepsalainen/Projects/presentation-template/generator/validate-geometry.js>) builds an in-memory presentation with `createPresentation(...)` and asks [`generator/validation.js`](</Users/juhovepsalainen/Projects/presentation-template/generator/validation.js>) to detect:
+[`generator/validate-geometry.js`](generator/validate-geometry.js) builds an in-memory presentation with `createPresentation(...)` and asks [`generator/validation.js`](generator/validation.js) to detect:
 
 - groups extending beyond slide bounds
 - overlapping layout groups
 
 ### Text-Fit Validation
 
-[`generator/validate-text.js`](</Users/juhovepsalainen/Projects/presentation-template/generator/validate-text.js>) uses the same reports from `generator/validation.js`, but now covers:
+[`generator/validate-text.js`](generator/validate-text.js) uses the same reports from `generator/validation.js`, but now covers:
 
-- text-fit checks using PDF-backed text measurement from [`generator/text-metrics.js`](</Users/juhovepsalainen/Projects/presentation-template/generator/text-metrics.js>)
+- text-fit checks using PDF-backed text measurement from [`generator/text-metrics.js`](generator/text-metrics.js)
 - text contrast checks against slide or containing panel backgrounds
 - image aspect-ratio checks for placed assets
 - text padding checks inside panel-like groups
 
 ### Render Validation
 
-[`generator/validate-render.js`](</Users/juhovepsalainen/Projects/presentation-template/generator/validate-render.js>) validates the actual rendered PDF output:
+[`generator/validate-render.js`](generator/validate-render.js) validates the actual rendered PDF output:
 
 1. Build the PDF.
-2. Rasterize the PDF pages with ImageMagick through [`generator/render-utils.js`](</Users/juhovepsalainen/Projects/presentation-template/generator/render-utils.js>).
-3. Compare the rendered pages to the approved baseline in [`generator/render-baseline`](</Users/juhovepsalainen/Projects/presentation-template/generator/render-baseline>).
+2. Rasterize the PDF pages with ImageMagick through [`generator/render-utils.js`](generator/render-utils.js).
+3. Compare the rendered pages to the approved baseline in [`generator/render-baseline`](generator/render-baseline).
 4. Write mismatch diffs under `slides/output/render-diff/` when pages drift.
 
 `npm run quality:gate` runs the geometry/text validators first and then this render-validation path.
@@ -152,8 +152,8 @@ Before those slide-level validators run, `npm run validate` also executes [`gene
 
 The repository keeps two kinds of long-lived outputs for different purposes:
 
-- [`generator/render-baseline`](</Users/juhovepsalainen/Projects/presentation-template/generator/render-baseline>) is the approval target for visual regression testing.
-- [`archive/demo-presentation.pdf`](</Users/juhovepsalainen/Projects/presentation-template/archive/demo-presentation.pdf>) is the checked-in presentation snapshot for linking and archival.
+- [`generator/render-baseline`](generator/render-baseline) is the approval target for visual regression testing.
+- [`archive/demo-presentation.pdf`](archive/demo-presentation.pdf) is the checked-in presentation snapshot for linking and archival.
 
 They serve different roles. Refreshing the render baseline is part of intentional visual changes. Refreshing the archive copy is a separate publishing decision.
 
@@ -161,12 +161,12 @@ They serve different roles. Refreshing the render baseline is part of intentiona
 
 If you change the deck, these are the normal entry points:
 
-- Add or reorder slides in [`generator/deck.js`](</Users/juhovepsalainen/Projects/presentation-template/generator/deck.js>).
-- Adjust palette or typography in [`generator/theme.js`](</Users/juhovepsalainen/Projects/presentation-template/generator/theme.js>).
-- Add reusable drawing helpers in [`generator/helpers.js`](</Users/juhovepsalainen/Projects/presentation-template/generator/helpers.js>).
-- Add or refine shared frame and stack calculations in [`generator/layout.js`](</Users/juhovepsalainen/Projects/presentation-template/generator/layout.js>).
-- Expand validation behavior in [`generator/validation.js`](</Users/juhovepsalainen/Projects/presentation-template/generator/validation.js>) or the dedicated validator entry points.
-- Change output file naming in [`generator/output-config.js`](</Users/juhovepsalainen/Projects/presentation-template/generator/output-config.js>).
+- Add or reorder slides in [`generator/deck.js`](generator/deck.js).
+- Adjust palette or typography in [`generator/theme.js`](generator/theme.js).
+- Add reusable drawing helpers in [`generator/helpers.js`](generator/helpers.js).
+- Add or refine shared frame and stack calculations in [`generator/layout.js`](generator/layout.js).
+- Expand validation behavior in [`generator/validation.js`](generator/validation.js) or the dedicated validator entry points.
+- Change output file naming in [`generator/output-config.js`](generator/output-config.js).
 
 ## Future Option: Extract A Runtime Package
 
@@ -174,18 +174,18 @@ If this repository becomes the first of several decks using the same runtime, it
 
 ### Good Candidates For Extraction
 
-- [`generator/pdf-renderer.js`](</Users/juhovepsalainen/Projects/presentation-template/generator/pdf-renderer.js>) for the PDF presentation implementation
-- [`generator/layout.js`](</Users/juhovepsalainen/Projects/presentation-template/generator/layout.js>) for reusable layout primitives
-- [`generator/validation.js`](</Users/juhovepsalainen/Projects/presentation-template/generator/validation.js>) for geometry and text-fit validation
-- [`generator/render-utils.js`](</Users/juhovepsalainen/Projects/presentation-template/generator/render-utils.js>) for rasterization and diff support
+- [`generator/pdf-renderer.js`](generator/pdf-renderer.js) for the PDF presentation implementation
+- [`generator/layout.js`](generator/layout.js) for reusable layout primitives
+- [`generator/validation.js`](generator/validation.js) for geometry and text-fit validation
+- [`generator/render-utils.js`](generator/render-utils.js) for rasterization and diff support
 - small shared abstractions around build and validation entry points
 
 ### Keep Local To The Deck Repo
 
-- [`generator/deck.js`](</Users/juhovepsalainen/Projects/presentation-template/generator/deck.js>) because it imports local slides and defines deck order
-- [`generator/theme.js`](</Users/juhovepsalainen/Projects/presentation-template/generator/theme.js>) because it carries this deck's palette, fonts, and metadata
-- [`generator/helpers.js`](</Users/juhovepsalainen/Projects/presentation-template/generator/helpers.js>) because it encodes the current visual language
-- [`generator/output-config.js`](</Users/juhovepsalainen/Projects/presentation-template/generator/output-config.js>) because it knows local artifact paths and naming
+- [`generator/deck.js`](generator/deck.js) because it imports local slides and defines deck order
+- [`generator/theme.js`](generator/theme.js) because it carries this deck's palette, fonts, and metadata
+- [`generator/helpers.js`](generator/helpers.js) because it encodes the current visual language
+- [`generator/output-config.js`](generator/output-config.js) because it knows local artifact paths and naming
 
 ### Recommended Boundary
 

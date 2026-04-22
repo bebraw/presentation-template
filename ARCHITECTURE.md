@@ -29,6 +29,7 @@ flowchart TD
         output["generator/output-config.js"]
         renderer["generator/pdf-renderer.js"]
         metrics["generator/text-metrics.js"]
+        diagrams["generator/render-diagrams.js"]
         compile["generator/compile.js"]
         geometry["generator/validate-geometry.js"]
         textfit["generator/validate-text.js"]
@@ -50,6 +51,7 @@ flowchart TD
     validation --> slides
 
     build --> compile
+    build --> diagrams
     compile --> renderer
     output --> compile
     renderer --> deck
@@ -57,6 +59,7 @@ flowchart TD
     renderer --> pdf
 
     validate --> geometry
+    validate --> diagrams
     validate --> textfit
     geometry --> deck
     geometry --> validation
@@ -104,14 +107,17 @@ Slides depend on those files so style decisions stay centralized rather than dri
 
 The build path is intentionally small:
 
-1. `npm run build` runs [`generator/compile.js`](</Users/juhovepsalainen/Projects/presentation-template/generator/compile.js>).
-2. `compile.js` asks [`generator/pdf-renderer.js`](</Users/juhovepsalainen/Projects/presentation-template/generator/pdf-renderer.js>) for a PDF presentation.
-3. `pdf-renderer.js` calls `populatePresentation(...)` from [`generator/deck.js`](</Users/juhovepsalainen/Projects/presentation-template/generator/deck.js>) to let the slide modules populate a `PdfPresentation`.
-4. The renderer writes the final PDF to the path from [`generator/output-config.js`](</Users/juhovepsalainen/Projects/presentation-template/generator/output-config.js>), currently [`slides/output/demo-presentation.pdf`](</Users/juhovepsalainen/Projects/presentation-template/slides/output/demo-presentation.pdf>).
+1. `npm run build` first runs [`generator/render-diagrams.js`](</Users/juhovepsalainen/Projects/presentation-template/generator/render-diagrams.js>) to regenerate any Graphviz-authored diagram assets from `slides/assets/diagrams/*.dot`.
+2. `npm run build` then runs [`generator/compile.js`](</Users/juhovepsalainen/Projects/presentation-template/generator/compile.js>).
+3. `compile.js` asks [`generator/pdf-renderer.js`](</Users/juhovepsalainen/Projects/presentation-template/generator/pdf-renderer.js>) for a PDF presentation.
+4. `pdf-renderer.js` calls `populatePresentation(...)` from [`generator/deck.js`](</Users/juhovepsalainen/Projects/presentation-template/generator/deck.js>) to let the slide modules populate a `PdfPresentation`.
+5. The renderer writes the final PDF to the path from [`generator/output-config.js`](</Users/juhovepsalainen/Projects/presentation-template/generator/output-config.js>), currently [`slides/output/demo-presentation.pdf`](</Users/juhovepsalainen/Projects/presentation-template/slides/output/demo-presentation.pdf>).
 
 ## Validation Flow
 
 There are three validation layers, each checking a different kind of failure.
+
+Before those slide-level validators run, `npm run validate` also executes [`generator/render-diagrams.js`](</Users/juhovepsalainen/Projects/presentation-template/generator/render-diagrams.js>) to enforce that any PNG diagram assets under `slides/assets/diagrams/` have matching Graphviz `.dot` sources.
 
 ### Geometry Validation
 
@@ -219,5 +225,6 @@ An eventual package should likely export things like:
 
 - The production artifact is PDF, not PPTX.
 - The slide modules must stay compatible with the limited drawing surface implemented by `PdfPresentation`.
+- Diagram graphics are expected to come from Graphviz source files under `slides/assets/diagrams/`.
 - Render validation depends on `magick` being available locally.
 - The archival PDF is not updated automatically by the build.

@@ -43,6 +43,8 @@ Refresh the committed render baseline after intentionally changing the deck desi
 npm run baseline:render
 ```
 
+If you add presentation diagrams or other deck graphics, author them as Graphviz `.dot` files in `slides/assets/diagrams/`. The build regenerates sibling `.png` files automatically through `npm run build:diagrams`, and validation rejects generated diagram PNGs that do not have matching `.dot` sources.
+
 ## Development Layout
 
 - `slides/slide-01.js` to `slides/slide-04.js` hold the demo deck content.
@@ -65,6 +67,7 @@ npm run baseline:render
 │   ├── pdf-renderer.js
 │   ├── references.js
 │   ├── render-baseline/
+│   ├── render-diagrams.js
 │   ├── render-utils.js
 │   ├── text-metrics.js
 │   ├── theme.js
@@ -80,6 +83,8 @@ npm run baseline:render
 │   └── pdf-slide-generator/
 │       └── SKILL.md
 └── slides/
+    ├── assets/
+    │   └── diagrams/
     ├── output/
     ├── slide-01.js
     ├── slide-02.js
@@ -90,6 +95,7 @@ npm run baseline:render
 ## Notes
 
 - Slide content lives in `slides/`, while the build and validation runtime lives in `generator/`.
+- Diagram graphics in `slides/assets/diagrams/` must come from Graphviz `.dot` sources; do not hand-maintain the generated PNGs.
 - The production build path renders PDF directly through `pdfkit`.
 - The deck uses `Avenir Next` for both display and body text.
 - `slides/output/` is git-ignored, so generated binaries stay local.

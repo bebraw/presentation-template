@@ -1,9 +1,19 @@
 const { createPresentation } = require("./deck");
-const { validateTextFit } = require("./validation");
+const {
+  validateImageAspectRatio,
+  validateTextContrast,
+  validateTextFit,
+  validateTextPadding
+} = require("./validation");
 
 function main() {
   const { reports } = createPresentation({ trackLayout: true });
-  const issues = validateTextFit(reports);
+  const issues = [
+    ...validateImageAspectRatio(reports),
+    ...validateTextContrast(reports),
+    ...validateTextFit(reports),
+    ...validateTextPadding(reports)
+  ];
   const errors = issues.filter((issue) => issue.level === "error");
 
   for (const issue of issues) {

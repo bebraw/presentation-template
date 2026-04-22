@@ -48,7 +48,7 @@ function createAgendaCard(canvas, pres, theme, x, title, text, index, group) {
     fontFace,
     fontSize: 11,
     bold: true,
-    color: "FFFFFF",
+    color: theme.primary,
     align: "center",
     valign: "middle",
     margin: 0

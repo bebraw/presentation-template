@@ -2,7 +2,13 @@ const fs = require("fs");
 const path = require("path");
 const PDFDocument = require("pdfkit");
 const { populatePresentation } = require("./deck");
-const { bodyFont, deckMeta, displayFont, theme } = require("./theme");
+const {
+  mapFont,
+  measureTextBlock,
+  registerEmbeddedFonts,
+  toPoints
+} = require("./text-metrics");
+const { bodyFont, deckMeta, theme } = require("./theme");
 
 const POINTS_PER_INCH = 72;
 const SLIDE_WIDTH = 10 * POINTS_PER_INCH;
@@ -16,29 +22,6 @@ const ShapeType = {
   roundRect: "roundRect"
 };
 
-const embeddedFonts = {
-  bodyBold: {
-    family: "AvenirNext-Bold",
-    path: "/System/Library/Fonts/Avenir Next.ttc"
-  },
-  bodyRegular: {
-    family: "AvenirNext-Regular",
-    path: "/System/Library/Fonts/Avenir Next.ttc"
-  },
-  displayBold: {
-    family: "Didot-Bold",
-    path: "/System/Library/Fonts/Supplemental/Didot.ttc"
-  },
-  displayRegular: {
-    family: "Didot",
-    path: "/System/Library/Fonts/Supplemental/Didot.ttc"
-  }
-};
-
-function toPoints(value) {
-  return Number(value || 0) * POINTS_PER_INCH;
-}
-
 function asHex(color, fallback = "000000") {
   const value = String(color || fallback).replace(/^#/, "");
   return `#${value}`;
@@ -47,42 +30,6 @@ function asHex(color, fallback = "000000") {
 function opacityFromTransparency(transparency) {
   const value = Number.isFinite(transparency) ? transparency : 0;
   return Math.max(0, Math.min(1, 1 - (value / 100)));
-}
-
-function normalizeText(text) {
-  if (Array.isArray(text)) {
-    return text
-      .map((item) => {
-        if (typeof item === "string") {
-          return item;
-        }
-        if (item && typeof item === "object" && "text" in item) {
-          return String(item.text);
-        }
-        return "";
-      })
-      .join("");
-  }
-
-  return String(text);
-}
-
-function mapFont(fontFace, bold) {
-  const face = String(fontFace || "").toLowerCase();
-  const isDisplayFace = face === String(displayFont).toLowerCase() || face.includes("didot");
-  if (isDisplayFace) {
-    return bold ? "displayBold" : "displayRegular";
-  }
-  return bold ? "bodyBold" : "bodyRegular";
-}
-
-function registerEmbeddedFonts(doc) {
-  for (const [alias, font] of Object.entries(embeddedFonts)) {
-    if (!fs.existsSync(font.path)) {
-      throw new Error(`Missing font file for ${alias}: ${font.path}`);
-    }
-    doc.registerFont(alias, font.path, font.family);
-  }
 }
 
 function ensureParentDir(fileName) {
@@ -294,26 +241,14 @@ function renderShape(doc, shapeType, options) {
 function renderText(doc, text, options) {
   const x = toPoints(options.x);
   let y = toPoints(options.y);
-  const width = toPoints(options.w);
   const height = toPoints(options.h);
-  const fontSize = Number(options.fontSize || 12);
-  const content = options.allCaps ? normalizeText(text).toUpperCase() : normalizeText(text);
-  const fontName = mapFont(options.fontFace || bodyFont, options.bold);
+  const { content, fontName, textOptions, measuredHeight, fontSize } = measureTextBlock(doc, text, options);
 
   doc.save();
   doc.font(fontName);
   doc.fontSize(fontSize);
   doc.fillColor(asHex(options.color, "000000"));
   doc.fillOpacity(1);
-
-  const textOptions = {
-    align: options.align || "left",
-    characterSpacing: Number(options.charSpace || 0),
-    lineGap: 0,
-    width
-  };
-
-  const measuredHeight = doc.heightOfString(content, textOptions);
   if (options.valign === "middle" && height > measuredHeight) {
     y += (height - measuredHeight) / 2;
   } else if (options.valign === "bottom" && height > measuredHeight) {

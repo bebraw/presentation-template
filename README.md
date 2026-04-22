@@ -18,4 +18,4 @@ The demo presentation is a four-slide starter deck:
 
 Build, validation, repository structure, and generator details are documented in [TECHNICAL.md](TECHNICAL.md).
 The higher-level system design and runtime flow are documented in [ARCHITECTURE.md](ARCHITECTURE.md).
-For presentation changes, run `npm run quality:gate` before considering the work done.
+For presentation changes, run `npm run quality:gate` before considering the work done. It now runs geometry/text validation before the render-baseline check.

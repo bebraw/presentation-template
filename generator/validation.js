@@ -1,3 +1,6 @@
+const fs = require("fs");
+const { createTextMeasurementDoc, measureTextBlock } = require("./text-metrics");
+
 const SLIDE_BOUNDS = {
   x: 0,
   y: 0,
@@ -59,6 +62,26 @@ function boxesOverlap(a, b, tolerance = 0.01) {
   const overlapHeight = Math.min(a.y + a.h, b.y + b.h) - Math.max(a.y, b.y);
 
   return overlapWidth > tolerance && overlapHeight > tolerance;
+}
+
+function overlapArea(a, b) {
+  const overlapWidth = Math.min(a.x + a.w, b.x + b.w) - Math.max(a.x, b.x);
+  const overlapHeight = Math.min(a.y + a.h, b.y + b.h) - Math.max(a.y, b.y);
+
+  if (overlapWidth <= 0 || overlapHeight <= 0) {
+    return 0;
+  }
+
+  return overlapWidth * overlapHeight;
+}
+
+function boxContains(outer, inner, tolerance = 0.01) {
+  return (
+    inner.x >= outer.x - tolerance &&
+    inner.y >= outer.y - tolerance &&
+    inner.x + inner.w <= outer.x + outer.w + tolerance &&
+    inner.y + inner.h <= outer.y + outer.h + tolerance
+  );
 }
 
 function outOfBounds(box, bounds, bleed = 0) {
@@ -155,7 +178,10 @@ function createSlideCanvas(pres, slideConfig, options = {}) {
     slide,
     addShape(id, shapeType, optionsForShape, meta = {}) {
       slide.addShape(shapeType, optionsForShape);
-      record("shape", id, getBox(optionsForShape), meta);
+      record("shape", id, getBox(optionsForShape), {
+        ...meta,
+        options: { ...optionsForShape }
+      });
     },
     addText(id, text, optionsForText, meta = {}) {
       slide.addText(text, optionsForText);
@@ -173,6 +199,13 @@ function createSlideCanvas(pres, slideConfig, options = {}) {
         options: { ...optionsForChart }
       });
     },
+    addImage(id, optionsForImage, meta = {}) {
+      slide.addImage(optionsForImage);
+      record("image", id, getBox(optionsForImage), {
+        ...meta,
+        options: { ...optionsForImage }
+      });
+    },
     reserveGroup(id, box, meta = {}) {
       record("reserve", id, box, meta);
     },
@@ -181,6 +214,7 @@ function createSlideCanvas(pres, slideConfig, options = {}) {
         slide,
         report: {
           slide: slideConfig,
+          backgroundColor: slide.background && slide.background.color ? slide.background.color : "FFFFFF",
           bounds: { ...SLIDE_BOUNDS },
           elements,
           groups: Array.from(groups.values()).filter((group) => group.box)
@@ -235,39 +269,339 @@ function validateGeometry(reports, options = {}) {
 
 function validateTextFit(reports) {
   const issues = [];
+  const measurement = createTextMeasurementDoc();
+
+  try {
+    for (const report of reports) {
+      for (const element of report.elements) {
+        if (element.type !== "text" || !element.box || !element.meta.text) {
+          continue;
+        }
+
+        const fontSize = element.meta.options && element.meta.options.fontSize;
+        if (typeof fontSize !== "number" || fontSize <= 0) {
+          continue;
+        }
+
+        const { measuredHeight } = measureTextBlock(measurement.doc, element.meta.text, element.meta.options);
+        const availableHeight = element.box.h * 72;
+        const utilization = measuredHeight / Math.max(availableHeight, 1);
+
+        if (utilization > 1.02) {
+          issues.push({
+            level: "error",
+            slide: report.slide.index,
+            rule: "text-overflow",
+            message: `Text box "${element.id}" is likely to overflow (${measuredHeight.toFixed(1)}pt for ${availableHeight.toFixed(1)}pt available)`
+          });
+        } else if (utilization > 0.9) {
+          issues.push({
+            level: "warn",
+            slide: report.slide.index,
+            rule: "text-tight",
+            message: `Text box "${element.id}" is close to its limit (${measuredHeight.toFixed(1)}pt for ${availableHeight.toFixed(1)}pt available)`
+          });
+        }
+      }
+    }
+  } finally {
+    measurement.dispose();
+  }
+
+  return issues;
+}
+
+function validateTextPadding(reports, options = {}) {
+  const issues = [];
+  const minHorizontal = options.minHorizontal ?? 0.08;
+  const minTop = options.minTop ?? 0.08;
+  const minBottom = options.minBottom ?? 0.05;
 
   for (const report of reports) {
+    const elementsById = new Map(report.elements.map((element) => [element.id, element]));
+
+    for (const group of report.groups) {
+      const members = group.members
+        .map((memberId) => elementsById.get(memberId))
+        .filter(Boolean);
+
+      const panels = members
+        .filter((element) => element.type === "shape" && element.meta.role === "panel" && element.box);
+
+      if (!panels.length) {
+        continue;
+      }
+
+      const texts = members.filter((element) => element.type === "text" && element.box);
+
+      for (const text of texts) {
+        const matchingPanels = panels
+          .filter((candidate) => boxContains(candidate.box, text.box, 0.02))
+          .sort((left, right) => (left.box.w * left.box.h) - (right.box.w * right.box.h));
+
+        const panel = matchingPanels[0] || panels
+          .map((candidate) => ({
+            candidate,
+            area: overlapArea(candidate.box, text.box)
+          }))
+          .filter((entry) => entry.area > 0)
+          .sort((left, right) => right.area - left.area)[0]?.candidate;
+
+        if (!panel) {
+          continue;
+        }
+
+        const leftInset = text.box.x - panel.box.x;
+        const topInset = text.box.y - panel.box.y;
+        const rightInset = (panel.box.x + panel.box.w) - (text.box.x + text.box.w);
+        const bottomInset = (panel.box.y + panel.box.h) - (text.box.y + text.box.h);
+
+        if (leftInset < minHorizontal || rightInset < minHorizontal || topInset < minTop || bottomInset < minBottom) {
+          issues.push({
+            level: "warn",
+            slide: report.slide.index,
+            rule: "text-padding",
+            message: `Text box "${text.id}" sits close to panel "${panel.id}" (${leftInset.toFixed(2)}/${topInset.toFixed(2)}/${rightInset.toFixed(2)}/${bottomInset.toFixed(2)}in insets)`
+          });
+        }
+      }
+    }
+  }
+
+  return issues;
+}
+
+function parseHexColor(color, fallback = "000000") {
+  const normalized = String(color || fallback).replace(/^#/, "");
+  const value = normalized.length === 3
+    ? normalized.split("").map((char) => char + char).join("")
+    : normalized.padStart(6, "0").slice(0, 6);
+
+  return {
+    r: Number.parseInt(value.slice(0, 2), 16) / 255,
+    g: Number.parseInt(value.slice(2, 4), 16) / 255,
+    b: Number.parseInt(value.slice(4, 6), 16) / 255
+  };
+}
+
+function linearizeChannel(channel) {
+  return channel <= 0.03928
+    ? channel / 12.92
+    : ((channel + 0.055) / 1.055) ** 2.4;
+}
+
+function relativeLuminance(color) {
+  const rgb = parseHexColor(color);
+  return (
+    0.2126 * linearizeChannel(rgb.r) +
+    0.7152 * linearizeChannel(rgb.g) +
+    0.0722 * linearizeChannel(rgb.b)
+  );
+}
+
+function contrastRatio(foreground, background) {
+  const left = relativeLuminance(foreground);
+  const right = relativeLuminance(background);
+  const lighter = Math.max(left, right);
+  const darker = Math.min(left, right);
+
+  return (lighter + 0.05) / (darker + 0.05);
+}
+
+function getPngDimensions(buffer) {
+  if (buffer.length < 24) {
+    return null;
+  }
+
+  const signature = buffer.subarray(0, 8);
+  const pngSignature = Buffer.from([137, 80, 78, 71, 13, 10, 26, 10]);
+  if (!signature.equals(pngSignature)) {
+    return null;
+  }
+
+  return {
+    width: buffer.readUInt32BE(16),
+    height: buffer.readUInt32BE(20)
+  };
+}
+
+function getJpegDimensions(buffer) {
+  if (buffer.length < 4 || buffer[0] !== 0xff || buffer[1] !== 0xd8) {
+    return null;
+  }
+
+  let offset = 2;
+
+  while (offset + 8 < buffer.length) {
+    if (buffer[offset] !== 0xff) {
+      offset += 1;
+      continue;
+    }
+
+    const marker = buffer[offset + 1];
+    const segmentLength = buffer.readUInt16BE(offset + 2);
+
+    if (segmentLength < 2) {
+      return null;
+    }
+
+    const isSofMarker = (
+      marker >= 0xc0 &&
+      marker <= 0xcf &&
+      ![0xc4, 0xc8, 0xcc].includes(marker)
+    );
+
+    if (isSofMarker) {
+      return {
+        height: buffer.readUInt16BE(offset + 5),
+        width: buffer.readUInt16BE(offset + 7)
+      };
+    }
+
+    offset += 2 + segmentLength;
+  }
+
+  return null;
+}
+
+function getGifDimensions(buffer) {
+  if (buffer.length < 10) {
+    return null;
+  }
+
+  const header = buffer.subarray(0, 6).toString("ascii");
+  if (header !== "GIF87a" && header !== "GIF89a") {
+    return null;
+  }
+
+  return {
+    width: buffer.readUInt16LE(6),
+    height: buffer.readUInt16LE(8)
+  };
+}
+
+function getImageDimensions(imagePath) {
+  const buffer = fs.readFileSync(imagePath);
+
+  return (
+    getPngDimensions(buffer) ||
+    getJpegDimensions(buffer) ||
+    getGifDimensions(buffer)
+  );
+}
+
+function findContainingPanel(element, shapes) {
+  const containing = shapes
+    .filter((shape) => {
+      const fillColor = shape.meta.options && shape.meta.options.fill && shape.meta.options.fill.color;
+      return Boolean(shape.box && fillColor && boxContains(shape.box, element.box, 0.02));
+    })
+    .sort((left, right) => (left.box.w * left.box.h) - (right.box.w * right.box.h));
+
+  return containing[0] || null;
+}
+
+function validateTextContrast(reports, options = {}) {
+  const issues = [];
+  const minRatio = options.minRatio ?? 2.5;
+  const warnRatio = options.warnRatio ?? 3;
+
+  for (const report of reports) {
+    const shapes = report.elements.filter((element) => element.type === "shape");
+
     for (const element of report.elements) {
-      if (element.type !== "text" || !element.box || !element.meta.text) {
+      if (element.type !== "text" || !element.box || !element.meta.options) {
         continue;
       }
 
-      const fontSize = element.meta.options && element.meta.options.fontSize;
-      if (typeof fontSize !== "number" || fontSize <= 0) {
-        continue;
-      }
+      const foreground = element.meta.options.color || "000000";
+      const panel = findContainingPanel(element, shapes);
+      const background = panel
+        ? panel.meta.options.fill.color
+        : report.backgroundColor || "FFFFFF";
+      const ratio = contrastRatio(foreground, background);
 
-      const averageWidthFactor = 0.5
-        + (element.meta.options.bold ? 0.03 : 0)
-        + (element.meta.options.allCaps ? 0.04 : 0);
-      const charsPerLine = (element.box.w * 72) / (fontSize * averageWidthFactor);
-      const estimatedLines = estimateWrappedLines(element.meta.text, charsPerLine);
-      const availableLines = (element.box.h * 72) / (fontSize * 1.18);
-      const utilization = estimatedLines / Math.max(availableLines, 1);
-
-      if (utilization > 1.05) {
+      if (ratio < minRatio) {
         issues.push({
           level: "error",
           slide: report.slide.index,
-          rule: "text-overflow",
-          message: `Text box "${element.id}" is likely to overflow (${estimatedLines.toFixed(1)} lines for ${availableLines.toFixed(1)} available)`
+          rule: "contrast-low",
+          message: `Text box "${element.id}" has low contrast (${ratio.toFixed(2)}:1) against ${panel ? `panel "${panel.id}"` : "slide background"}`
         });
-      } else if (utilization > 0.92) {
+      } else if (ratio < warnRatio) {
         issues.push({
           level: "warn",
           slide: report.slide.index,
-          rule: "text-tight",
-          message: `Text box "${element.id}" is close to its limit (${estimatedLines.toFixed(1)} lines for ${availableLines.toFixed(1)} available)`
+          rule: "contrast-tight",
+          message: `Text box "${element.id}" is close to the contrast threshold (${ratio.toFixed(2)}:1)`
+        });
+      }
+    }
+  }
+
+  return issues;
+}
+
+function validateImageAspectRatio(reports, options = {}) {
+  const issues = [];
+  const warnDelta = options.warnDelta ?? 0.03;
+  const maxDelta = options.maxDelta ?? 0.08;
+
+  for (const report of reports) {
+    for (const element of report.elements) {
+      if (element.type !== "image" || !element.box || !element.meta.options) {
+        continue;
+      }
+
+      if (element.meta.skipAspectValidation === true) {
+        continue;
+      }
+
+      const imagePath = element.meta.options.path;
+      if (!imagePath) {
+        continue;
+      }
+
+      let dimensions;
+      try {
+        dimensions = getImageDimensions(imagePath);
+      } catch (error) {
+        issues.push({
+          level: "error",
+          slide: report.slide.index,
+          rule: "image-metadata",
+          message: `Image "${element.id}" could not be inspected (${error.message})`
+        });
+        continue;
+      }
+
+      if (!dimensions || !dimensions.width || !dimensions.height) {
+        issues.push({
+          level: "error",
+          slide: report.slide.index,
+          rule: "image-metadata",
+          message: `Image "${element.id}" uses an unsupported format for aspect validation`
+        });
+        continue;
+      }
+
+      const intrinsicRatio = dimensions.width / dimensions.height;
+      const placedRatio = element.box.w / element.box.h;
+      const delta = Math.abs((placedRatio / intrinsicRatio) - 1);
+
+      if (delta > maxDelta) {
+        issues.push({
+          level: "error",
+          slide: report.slide.index,
+          rule: "image-aspect",
+          message: `Image "${element.id}" distorts its source ratio (${placedRatio.toFixed(2)} placed vs ${intrinsicRatio.toFixed(2)} intrinsic)`
+        });
+      } else if (delta > warnDelta) {
+        issues.push({
+          level: "warn",
+          slide: report.slide.index,
+          rule: "image-aspect-tight",
+          message: `Image "${element.id}" is close to aspect distortion (${placedRatio.toFixed(2)} placed vs ${intrinsicRatio.toFixed(2)} intrinsic)`
         });
       }
     }
@@ -278,8 +612,12 @@ function validateTextFit(reports) {
 
 module.exports = {
   SLIDE_BOUNDS,
+  contrastRatio,
   createSlideCanvas,
   normalizeText,
   validateGeometry,
-  validateTextFit
+  validateImageAspectRatio,
+  validateTextContrast,
+  validateTextFit,
+  validateTextPadding
 };

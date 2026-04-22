@@ -66,6 +66,7 @@ npm run baseline:render
 │   ├── references.js
 │   ├── render-baseline/
 │   ├── render-utils.js
+│   ├── text-metrics.js
 │   ├── theme.js
 │   ├── update-render-baseline.js
 │   ├── validate-geometry.js
@@ -94,5 +95,5 @@ npm run baseline:render
 - `slides/output/` is git-ignored, so generated binaries stay local.
 - `archive/demo-presentation.pdf` stores the checked-in PDF snapshot for linking and archival.
 - `generator/render-baseline/` stores the approved render baseline for the current deck output.
-- `npm run quality:gate` checks the generated PDF against that baseline and is the required final validation for presentation changes.
+- `npm run quality:gate` runs geometry/text validation before checking the generated PDF against the approved render baseline.
 - If you extend the deck, duplicate an existing slide module and add it to `generator/deck.js`.

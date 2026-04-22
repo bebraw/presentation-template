@@ -28,6 +28,7 @@ flowchart TD
         validation["generator/validation.js"]
         output["generator/output-config.js"]
         renderer["generator/pdf-renderer.js"]
+        metrics["generator/text-metrics.js"]
         compile["generator/compile.js"]
         geometry["generator/validate-geometry.js"]
         textfit["generator/validate-text.js"]
@@ -52,6 +53,7 @@ flowchart TD
     compile --> renderer
     output --> compile
     renderer --> deck
+    metrics --> renderer
     renderer --> pdf
 
     validate --> geometry
@@ -60,6 +62,7 @@ flowchart TD
     geometry --> validation
     textfit --> deck
     textfit --> validation
+    metrics --> textfit
 
     gate --> render
     render --> renderUtils
@@ -119,7 +122,12 @@ There are three validation layers, each checking a different kind of failure.
 
 ### Text-Fit Validation
 
-[`generator/validate-text.js`](</Users/juhovepsalainen/Projects/presentation-template/generator/validate-text.js>) uses the same reports from `generator/validation.js`, but checks estimated line usage against each text box size.
+[`generator/validate-text.js`](</Users/juhovepsalainen/Projects/presentation-template/generator/validate-text.js>) uses the same reports from `generator/validation.js`, but now covers:
+
+- text-fit checks using PDF-backed text measurement from [`generator/text-metrics.js`](</Users/juhovepsalainen/Projects/presentation-template/generator/text-metrics.js>)
+- text contrast checks against slide or containing panel backgrounds
+- image aspect-ratio checks for placed assets
+- text padding checks inside panel-like groups
 
 ### Render Validation
 
@@ -130,7 +138,7 @@ There are three validation layers, each checking a different kind of failure.
 3. Compare the rendered pages to the approved baseline in [`generator/render-baseline`](</Users/juhovepsalainen/Projects/presentation-template/generator/render-baseline>).
 4. Write mismatch diffs under `slides/output/render-diff/` when pages drift.
 
-`npm run quality:gate` currently maps to this render-validation path.
+`npm run quality:gate` runs the geometry/text validators first and then this render-validation path.
 
 ## Baseline And Archive
 

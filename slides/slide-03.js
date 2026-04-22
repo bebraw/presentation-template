@@ -17,7 +17,7 @@ function addMetric(canvas, theme, x, y, value, label, id) {
     fontFace,
     fontSize: 20,
     bold: true,
-    color: theme.primary,
+    color: "FFFFFF",
     margin: 0
   }, {
     group: "content-stats-panel"
@@ -30,7 +30,7 @@ function addMetric(canvas, theme, x, y, value, label, id) {
     h: 0.3,
     fontFace,
     fontSize: 10.5,
-    color: "5d7591",
+    color: theme.light,
     margin: 0
   }, {
     group: "content-stats-panel"

@@ -49,7 +49,8 @@ If you add presentation diagrams or other deck graphics, author them as Graphviz
 
 - `slides/slide-01.js` to `slides/slide-04.js` hold the demo deck content.
 - `generator/` holds the build, rendering, and validation runtime.
-- `skills/pdf-slide-generator/SKILL.md` contains the imported skill guidance.
+- `skills/pdf-slide-generator/SKILL.md` contains the deck-generation workflow guidance.
+- `skills/slide-clarity-drill/` contains the wording-tightening skill used for line-by-line slide copy refinement.
 - `archive/demo-presentation.pdf` stores the checked-in PDF snapshot for linking and archival.
 
 ## Project Structure
@@ -80,7 +81,11 @@ If you add presentation diagrams or other deck graphics, author them as Graphviz
 ├── README.md
 ├── TECHNICAL.md
 ├── skills/
-│   └── pdf-slide-generator/
+│   ├── pdf-slide-generator/
+│   │   └── SKILL.md
+│   └── slide-clarity-drill/
+│       ├── agents/
+│       │   └── openai.yaml
 │       └── SKILL.md
 └── slides/
     ├── assets/

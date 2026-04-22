@@ -1,0 +1,3 @@
+display_name: Slide Clarity Drill
+short_description: Refine fuzzy slide wording line by line.
+default_prompt: Clarify slide wording one line at a time by asking focused questions, proposing tighter alternatives, and patching only after the meaning is clear.

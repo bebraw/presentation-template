@@ -33,16 +33,13 @@ Do not consider presentation work done unless `npm run quality:gate` passes.
 
 - Keep one file per slide module, following the existing naming pattern such as `slides/slide-05.js`.
 - Prefer updating the existing design system in `generator/theme.js` and `generator/helpers.js` over slide-local style drift.
-- Author deck diagrams and related graphics as Graphviz `.dot` sources under `slides/assets/diagrams/`; let the build regenerate the sibling PNGs.
-- Do not hand-edit generated diagram PNGs or check in diagram PNGs without matching `.dot` sources.
-- Put non-Graphviz presentation images in `slides/imgs/`.
+- Put presentation images in `slides/imgs/`.
 - Keep generated artifacts in `slides/output/`.
 - Treat `archive/demo-presentation.pdf` as a release snapshot. Update it only when the user asks for the archival copy to be refreshed.
 
 ## Validation Rules
 
 - `npm run build` must produce the PDF successfully.
-- `npm run build:diagrams` is the required path for refreshing Graphviz-authored graphics.
 - `npm run quality:gate` is the required final validation.
 - If slide visuals change intentionally, update `generator/render-baseline/` with `npm run baseline:render` before rerunning the gate.
 - If `quality:gate` fails, fix the deck or baseline mismatch instead of bypassing the check.

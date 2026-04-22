@@ -1,6 +1,54 @@
 # presentation-template
 
-This repository contains a small demonstration presentation built around the imported `pdf-slide-generator` skill.
+This repository contains a small demonstration presentation built around imported presentation skills, including `pdf-slide-generator` and `slide-clarity-drill`.
+
+## Included skills
+
+This repository ships with two presentation-focused skills under `skills/`.
+
+### `pdf-slide-generator`
+
+Use this skill for deck-building work:
+
+- adding or editing slides in `slides/`
+- changing shared presentation helpers in `generator/`
+- updating assets, PDF output, or render baselines
+- validating deck changes with `npm run build` and `npm run quality:gate`
+
+Typical requests:
+
+- `Use pdf-slide-generator to add a new slide about X.`
+- `Update the theme and rebuild the PDF.`
+- `Refresh the render baseline after this visual change.`
+
+### `slide-clarity-drill`
+
+Use this skill when the structure is mostly right but slide wording needs tightening:
+
+- vague or slogan-like claims
+- overlong slide text
+- wording that needs to become more concrete or defensible
+- line-by-line rewrite passes before patching slides
+
+Typical requests:
+
+- `Use slide-clarity-drill on slide 3.`
+- `This wording feels fuzzy. Tighten it one line at a time.`
+- `Help me rewrite these bullets without shrinking the font.`
+
+## How to use them
+
+Mention the skill name directly in your request when you want Codex to follow that workflow.
+
+- Use `pdf-slide-generator` for implementation, rendering, validation, and deck structure changes.
+- Use `slide-clarity-drill` for interactive copy refinement and line-by-line wording decisions.
+- Use both when a change needs wording work first and slide/code updates after that.
+
+Example combined request:
+
+```text
+Use slide-clarity-drill to tighten slide 2, then use pdf-slide-generator to patch the slide and run the deck validation flow.
+```
 
 ## Demo deck
 

@@ -2,8 +2,13 @@ const theme = {
   primary: "183153",
   secondary: "275d8c",
   accent: "f28f3b",
+  muted: "56677c",
   light: "d7e6f5",
-  bg: "f5f8fc"
+  bg: "f5f8fc",
+  panel: "f8fbfe",
+  slideCount: 4,
+  progressTrack: "d7e6f5",
+  progressFill: "275d8c"
 };
 
 const deckMeta = {

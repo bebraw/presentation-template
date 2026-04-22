@@ -25,6 +25,7 @@ flowchart TD
         deck["generator/deck.js"]
         theme["generator/theme.js"]
         helpers["generator/helpers.js"]
+        layout["generator/layout.js"]
         validation["generator/validation.js"]
         output["generator/output-config.js"]
         renderer["generator/pdf-renderer.js"]
@@ -48,6 +49,7 @@ flowchart TD
     slides --> deck
     theme --> deck
     helpers --> slides
+    layout --> slides
     validation --> slides
 
     build --> compile
@@ -97,11 +99,11 @@ The repository uses a shared presentation contract so the same slide modules can
 
 This is why `pptxgenjs` still exists as a dependency even though the production output is PDF-only.
 
-### Theme And Helper Layer
+### Theme, Helper, And Layout Layer
 
-[`generator/theme.js`](</Users/juhovepsalainen/Projects/presentation-template/generator/theme.js>) defines the shared color palette, fonts, and deck metadata. [`generator/helpers.js`](</Users/juhovepsalainen/Projects/presentation-template/generator/helpers.js>) provides reusable slide-level primitives such as section titles and page badges.
+[`generator/theme.js`](</Users/juhovepsalainen/Projects/presentation-template/generator/theme.js>) defines the shared color palette, fonts, and deck metadata. [`generator/helpers.js`](</Users/juhovepsalainen/Projects/presentation-template/generator/helpers.js>) provides reusable slide-level primitives such as section titles, cards, panels, and the deck progress indicator. [`generator/layout.js`](</Users/juhovepsalainen/Projects/presentation-template/generator/layout.js>) adds geometry helpers for frames, column splits, stacked items, and text-driven centering.
 
-Slides depend on those files so style decisions stay centralized rather than drifting slide by slide.
+Slides depend on those files so styling and spacing decisions stay centralized rather than drifting slide by slide.
 
 ## Build Flow
 
@@ -162,6 +164,7 @@ If you change the deck, these are the normal entry points:
 - Add or reorder slides in [`generator/deck.js`](</Users/juhovepsalainen/Projects/presentation-template/generator/deck.js>).
 - Adjust palette or typography in [`generator/theme.js`](</Users/juhovepsalainen/Projects/presentation-template/generator/theme.js>).
 - Add reusable drawing helpers in [`generator/helpers.js`](</Users/juhovepsalainen/Projects/presentation-template/generator/helpers.js>).
+- Add or refine shared frame and stack calculations in [`generator/layout.js`](</Users/juhovepsalainen/Projects/presentation-template/generator/layout.js>).
 - Expand validation behavior in [`generator/validation.js`](</Users/juhovepsalainen/Projects/presentation-template/generator/validation.js>) or the dedicated validator entry points.
 - Change output file naming in [`generator/output-config.js`](</Users/juhovepsalainen/Projects/presentation-template/generator/output-config.js>).
 
@@ -172,6 +175,7 @@ If this repository becomes the first of several decks using the same runtime, it
 ### Good Candidates For Extraction
 
 - [`generator/pdf-renderer.js`](</Users/juhovepsalainen/Projects/presentation-template/generator/pdf-renderer.js>) for the PDF presentation implementation
+- [`generator/layout.js`](</Users/juhovepsalainen/Projects/presentation-template/generator/layout.js>) for reusable layout primitives
 - [`generator/validation.js`](</Users/juhovepsalainen/Projects/presentation-template/generator/validation.js>) for geometry and text-fit validation
 - [`generator/render-utils.js`](</Users/juhovepsalainen/Projects/presentation-template/generator/render-utils.js>) for rasterization and diff support
 - small shared abstractions around build and validation entry points

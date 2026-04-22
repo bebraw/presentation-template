@@ -75,6 +75,14 @@ function overlapArea(a, b) {
   return overlapWidth * overlapHeight;
 }
 
+function horizontalOverlap(a, b) {
+  return Math.min(a.x + a.w, b.x + b.w) - Math.max(a.x, b.x);
+}
+
+function verticalGap(upper, lower) {
+  return lower.y - (upper.y + upper.h);
+}
+
 function boxContains(outer, inner, tolerance = 0.01) {
   return (
     inner.x >= outer.x - tolerance &&
@@ -260,6 +268,136 @@ function validateGeometry(reports, options = {}) {
             message: `Groups "${left.id}" and "${right.id}" overlap`
           });
         }
+      }
+    }
+  }
+
+  return issues;
+}
+
+function validateVerticalBalance(reports, options = {}) {
+  const issues = [];
+  const minGap = options.minGap ?? 0.18;
+  const ratioThreshold = options.ratioThreshold ?? 1.6;
+  const differenceThreshold = options.differenceThreshold ?? 0.24;
+
+  for (const report of reports) {
+    if (report.slide.type !== "content") {
+      continue;
+    }
+
+    const header = report.groups.find((group) => group.id === "section-header" && group.box);
+    const progress = report.groups.find((group) => group.id === "slide-progress" && group.box);
+
+    if (!header || !progress) {
+      continue;
+    }
+
+    const contentGroups = report.groups.filter((group) => (
+      group.box &&
+      group.id !== "section-header" &&
+      group.id !== "slide-progress"
+    ));
+
+    if (!contentGroups.length) {
+      continue;
+    }
+
+    const contentBox = contentGroups.reduce((current, group) => unionBoxes(current, group.box), null);
+    const topGap = contentBox.y - (header.box.y + header.box.h);
+    const bottomGap = progress.box.y - (contentBox.y + contentBox.h);
+
+    if (topGap < minGap || bottomGap < minGap) {
+      continue;
+    }
+
+    const largerGap = Math.max(topGap, bottomGap);
+    const smallerGap = Math.max(Math.min(topGap, bottomGap), Number.EPSILON);
+    const ratio = largerGap / smallerGap;
+    const difference = Math.abs(topGap - bottomGap);
+
+    if (ratio > ratioThreshold && difference > differenceThreshold) {
+      issues.push({
+        level: "warn",
+        slide: report.slide.index,
+        rule: "vertical-balance",
+        message: `Content is vertically imbalanced (${topGap.toFixed(2)}in below title vs ${bottomGap.toFixed(2)}in above progress bar)`
+      });
+    }
+  }
+
+  return issues;
+}
+
+function isCaptionLikeElement(element) {
+  if (element.type !== "text" || !element.box || !element.meta) {
+    return false;
+  }
+
+  const id = String(element.id || "").toLowerCase();
+  const group = String(element.meta.group || "").toLowerCase();
+
+  return /caption|reference|source|note/.test(id) || /caption|reference|source|note/.test(group);
+}
+
+function validateCaptionSpacing(reports, options = {}) {
+  const issues = [];
+  const minGap = options.minGap ?? 0.1;
+  const maxGap = options.maxGap ?? 0.32;
+  const minHorizontalOverlapRatio = options.minHorizontalOverlapRatio ?? 0.4;
+
+  for (const report of reports) {
+    const visuals = report.elements.filter((element) => (
+      (element.type === "image" || element.type === "chart") &&
+      element.box
+    ));
+
+    if (!visuals.length) {
+      continue;
+    }
+
+    for (const element of report.elements) {
+      if (!isCaptionLikeElement(element)) {
+        continue;
+      }
+
+      const relatedVisuals = visuals
+        .map((visual) => {
+          const overlap = horizontalOverlap(element.box, visual.box);
+          const overlapRatio = overlap / Math.max(Math.min(element.box.w, visual.box.w), Number.EPSILON);
+          const gap = element.box.y >= visual.box.y
+            ? verticalGap(visual.box, element.box)
+            : verticalGap(element.box, visual.box);
+
+          return {
+            gap,
+            overlapRatio,
+            visual
+          };
+        })
+        .filter((entry) => entry.overlapRatio >= minHorizontalOverlapRatio && entry.gap >= 0)
+        .sort((left, right) => left.gap - right.gap);
+
+      if (!relatedVisuals.length) {
+        continue;
+      }
+
+      const nearest = relatedVisuals[0];
+
+      if (nearest.gap < minGap) {
+        issues.push({
+          level: "warn",
+          slide: report.slide.index,
+          rule: "caption-spacing-tight",
+          message: `Caption "${element.id}" sits close to visual "${nearest.visual.id}" (${nearest.gap.toFixed(2)}in gap)`
+        });
+      } else if (nearest.gap > maxGap) {
+        issues.push({
+          level: "warn",
+          slide: report.slide.index,
+          rule: "caption-spacing-loose",
+          message: `Caption "${element.id}" sits far from visual "${nearest.visual.id}" (${nearest.gap.toFixed(2)}in gap)`
+        });
       }
     }
   }
@@ -615,8 +753,10 @@ module.exports = {
   contrastRatio,
   createSlideCanvas,
   normalizeText,
+  validateCaptionSpacing,
   validateGeometry,
   validateImageAspectRatio,
+  validateVerticalBalance,
   validateTextContrast,
   validateTextFit,
   validateTextPadding

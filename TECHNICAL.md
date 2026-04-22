@@ -64,6 +64,7 @@ If you add presentation diagrams or other deck graphics, author them as Graphviz
 │   ├── compile.js
 │   ├── deck.js
 │   ├── helpers.js
+│   ├── layout.js
 │   ├── output-config.js
 │   ├── pdf-renderer.js
 │   ├── references.js
@@ -103,6 +104,7 @@ If you add presentation diagrams or other deck graphics, author them as Graphviz
 - Diagram graphics in `slides/assets/diagrams/` must come from Graphviz `.dot` sources; do not hand-maintain the generated PNGs.
 - The production build path renders PDF directly through `pdfkit`.
 - The deck uses `Avenir Next` for both display and body text.
+- Shared slide spacing now lives in `generator/layout.js`, while reusable drawing primitives stay in `generator/helpers.js`.
 - `slides/output/` is git-ignored, so generated binaries stay local.
 - `archive/demo-presentation.pdf` stores the checked-in PDF snapshot for linking and archival.
 - `generator/render-baseline/` stores the approved render baseline for the current deck output.

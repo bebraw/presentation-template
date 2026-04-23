@@ -42,7 +42,7 @@ The first DOM-pivot slices are now in place:
 
 The next practical slice should move beyond the DOM cutover itself:
 
-1. deepen DOM validation further only where checks beyond bounds, padding, font-size, word-count, contrast, and vertical rhythm still prove necessary
+1. deepen DOM validation further only where checks beyond bounds, content gaps, padding, font-size, word-count, contrast, and vertical rhythm still prove necessary
 2. broaden repo-aware deck-level workflows where saved planning context should steer more shared deck behavior
 3. keep the remaining raster-baseline utilities narrow instead of letting generic preview or export logic drift back under `generator/`
 
@@ -70,7 +70,7 @@ Current implementation is now hybrid during migration:
 - supported JSON slide families render through [`studio/client/slide-dom.js`](./studio/client/slide-dom.js) for studio preview and the standalone `/deck-preview` document
 - studio-triggered PDF export and preview PNG generation now run through Playwright in [`studio/server/services/dom-export.js`](./studio/server/services/dom-export.js)
 - studio geometry and text validation for supported slide families now run through Playwright DOM inspection in [`studio/server/services/dom-validate.js`](./studio/server/services/dom-validate.js)
-- that DOM validator now covers contrast and vertical-balance checks in addition to bounds, panel padding, minimum font size, and words-per-slide
+- that DOM validator now covers content-gap floors, contrast, and vertical-balance checks in addition to bounds, panel padding, minimum font size, and words-per-slide
 - [`generator/compile.js`](./generator/compile.js) now builds the deck PDF through that same Playwright-backed DOM renderer
 - the CLI geometry and text validation entrypoints now also call that DOM validator instead of the older generator-side slide drawer
 - studio preview strips and contact sheets now use [`studio/server/services/page-artifacts.js`](./studio/server/services/page-artifacts.js) instead of importing those generic helpers from the generator runtime

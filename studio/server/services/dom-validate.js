@@ -250,6 +250,47 @@ function evaluateSlideInDom(slideEntry, previewState) {
         };
       }
 
+      function collectGroupGaps(selector, childSelector) {
+        return Array.from(document.querySelectorAll(selector))
+          .map((container) => {
+            const children = Array.from(container.querySelectorAll(`:scope > ${childSelector}`))
+              .map((child) => {
+                const rect = child.getBoundingClientRect();
+                return {
+                  className: child.className || child.tagName.toLowerCase(),
+                  rect: {
+                    bottom: rect.bottom,
+                    left: rect.left,
+                    right: rect.right,
+                    top: rect.top
+                  }
+                };
+              });
+
+            const gaps = [];
+
+            for (let index = 1; index < children.length; index += 1) {
+              const previous = children[index - 1].rect;
+              const current = children[index].rect;
+              const horizontalGap = current.left - previous.right;
+              const verticalGap = current.top - previous.bottom;
+              const gap = horizontalGap >= -1 ? horizontalGap : verticalGap;
+
+              gaps.push({
+                currentClassName: children[index].className,
+                gap,
+                previousClassName: children[index - 1].className
+              });
+            }
+
+            return {
+              className: container.className || selector,
+              gaps
+            };
+          })
+          .filter((entry) => entry.gaps.length);
+      }
+
       const contentRects = [
         ".dom-slide__toc-body",
         ".dom-slide__content-columns",
@@ -260,6 +301,13 @@ function evaluateSlideInDom(slideEntry, previewState) {
 
       return {
         contentRects,
+        contentGroupGaps: [
+          ...collectGroupGaps(".dom-slide__cover-cards", ".dom-card"),
+          ...collectGroupGaps(".dom-slide__toc-cards", ".dom-card"),
+          ...collectGroupGaps(".dom-slide__content-columns", ".dom-panel"),
+          ...collectGroupGaps(".dom-slide__summary-columns", ".dom-bullet-list, .dom-panel"),
+          ...collectGroupGaps(".dom-resource-list", ".dom-card")
+        ],
         panelBoxes,
         progressRect: getRect(".dom-slide__badge"),
         sectionHeaderRect: getRect(".dom-slide__section-header"),
@@ -282,6 +330,10 @@ function collectGeometryIssues(slideEntry, domData, validationOptions) {
   if (!slideRect) {
     return issues;
   }
+  const minContentGapIn = validationOptions.contentSpacing && validationOptions.contentSpacing.minGap
+    ? validationOptions.contentSpacing.minGap
+    : 0.18;
+  const minContentGapPx = minContentGapIn * PX_PER_INCH;
 
   domData.textItems.forEach((item) => {
     const rect = normalizeRect(item.rect);
@@ -327,6 +379,20 @@ function collectGeometryIssues(slideEntry, domData, validationOptions) {
     }
   });
 
+  const contentGroupGaps = Array.isArray(domData.contentGroupGaps) ? domData.contentGroupGaps : [];
+  contentGroupGaps.forEach((group) => {
+    group.gaps.forEach((entry) => {
+      if (entry.gap < minContentGapPx - 2) {
+        issues.push(createIssue(
+          slideEntry.index,
+          "warn",
+          "content-gap-tight",
+          `Content group "${group.className}" is tighter than the ${minContentGapIn.toFixed(2)}in minimum (${(entry.gap / PX_PER_INCH).toFixed(2)}in between "${entry.previousClassName}" and "${entry.currentClassName}")`
+        ));
+      }
+    });
+  });
+
   const sectionHeaderRect = domData.sectionHeaderRect ? normalizeRect(domData.sectionHeaderRect) : null;
   const progressRect = domData.progressRect ? normalizeRect(domData.progressRect) : null;
   const contentBox = Array.isArray(domData.contentRects)
@@ -334,7 +400,7 @@ function collectGeometryIssues(slideEntry, domData, validationOptions) {
     : null;
 
   if (sectionHeaderRect && progressRect && contentBox) {
-    const minGap = 12;
+    const minGap = minContentGapPx;
     const ratioThreshold = 1.7;
     const differenceThreshold = 24;
     const topGap = contentBox.top - sectionHeaderRect.bottom;

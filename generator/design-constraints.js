@@ -80,6 +80,9 @@ function getValidationConstraintOptions(input = {}) {
     captionSpacing: {
       minGap: constraints.minCaptionGapIn
     },
+    contentSpacing: {
+      minGap: constraints.minContentGapIn
+    },
     minimumFontSize: {
       minFontSizePt: constraints.minFontSizePt
     },

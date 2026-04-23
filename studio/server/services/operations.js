@@ -6,7 +6,7 @@ const { buildIdeateSlidePrompts } = require("./llm/prompts");
 const { getIdeateSlideResponseSchema } = require("./llm/schemas");
 const { outputDir, previewDir, variantPreviewDir } = require("./paths");
 const { getDeckContext } = require("./state");
-const { getSlide, getSlides, readSlideSpec, writeSlideSpec } = require("./slides");
+const { createStructuredSlide, getSlide, getSlides, readSlideSpec, writeSlideSpec } = require("./slides");
 const { validateSlideSpec } = require("./slide-specs");
 const { captureVariant, updateVariant } = require("./variants");
 const { ensureDir, listPages } = require("../../../generator/render-utils");
@@ -1590,18 +1590,71 @@ function collectDeckStructureContext(context) {
   };
 }
 
-function createDeckStructurePlan(context, definition) {
+function createInsertedDecisionCriteriaSlide(context, proposedIndex) {
+  return validateSlideSpec({
+    eyebrow: "Decision criteria",
+    guardrails: [
+      { id: `decision-criteria-guardrail-1`, label: "must-include", value: "1" },
+      { id: `decision-criteria-guardrail-2`, label: "apply step", value: "1" },
+      { id: `decision-criteria-guardrail-3`, label: "preview pass", value: "1" }
+    ],
+    guardrailsTitle: "Decision checks",
+    index: proposedIndex,
+    signals: [
+      { id: `decision-criteria-signal-1`, label: "claim", value: 0.9 },
+      { id: `decision-criteria-signal-2`, label: "options", value: 0.86 },
+      { id: `decision-criteria-signal-3`, label: "proof", value: 0.92 },
+      { id: `decision-criteria-signal-4`, label: "action", value: 0.84 }
+    ],
+    signalsTitle: "Decision inputs",
+    summary: `Surface the criteria that connect ${context.slides[1] ? context.slides[1].currentTitle : "structure options"} to ${context.slides[2] ? context.slides[2].currentTitle : "proof"}.`,
+    title: "Decision criteria",
+    type: "content"
+  });
+}
+
+function buildDeckPlanEntries(context, definition) {
   const order = Array.isArray(definition.order) && definition.order.length === context.slides.length
     ? definition.order
     : context.slides.map((_, index) => index);
-  const slides = order.map((slideIndex, proposedPosition) => {
-    const slide = context.slides[slideIndex];
+  const insertions = Array.isArray(definition.insertions) ? definition.insertions.slice() : [];
+  const totalEntries = context.slides.length + insertions.length;
+  const entries = [];
+  let existingCursor = 0;
+
+  for (let proposedPosition = 0; proposedPosition < totalEntries; proposedPosition += 1) {
+    const insertion = insertions.find((entry) => entry.proposedIndex === proposedPosition + 1);
     const role = definition.roles[proposedPosition] || `Beat ${proposedPosition + 1}`;
-    const title = definition.titles[proposedPosition] || slide.outlineLine || slide.currentTitle;
-    const focus = definition.focus[proposedPosition] || slide.intent;
-    const rationale = definition.rationales[proposedPosition] || focus;
+    const title = definition.titles[proposedPosition];
+    const focus = definition.focus[proposedPosition];
+    const rationale = definition.rationales[proposedPosition] || focus || role;
+
+    if (insertion) {
+      const insertedTitle = title || insertion.title;
+      entries.push({
+        action: "insert",
+        currentIndex: null,
+        currentTitle: "",
+        proposedIndex: proposedPosition + 1,
+        proposedTitle: insertedTitle,
+        rationale,
+        role,
+        scaffold: {
+          slideSpec: insertion.createSlideSpec(context, proposedPosition + 1)
+        },
+        slideId: null,
+        summary: focus || insertion.summary || rationale,
+        type: insertion.type || "content"
+      });
+      continue;
+    }
+
+    const slide = context.slides[order[existingCursor]];
+    existingCursor += 1;
+    const nextTitle = title || slide.outlineLine || slide.currentTitle;
+    const nextFocus = focus || slide.intent;
     const moved = slide.index !== proposedPosition + 1;
-    const retitled = normalizeSentence(title).toLowerCase() !== normalizeSentence(slide.currentTitle).toLowerCase();
+    const retitled = normalizeSentence(nextTitle).toLowerCase() !== normalizeSentence(slide.currentTitle).toLowerCase();
     const action = moved && retitled
       ? "move-and-retitle"
       : moved
@@ -1609,19 +1662,26 @@ function createDeckStructurePlan(context, definition) {
         : retitled
           ? "retitle"
           : "keep";
-    return {
+
+    entries.push({
       action,
-      currentTitle: slide.currentTitle,
       currentIndex: slide.index,
-      proposedTitle: title,
+      currentTitle: slide.currentTitle,
       proposedIndex: proposedPosition + 1,
+      proposedTitle: nextTitle,
       rationale,
       role,
       slideId: slide.id,
-      summary: focus,
+      summary: nextFocus,
       type: slide.type
-    };
-  });
+    });
+  }
+
+  return entries;
+}
+
+function createDeckStructurePlan(context, definition) {
+  const slides = buildDeckPlanEntries(context, definition);
 
   return {
     changeSummary: [
@@ -1705,8 +1765,18 @@ function createLocalDeckStructureCandidates(context) {
       focus: [
         "Open with the core decision or claim the deck needs to support.",
         "Show the options or structure that shape that decision.",
+        "Insert one explicit criteria slide before the proof block so the decision rules are visible.",
         "Make the strongest proof and operational limits explicit.",
         "Close on the action the team should take next."
+      ],
+      insertions: [
+        {
+          createSlideSpec: (context, proposedIndex) => createInsertedDecisionCriteriaSlide(context, proposedIndex),
+          proposedIndex: 3,
+          summary: "Insert one decision-criteria slide to bridge the options and proof sections.",
+          title: "Decision criteria",
+          type: "content"
+        }
       ],
       label: "Decision-led structure",
       notes: "Turns the presentation into a decision-support flow aimed at a concrete next move.",
@@ -1714,14 +1784,16 @@ function createLocalDeckStructureCandidates(context) {
       rationales: [
         "Keep the opening slide focused on the decision instead of a generic intro.",
         "Use the second slide to surface the available structure options.",
+        "Add one explicit criteria slide so the audience sees how options are judged before proof lands.",
         "Let the third slide act as the proof block that narrows the decision.",
         "Turn the final slide into the explicit action to take next."
       ],
-      roles: ["Decision", "Options", "Evidence", "Action"],
+      roles: ["Decision", "Options", "Criteria", "Evidence", "Action"],
       summary: `Organize the deck around one decision path for ${structureContext.audience}, then close on the next action.`,
       titles: [
         "The decision to make",
         "The structure options",
+        "Decision criteria",
         "The proof and limits",
         "The next action"
       ]
@@ -2216,10 +2288,23 @@ async function ideateDeckStructure(options = {}) {
 
 async function applyDeckStructureCandidate(candidate, options = {}) {
   const plan = Array.isArray(candidate && candidate.slides) ? candidate.slides : [];
+  const promoteInsertions = options.promoteInsertions !== false;
+  let insertedSlides = 0;
   const promoteIndices = options.promoteIndices !== false;
   const promoteTitles = options.promoteTitles !== false;
   let indexUpdates = 0;
   let titleUpdates = 0;
+
+  if (promoteInsertions) {
+    for (const entry of plan) {
+      if (!entry || entry.action !== "insert" || !entry.scaffold || !entry.scaffold.slideSpec) {
+        continue;
+      }
+
+      createStructuredSlide(entry.scaffold.slideSpec);
+      insertedSlides += 1;
+    }
+  }
 
   if (promoteTitles || promoteIndices) {
     for (const entry of plan) {
@@ -2263,6 +2348,7 @@ async function applyDeckStructureCandidate(candidate, options = {}) {
   const previews = (await buildAndRenderDeck()).previews;
 
   return {
+    insertedSlides,
     indexUpdates,
     previews,
     titleUpdates

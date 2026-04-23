@@ -44,18 +44,18 @@ Implemented:
 - structured local `Redo Layout` workflow with direct browser action, assistant routing, and compareable dry-run variants
 - structured local `Ideate Theme` workflow with direct browser action, assistant routing, and compareable dry-run variants
 - structured local `Ideate Structure` workflow with direct browser action, assistant routing, and compareable dry-run variants
-- structured local deck-level presentation-structure ideation that generates candidate outlines plus per-slide plan changes from saved deck context and can apply one back to persisted deck metadata while promoting retitles and slide reordering into the deck itself
+- structured local deck-level presentation-structure ideation that generates candidate outlines plus per-slide plan changes from saved deck context and can apply one back to persisted deck metadata while promoting retitles, slide reordering, and inserted slide scaffolds into the deck itself
 - broader assistant intent handling for short layout-oriented requests such as `redo layout`, `rebalance`, and `rearrange`
 - browser-visible workflow progress states through the shared runtime endpoint so direct operations and assistant-triggered actions can report stages before previews are ready
 
 Not implemented yet:
-- repo-aware deck-level workflows beyond reordering, title promotion, and metadata-backed structure planning
+- repo-aware deck-level workflows beyond inserted-slide scaffolding, reordering, title promotion, and metadata-backed structure planning
 
 ## Next Focus
 
-The next practical slice should deepen the deck-level workflow surface now that title promotion and reordering are in place:
+The next practical slice should deepen the deck-level workflow surface now that inserted-slide scaffolding is in place:
 
-1. extend deck-level structure planning from reordering into insert/remove operations or new-slide scaffolding with explicit apply gating
+1. extend deck-level structure planning from inserted-slide scaffolding into guarded remove/replace operations or richer compose flows
 2. keep the server responsible for validating slide specs, preview rendering, variant storage, and apply gating
 3. decide whether progress reporting should stay polling-based or move to streaming once more workflows exist
 
@@ -387,7 +387,7 @@ Implemented so far:
 - `Ideate Slide` workflow action for the selected slide
 - `Ideate Structure` workflow action for the selected slide through both the browser UI and the assistant
 - `Ideate Theme` workflow action for the selected slide through both the browser UI and the assistant
-- deck-level presentation-structure ideation through both the browser UI and the assistant, with safe apply back to the saved outline, per-slide structure metadata, promoted slide titles, and slide reordering
+- deck-level presentation-structure ideation through both the browser UI and the assistant, with safe apply back to the saved outline, per-slide structure metadata, promoted slide titles, slide reordering, and inserted slide scaffolds
 - `Drill Wording` workflow action through the assistant and server API
 - generated multi-option source variants from stored deck and slide context
 - schema-backed slide-spec generation and materialization for `cover`, `toc`, `content`, and `summary`
@@ -399,7 +399,7 @@ Implemented so far:
 
 Still needed:
 
-- repo-aware deck-level workflow operations beyond reordering, title promotion, and metadata-backed structure planning
+- repo-aware deck-level workflow operations beyond inserted-slide scaffolding, reordering, title promotion, and metadata-backed structure planning
 - stronger operation-specific change summaries and fuller diff support
 - legacy-variant cleanup so older entries in `studio/state/variants.json` can be folded fully into slide-local storage
 

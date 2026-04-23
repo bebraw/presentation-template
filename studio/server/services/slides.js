@@ -21,6 +21,18 @@ function writeJson(fileName, value) {
   fs.writeFileSync(fileName, `${JSON.stringify(value, null, 2)}\n`, "utf8");
 }
 
+function getNextStructuredSlideFileName() {
+  const allFiles = fs.readdirSync(slidesDir);
+  const nextIndex = allFiles
+    .map((fileName) => {
+      const match = fileName.match(/^slide-(\d+)\.json$/);
+      return match ? Number(match[1]) : 0;
+    })
+    .reduce((maximum, value) => Math.max(maximum, value), 0) + 1;
+
+  return `slide-${String(nextIndex).padStart(2, "0")}.json`;
+}
+
 function readStructuredSlideDocumentFile(fileName) {
   const parsed = readJson(fileName, {});
 
@@ -174,6 +186,20 @@ function writeSlideSpec(slideId, slideSpec) {
   return slide;
 }
 
+function createStructuredSlide(slideSpec) {
+  const validated = validateSlideSpec(slideSpec);
+  const fileName = getNextStructuredSlideFileName();
+  const filePath = path.join(slidesDir, fileName);
+  writeJson(filePath, buildStructuredSlideDocument(validated, []));
+
+  return {
+    fileName,
+    id: path.basename(fileName, path.extname(fileName)),
+    path: filePath,
+    slideSpec: validated
+  };
+}
+
 function readStructuredSlideVariants(slideId) {
   const slide = getSlide(slideId);
   if (!slide.structured) {
@@ -199,6 +225,7 @@ function writeStructuredSlideVariants(slideId, variants) {
 module.exports = {
   getSlide,
   getSlides,
+  createStructuredSlide,
   readSlideSpec,
   readSlideSource,
   readStructuredSlideVariants,

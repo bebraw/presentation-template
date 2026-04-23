@@ -393,12 +393,15 @@ function renderDeckStructureCandidates() {
     card.className = `variant-card${candidate.id === state.selectedDeckStructureId ? " active" : ""}`;
     const outlineLines = String(candidate.outline || "").split("\n").filter(Boolean);
     const planStats = candidate.planStats || {};
+    const diff = candidate.diff || {};
     const preview = candidate.preview || {};
     const plan = Array.isArray(candidate.slides) ? candidate.slides : [];
     const previewCues = Array.isArray(preview.cues) ? preview.cues : [];
     const previewHints = Array.isArray(preview.previewHints) ? preview.previewHints : [];
     const currentSequence = Array.isArray(preview.currentSequence) ? preview.currentSequence : [];
     const proposedSequence = Array.isArray(preview.proposedSequence) ? preview.proposedSequence : [];
+    const diffFiles = Array.isArray(diff.files) ? diff.files : [];
+    const outlineDiff = diff.outline || {};
     const stripMarkup = preview.strip && preview.strip.url
       ? `
       <div class="deck-structure-strip">
@@ -457,8 +460,31 @@ function renderDeckStructureCandidates() {
           .concat(previewCues.map((cue) => `<p class="compare-summary-item">${escapeHtml(cue)}</p>`))
           .join("")}
       </div>
+      <div class="compare-stats">
+        <span class="compare-stat"><strong>${(diff.counts && diff.counts.beforeSlides) || currentSequence.length}</strong> slides before</span>
+        <span class="compare-stat"><strong>${(diff.counts && diff.counts.afterSlides) || proposedSequence.length}</strong> slides after</span>
+        <span class="compare-stat"><strong>${diffFiles.length}</strong> file target${diffFiles.length === 1 ? "" : "s"}</span>
+      </div>
       ${stripMarkup}
       ${previewHintMarkup}
+      <div class="deck-structure-outline">
+        <div class="deck-structure-outline-line"><strong>Diff summary</strong><span>${escapeHtml(diff.summary || "No deck diff summary available")}</span></div>
+        <div class="deck-structure-outline-line"><strong>Added to live deck</strong><span>${escapeHtml((outlineDiff.added || []).join(" / ") || "None")}</span></div>
+        <div class="deck-structure-outline-line"><strong>Archived from live deck</strong><span>${escapeHtml((outlineDiff.archived || []).join(" / ") || "None")}</span></div>
+        <div class="deck-structure-outline-line"><strong>Retitled beats</strong><span>${escapeHtml((outlineDiff.retitled || []).map((item) => `${item.before} -> ${item.after}`).join(" / ") || "None")}</span></div>
+        <div class="deck-structure-outline-line"><strong>Moved beats</strong><span>${escapeHtml((outlineDiff.moved || []).map((item) => `${item.title} ${item.from}->${item.to}`).join(" / ") || "None")}</span></div>
+      </div>
+      <div class="deck-structure-plan">
+        ${diffFiles.map((file) => `
+          <div class="deck-structure-step">
+            <strong>${escapeHtml(file.targetPath || "slides/(pending)")}</strong>
+            <span class="deck-structure-pill">${escapeHtml((file.changeKinds || []).join(" + ") || "change")}</span>
+            <span>Before: ${escapeHtml(file.before || "(none)")}</span>
+            <span>After: ${escapeHtml(file.after || "(none)")}</span>
+            <span>${escapeHtml(file.note || "")}</span>
+          </div>
+        `).join("") || `<div class="deck-structure-step"><strong>No file-level changes</strong><span>This candidate keeps the current file set untouched.</span></div>`}
+      </div>
       <div class="deck-structure-outline">
         <div class="deck-structure-outline-line"><strong>Current live deck</strong><span>${escapeHtml(currentSequence.map((slide) => `${slide.index}. ${slide.title}`).join(" / ") || "No current sequence")}</span></div>
         <div class="deck-structure-outline-line"><strong>Proposed live deck</strong><span>${escapeHtml(proposedSequence.map((slide) => `${slide.index}. ${slide.title}`).join(" / ") || "No proposed sequence")}</span></div>

@@ -6,7 +6,7 @@ const { buildIdeateSlidePrompts } = require("./llm/prompts");
 const { getIdeateSlideResponseSchema } = require("./llm/schemas");
 const { deckStructurePreviewDir, outputDir, previewDir, variantPreviewDir } = require("./paths");
 const { getDeckContext } = require("./state");
-const { createStructuredSlide, getSlide, getSlides, readSlideSpec, writeSlideSpec } = require("./slides");
+const { createStructuredSlide, getSlide, getSlides, peekNextStructuredSlideFileName, readSlideSpec, writeSlideSpec } = require("./slides");
 const { validateSlideSpec } = require("./slide-specs");
 const { captureVariant, updateVariant } = require("./variants");
 const { createContactSheet, ensureDir, listPages } = require("../../../generator/render-utils");
@@ -1826,6 +1826,33 @@ function buildDeckPlanActionCue(slide) {
   return `Keep ${currentTitle} in the live deck.`;
 }
 
+function getDeckPlanChangeKinds(action) {
+  const normalized = String(action || "");
+  const changeKinds = [];
+
+  if (normalized === "insert") {
+    return ["create"];
+  }
+
+  if (normalized === "remove") {
+    return ["archive"];
+  }
+
+  if (normalized.includes("move")) {
+    changeKinds.push("reorder");
+  }
+
+  if (normalized.includes("retitle")) {
+    changeKinds.push("retitle");
+  }
+
+  if (normalized.includes("replace")) {
+    changeKinds.push("replace");
+  }
+
+  return changeKinds.length ? changeKinds : ["keep"];
+}
+
 function buildDeckPlanPreviewHint(slide) {
   const action = String(slide && slide.action ? slide.action : "keep");
   const currentIndex = Number.isFinite(slide && slide.currentIndex) ? slide.currentIndex : null;
@@ -1843,6 +1870,83 @@ function buildDeckPlanPreviewHint(slide) {
     proposedTitle,
     slideId: slide && slide.slideId ? slide.slideId : null,
     type: slide && slide.type ? slide.type : null
+  };
+}
+
+function buildDeckPlanDiff(context, slides, planStats) {
+  const currentSequence = context.slides.map((slide) => ({
+    index: slide.index,
+    title: slide.currentTitle
+  }));
+  const proposedSequence = getDeckPlanLiveSlides(slides).map((slide) => ({
+    index: slide.proposedIndex,
+    title: slide.proposedTitle
+  }));
+  const nextStructuredFile = peekNextStructuredSlideFileName();
+  const changedSlides = (Array.isArray(slides) ? slides : []).filter((slide) => String(slide && slide.action ? slide.action : "") !== "keep");
+  const insertedTitles = changedSlides
+    .filter((slide) => String(slide.action || "") === "insert")
+    .map((slide) => slide.proposedTitle)
+    .filter(Boolean);
+  const archivedTitles = changedSlides
+    .filter((slide) => String(slide.action || "") === "remove")
+    .map((slide) => slide.currentTitle)
+    .filter(Boolean);
+  const files = changedSlides.map((slide) => {
+    const changeKinds = getDeckPlanChangeKinds(slide.action);
+    const targetPath = slide.action === "insert"
+      ? path.join("slides", nextStructuredFile)
+      : path.join("slides", `${slide.slideId}.json`);
+
+    return {
+      after: slide.action === "remove"
+        ? "(archived from live deck)"
+        : slide.proposedTitle || slide.currentTitle || "",
+      before: slide.action === "insert"
+        ? "(new slide)"
+        : slide.currentTitle || "",
+      changeKinds,
+      currentIndex: Number.isFinite(slide.currentIndex) ? slide.currentIndex : null,
+      note: buildDeckPlanActionCue(slide),
+      proposedIndex: Number.isFinite(slide.proposedIndex) ? slide.proposedIndex : null,
+      slideId: slide.slideId || null,
+      targetPath
+    };
+  });
+
+  return {
+    counts: {
+      afterSlides: proposedSequence.length,
+      archived: planStats.archived,
+      beforeSlides: currentSequence.length,
+      inserted: planStats.inserted,
+      moved: planStats.moved,
+      replaced: planStats.replaced,
+      retitled: planStats.retitled
+    },
+    files,
+    outline: {
+      added: insertedTitles,
+      archived: archivedTitles,
+      currentSequence,
+      moved: changedSlides
+        .filter((slide) => String(slide.action || "").includes("move") && Number.isFinite(slide.proposedIndex))
+        .map((slide) => ({
+          from: slide.currentIndex,
+          title: slide.currentTitle,
+          to: slide.proposedIndex
+        })),
+      proposedSequence,
+      retitled: changedSlides
+        .filter((slide) => String(slide.action || "").includes("retitle"))
+        .map((slide) => ({
+          after: slide.proposedTitle,
+          before: slide.currentTitle
+        }))
+    },
+    summary: currentSequence.length === proposedSequence.length
+      ? `Live deck stays at ${proposedSequence.length} slides while changing ${files.length} file target${files.length === 1 ? "" : "s"}.`
+      : `Live deck changes from ${currentSequence.length} to ${proposedSequence.length} slides while changing ${files.length} file target${files.length === 1 ? "" : "s"}.`
   };
 }
 
@@ -2057,6 +2161,7 @@ function createDeckStructurePlan(context, definition) {
   const slides = buildDeckPlanEntries(context, definition);
   const planStats = collectDeckPlanStats(slides);
   const preview = buildDeckPlanPreview(context, slides, planStats);
+  const diff = buildDeckPlanDiff(context, slides, planStats);
 
   return {
     changeSummary: buildDeckPlanChangeSummary(definition, preview),
@@ -2067,6 +2172,7 @@ function createDeckStructurePlan(context, definition) {
       .filter((slide) => Number.isFinite(slide.proposedIndex) && slide.proposedTitle)
       .map((slide) => slide.proposedTitle)
       .join("\n"),
+    diff,
     planStats,
     preview,
     promptSummary: definition.promptSummary,

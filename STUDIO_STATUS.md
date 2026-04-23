@@ -29,12 +29,12 @@ Implemented:
 - the included four-slide demo deck ported to JSON slide specs and rendered directly from that structured content
 - deck-level presentation-structure ideation through both the browser UI and the assistant
 - deck-plan apply that can promote retitles, reordering, inserted slide scaffolds, scaffolded slide replacement, guarded slide archival, and composed deck plans
-- stronger pre-apply deck-plan summaries, current/proposed sequence previews, affected-slide preview hints, and transient deck-level preview strips
+- stronger pre-apply deck-plan summaries, current/proposed sequence previews, affected-slide preview hints, transient deck-level preview strips, and structured deck-plan diff summaries
 - browser-visible workflow progress states through the shared runtime endpoint
 
 Current gaps:
 
-- stronger operation-specific diff and change summaries beyond the current text-first summaries
+- richer diff and change-summary support across more workflows beyond the current deck-plan-focused slice
 - repo-aware deck-level workflows beyond the current file-safe compose actions, such as broader generator-aware composition changes or larger batch authoring flows
 - legacy-variant cleanup so older entries in `studio/state/variants.json` can be folded fully into slide-local storage
 - stronger enforcement and documentation of allowed write targets
@@ -62,7 +62,7 @@ Implemented so far:
 - `Ideate Slide` workflow action for the selected slide
 - `Ideate Structure` workflow action for the selected slide through both the browser UI and the assistant
 - `Ideate Theme` workflow action for the selected slide through both the browser UI and the assistant
-- deck-level presentation-structure ideation through both the browser UI and the assistant, with safe apply back to the saved outline, per-slide structure metadata, promoted slide titles, slide reordering, inserted slide scaffolds, scaffolded slide replacement, guarded slide archival, richer composed deck plans, stronger pre-apply deck-plan summaries, affected-slide preview hints, and transient deck-level preview strips
+- deck-level presentation-structure ideation through both the browser UI and the assistant, with safe apply back to the saved outline, per-slide structure metadata, promoted slide titles, slide reordering, inserted slide scaffolds, scaffolded slide replacement, guarded slide archival, richer composed deck plans, stronger pre-apply deck-plan summaries, affected-slide preview hints, transient deck-level preview strips, and structured diff summaries
 - `Drill Wording` workflow action through the assistant and server API
 - generated multi-option source variants from stored deck and slide context
 - schema-backed slide-spec generation and materialization for `cover`, `toc`, `content`, and `summary`
@@ -74,7 +74,7 @@ Implemented so far:
 
 Still needed:
 
-- stronger operation-specific change summaries and fuller diff support
+- richer diff and change-summary support across more workflows
 - repo-aware deck-level workflow operations beyond the current file-safe compose actions
 
 ### Phase 5: Slide Variant System
@@ -118,7 +118,7 @@ Implemented so far:
 - geometry, text, and render validation are exposed separately
 - validation results are shown in the UI
 - source diffs and operation-specific summaries exist for slide-level workflows
-- deck-plan summaries, affected-slide hints, and transient preview strips exist for deck-level workflows
+- deck-plan summaries, affected-slide hints, transient preview strips, and structured diff summaries exist for deck-level workflows
 
 Still needed:
 
@@ -139,5 +139,5 @@ What already works:
 
 What still needs polish:
 
-1. stronger change summaries for larger workflow outputs
-2. broader deck-level authoring flows beyond the current file-safe compose actions
+1. broader deck-level authoring flows beyond the current file-safe compose actions
+2. richer diff and summary support across more workflow types

@@ -2,7 +2,7 @@
 
 This document turns the browser-app MVP discussion into a concrete implementation roadmap for this repository.
 
-The goal is to build a local browser-based presentation studio that reduces typing, codifies common flows, improves context handling, and shortens the iteration loop while keeping the existing deck generator as the source of truth.
+The goal is to build a local browser-based presentation studio that reduces typing, codifies common flows, improves context handling, and shortens the iteration loop while converging on one DOM-first rendering path for both browser preview and PDF output.
 
 ## Working Agreement
 
@@ -30,16 +30,16 @@ Keep this roadmap focused on architecture, rollout order, and the next slice to 
 
 ## Next Focus
 
-The next practical slice should build on the shared generator-aware composition work that is already in place. The generator now reads saved deck metadata, active-slide totals, design constraints, palette values, and explicit progress-bar colors from studio state, so the remaining work should keep pushing real generator defaults behind the same planning boundary instead of introducing browser-only state.
+The next practical slice is now an architecture pivot, not another incremental studio feature.
 
 If choosing one thing to build next, do this:
 
-1. keep extending generator-aware deck composition where one more shared generator default moves behind saved planning context and affects both previews and final output deterministically
+1. introduce a DOM-first slide runtime for the supported JSON slide families and make it the authoritative preview path inside the studio
 
 After that:
 
-1. keep extending generator-aware deck composition where more shared generator defaults should move behind saved planning context
-2. keep refining diff and summary support across more workflow types as broader composition work lands
+1. generate the final PDF and preview images from the same DOM renderer through a headless browser path
+2. move layout validation from generator-side geometry into DOM layout inspection and retire the old generator-first preview path
 
 ## Product Intent
 
@@ -58,18 +58,25 @@ This is not a PowerPoint replacement and not a full WYSIWYG editor in the MVP.
 
 ## Core Principle
 
-Keep the current deck engine as the source of truth.
+Keep exactly one rendering engine authoritative at a time.
 
-The app should wrap the existing runtime rather than replace it:
+Current implementation is still generator-first:
 
-- [`generator/deck.js`](./generator/deck.js) remains the composition point
-- [`generator/compile.js`](./generator/compile.js) remains the main PDF build path
-- [`generator/render-utils.js`](./generator/render-utils.js) remains the page-rendering utility
-- validation continues to reuse the existing geometry, text, and render checks under [`generator/`](./generator)
+- [`generator/deck.js`](./generator/deck.js) is the composition point
+- [`generator/compile.js`](./generator/compile.js) is the main PDF build path
+- [`generator/render-utils.js`](./generator/render-utils.js) produces preview pages
+- validation still reuses the existing geometry, text, and render checks under [`generator/`](./generator)
 
-The studio is a control plane around the current generator, not a second rendering system.
+Target architecture is DOM-first:
 
-Deck-level planning context should also be able to flow back into shared generator behavior where it is safe and deterministic to do so. That now includes document metadata such as deck title, author, company, explicit subject, and language, live progress-bar totals derived from the active slide set, saved design constraints like minimum font size, spacing floors, and maximum words per slide, plus shared deck palette values such as background, panel, neutral surface, and explicit progress-bar colors that drive slide chrome and preview colors. Future composition work should continue following that pattern instead of introducing browser-only deck state.
+- slide-spec JSON stays the source content model for supported slides
+- a shared DOM renderer becomes the source of truth for browser preview
+- the same DOM renderer, via headless browser automation, becomes the source of truth for PDF and PNG export
+- validation reads DOM layout results instead of generator-side geometry
+
+The migration should reduce total complexity, not split it. Do not build a long-lived “browser preview only” renderer beside the current generator. During migration, the generator path may remain as a temporary fallback, but the end state should be one DOM-first rendering runtime rather than two peer renderers.
+
+Deck-level planning context should still flow into shared rendering behavior where it is safe and deterministic to do so. The current implementation already proves that with metadata, progress totals, design constraints, and shared palette values. The DOM-first renderer should inherit that same deck-context boundary instead of inventing browser-only presentation state.
 
 The studio write boundary should stay explicit and narrow. Studio-driven file mutation is now limited to slide files under `slides/slide-*`, repo-local state files under `studio/state/*.json`, and generated workflow artifacts under `studio/output/**`. Future workflow expansion should continue extending that allowlist deliberately rather than relying on ad hoc file writes.
 
@@ -242,6 +249,52 @@ Recommended stack:
 
 Current implementation uses plain browser assets instead of React + Vite so the local-first slice stays small and works directly with the current CommonJS runtime.
 
+## DOM-First Migration
+
+This is the next major roadmap track.
+
+### Why This Pivot
+
+- one renderer for editing, preview, and final export is simpler than keeping preview images plus a separate authoring surface
+- CSS layout primitives such as Flexbox and Grid are a better long-term fit than manual slide geometry for many authoring tasks
+- the project targets PDF output, so keeping PPT-specific rendering constraints is no longer a requirement
+- structured slide JSON already exists, so the content model is strong enough to support a rendering reset
+
+### Target Runtime
+
+End-state request flow:
+
+1. slide-spec JSON is loaded
+2. a shared DOM renderer turns it into HTML/CSS
+3. the browser uses that DOM for live studio preview
+4. a headless browser uses that same DOM for exported PNGs and final PDF
+5. validation inspects DOM layout boxes, overflow, spacing, and rendered output from that same runtime
+
+### Non-Goals
+
+- preserving PPT output
+- keeping the current generator-side slide renderer as a permanent second runtime
+- building a freeform WYSIWYG editor before the DOM renderer is stable
+
+### Migration Order
+
+Implement in this order:
+
+1. keep slide-spec JSON as the only source model for supported slide families
+2. add a DOM renderer for `cover`, `toc`, `content`, and `summary`
+3. switch studio preview for supported slides from server-rendered PNG-first to DOM-first
+4. add a headless-browser export path that produces the deck PDF and preview images from the DOM renderer
+5. move validation from generator-side geometry to DOM layout inspection plus rendered checks
+6. retire generator-side slide drawing for supported slide types once the DOM path is stable
+7. migrate or remove remaining legacy generator-only slides and helpers
+
+### Acceptance Criteria
+
+- the same DOM renderer powers live studio preview and exported PDF for supported slides
+- supported slide families no longer depend on generator-side drawing code for authoritative layout
+- validation results come from DOM layout and rendered output, not from the old slide-canvas geometry model
+- the current generator path can be disabled for the supported slide families without losing the demo deck
+
 ## UX Shape
 
 Current implementation uses a centered white-canvas workspace with page-level separation:
@@ -260,6 +313,8 @@ Visual rules for the current studio UI:
 This is intentionally quieter than a full app shell. If a later iteration adds richer workflow controls, keep the visual hierarchy anchored around the preview rather than turning the page into a dashboard.
 
 ## Phase Plan
+
+The phases below describe the delivered generator-first studio foundation. The DOM-first migration above is now the next major implementation track built on top of that foundation.
 
 ### Phase 1: Studio Shell And Runtime Bridge
 

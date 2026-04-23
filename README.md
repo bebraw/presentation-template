@@ -78,7 +78,7 @@ Then open:
 http://127.0.0.1:4173
 ```
 
-The first implementation slice is local-first and wraps the existing generator runtime. It currently supports:
+The current implementation is local-first and wraps the existing generator runtime. It currently supports:
 
 - deck rebuilds and preview rendering
 - geometry/text validation and optional full render validation
@@ -90,7 +90,9 @@ The first implementation slice is local-first and wraps the existing generator r
 - capture/apply slide variants through structured slide specs for supported slide families, with supported JSON slides saving named variants alongside the active slide spec and legacy structured variants migrated into the owning slide JSON
 - grouped slide-compare summaries for supported JSON slide types so larger changes read as framed content-area diffs instead of only flat line changes
 
-The studio does not replace the current PDF generator. It uses the same deck source files and rebuild path that the repository already uses for normal presentation work.
+Today the studio does not replace the current PDF generator. It uses the same deck source files and rebuild path that the repository already uses for normal presentation work.
+
+The next planned architecture step is a DOM-first renderer so browser preview and final PDF output can converge on one rendering path. See [ROADMAP.md](ROADMAP.md) for the migration plan.
 
 Studio write targets are intentionally narrow. The server only mutates:
 

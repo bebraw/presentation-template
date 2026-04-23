@@ -4,6 +4,8 @@ This file tracks the live implementation snapshot for the browser studio.
 
 Use [`ROADMAP.md`](./ROADMAP.md) for architecture, rollout order, and the next build slice.
 
+Current implementation is still generator-first. The next major planned rework is a DOM-first renderer migration so browser preview, PNG preview generation, PDF export, and layout validation can converge on one rendering runtime.
+
 ## Snapshot
 
 Implemented:
@@ -49,6 +51,17 @@ Implemented:
 Current gaps:
 
 - repo-aware deck-level workflows beyond the current file-safe compose and rewrite actions, especially where more shared generator behavior should respond to saved planning context
+- the DOM-first renderer migration is not started yet, so preview, export, and validation still depend on the older generator-side runtime
+
+## Planned Rework
+
+Next major direction:
+
+- keep slide-spec JSON as the source content model for supported slides
+- replace generator-first preview and export for those slide families with a shared DOM renderer
+- generate PDF and preview PNGs from that DOM renderer through a headless browser path
+- move validation from generator-side geometry to DOM layout inspection
+- retire generator-side slide drawing for supported slide families once the DOM path is stable
 
 ## Phase Snapshot
 
@@ -146,3 +159,4 @@ What still needs polish:
 
 1. broader deck-level composition flows where more shared generator behavior should respond to saved planning context
 2. richer diff and summary support across more workflow types
+3. the DOM-first renderer migration that will eventually replace the current generator-first preview and export path

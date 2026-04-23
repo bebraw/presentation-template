@@ -149,6 +149,8 @@ async function renderDeckPreviewImagesFromDom(previewState) {
 
 module.exports = {
   createStandaloneDeckHtml,
+  createStandaloneSlideHtml,
   exportDeckPdfFromDom,
-  renderDeckPreviewImagesFromDom
+  renderDeckPreviewImagesFromDom,
+  withBrowser
 };

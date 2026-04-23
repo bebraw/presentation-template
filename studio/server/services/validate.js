@@ -1,6 +1,7 @@
 const fs = require("fs");
 const path = require("path");
 const { createPresentation } = require("../../../generator/deck");
+const { createPdfPresentation } = require("../../../generator/pdf-renderer");
 const {
   getValidationConstraintOptions,
   readDesignConstraints
@@ -23,6 +24,7 @@ const {
   validateTextPadding,
   validateVerticalBalance
 } = require("../../../generator/validation");
+const { validateDeckInDom } = require("./dom-validate");
 const {
   outputDir,
   renderCheckCurrentDir,
@@ -68,7 +70,14 @@ function runTextValidation(reports, validationOptions) {
   ]);
 }
 
-function runRenderValidation() {
+async function buildGeneratorValidationPdf(targetFile) {
+  const { pres } = createPdfPresentation();
+  fs.mkdirSync(path.dirname(targetFile), { recursive: true });
+  await pres.writeFile({ fileName: targetFile });
+  return targetFile;
+}
+
+async function runRenderValidation() {
   const baselinePages = listPages(baselineDir);
   if (!baselinePages.length) {
     return {
@@ -85,7 +94,9 @@ function runRenderValidation() {
   }
 
   ensureAllowedDir(renderCheckDiffDir);
-  const currentPages = renderPdfPages(renderCheckCurrentDir);
+  const generatorRenderPdf = path.join(path.dirname(renderCheckCurrentDir), "generator-render-check.pdf");
+  await buildGeneratorValidationPdf(generatorRenderPdf);
+  const currentPages = renderPdfPages(renderCheckCurrentDir, generatorRenderPdf);
   if (baselinePages.length !== currentPages.length) {
     return {
       errors: [{
@@ -135,12 +146,32 @@ function runRenderValidation() {
 async function validateDeck(options = {}) {
   const includeRender = options.includeRender === true;
   const buildResult = await buildAndRenderDeck();
-  const { reports } = createPresentation({ trackLayout: true });
-  const validationOptions = getValidationConstraintOptions(readDesignConstraints());
-  const geometry = runGeometryValidation(reports, validationOptions);
-  const text = runTextValidation(reports, validationOptions);
+  let geometry;
+  let text;
+
+  try {
+    const domResult = await validateDeckInDom();
+    geometry = domResult.geometry;
+    text = domResult.text;
+  } catch (error) {
+    const { reports } = createPresentation({ trackLayout: true });
+    const validationOptions = getValidationConstraintOptions(readDesignConstraints());
+    geometry = runGeometryValidation(reports, validationOptions);
+    text = runTextValidation(reports, validationOptions);
+    geometry.issues = [
+      {
+        level: "warn",
+        slide: 0,
+        rule: "dom-validation-fallback",
+        message: `DOM validation fell back to generator checks: ${error.message}`
+      },
+      ...geometry.issues
+    ];
+    geometry.errors = geometry.issues.filter((issue) => issue.level === "error");
+  }
+
   const render = includeRender
-    ? runRenderValidation()
+    ? await runRenderValidation()
     : {
         errors: [],
         failures: [],

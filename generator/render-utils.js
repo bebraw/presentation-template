@@ -40,9 +40,9 @@ function listPages(dir) {
     .map((name) => path.join(dir, name));
 }
 
-function renderPdfPages(targetDir) {
-  if (!fs.existsSync(pdfFile)) {
-    throw new Error(`Missing PDF input: ${pdfFile}`);
+function renderPdfPages(targetDir, inputFile = pdfFile) {
+  if (!fs.existsSync(inputFile)) {
+    throw new Error(`Missing PDF input: ${inputFile}`);
   }
 
   resetDir(targetDir);
@@ -50,7 +50,7 @@ function renderPdfPages(targetDir) {
   const result = run("magick", [
     "-density",
     "160",
-    pdfFile,
+    inputFile,
     pattern
   ]);
 

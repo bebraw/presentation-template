@@ -46,14 +46,15 @@ function getSlides() {
   return getSlideFiles().map((fileName, index) => {
     const filePath = path.join(slidesDir, fileName);
     const slideId = path.basename(fileName, path.extname(fileName));
+    const structured = fileName.endsWith(".json");
 
     return {
       fileName,
       id: slideId,
       index: index + 1,
       path: filePath,
-      sourcePath: fileName.endsWith(".json") ? path.join(slidesDir, `${slideId}.js`) : filePath,
-      structured: fileName.endsWith(".json"),
+      sourcePath: structured ? null : filePath,
+      structured,
       title: extractTitle(filePath, fileName) || `Slide ${index + 1}`
     };
   });
@@ -69,12 +70,16 @@ function getSlide(slideId) {
 
 function readSlideSource(slideId) {
   const slide = getSlide(slideId);
-  return fs.readFileSync(slide.sourcePath || slide.path, "utf8");
+  return fs.readFileSync(slide.path, "utf8");
 }
 
 function writeSlideSource(slideId, source) {
   const slide = getSlide(slideId);
-  fs.writeFileSync(slide.sourcePath || slide.path, source, "utf8");
+  if (slide.structured) {
+    throw new Error("Raw source writes are disabled for structured JSON slides.");
+  }
+
+  fs.writeFileSync(slide.path, source, "utf8");
   return slide;
 }
 

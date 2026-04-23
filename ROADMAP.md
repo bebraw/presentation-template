@@ -38,7 +38,7 @@ Implemented:
 - assistant workflow API and browser chat surface that can answer, trigger `Ideate Slide`, and run validation through the existing guarded server flows
 - source-to-slide-spec extraction for the four supported slide families so workflows can tighten current slide copy without editing JavaScript directly
 - browser-based slide-spec JSON editing for the four supported slide families, with server-side materialization back into source so JavaScript is not exposed as the primary authoring surface
-- the included four-slide demo deck ported to JSON slide specs, with thin JS runtime wrappers so the studio and the PDF build both run from the same structured content
+- the included four-slide demo deck ported to JSON slide specs and rendered directly from that structured content in both the studio and the PDF build
 - structured local `Drill Wording` workflow with assistant routing and compareable dry-run variants
 - structured local `Redo Layout` workflow with direct browser action, assistant routing, and compareable dry-run variants
 - broader assistant intent handling for short layout-oriented requests such as `redo layout`, `rebalance`, and `rearrange`

@@ -83,7 +83,7 @@ The first implementation slice is local-first and wraps the existing generator r
 - deck rebuilds and preview rendering
 - geometry/text validation and optional full render validation
 - persisted deck and slide context in `studio/state/`
-- the included four-slide demo deck stored as slide-spec JSON with thin JS runtime wrappers
+- the included four-slide demo deck stored as slide-spec JSON and rendered directly by the shared slide-spec runtime
 - browser-based editing of supported slides through slide-spec JSON instead of direct JavaScript
 - capture/apply slide variants through structured slide specs for supported slide families
 
@@ -129,3 +129,19 @@ Build, validation, repository structure, and generator details are documented in
 The higher-level system design and runtime flow are documented in [ARCHITECTURE.md](ARCHITECTURE.md).
 For presentation changes, run `npm run quality:gate` before considering the work done. It now runs geometry/text validation before the render-baseline check.
 If you add deck graphics, author them as Graphviz `.dot` sources under `slides/assets/diagrams/`; the build regenerates the matching PNGs automatically.
+
+### Slide JSON migration
+
+If you have legacy slide modules that still use the older CommonJS source format, you can extract them into slide-spec JSON with:
+
+```bash
+npm run slides:migrate:json -- slides/slide-02.js
+```
+
+Useful options:
+
+- `--out-dir <dir>` writes the generated JSON files into another directory
+- `--force` overwrites existing JSON output
+- `--delete-js` removes the source JS file after extraction
+
+The migration utility currently supports the slide families that already have structured schemas in this repository: `cover`, `toc`, `content`, and `summary`.

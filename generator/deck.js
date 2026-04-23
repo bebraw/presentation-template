@@ -1,18 +1,31 @@
+const fs = require("fs");
+const path = require("path");
 const PptxGenJS = require("pptxgenjs");
+const { createSlideFromSpec } = require("../slides/render-slide-spec");
 const { bodyFont, deckMeta, displayFont, theme } = require("./theme");
 
-const slideModules = [
-  require("../slides/slide-01"),
-  require("../slides/slide-02"),
-  require("../slides/slide-03"),
-  require("../slides/slide-04")
-];
+const slidesDir = path.join(__dirname, "..", "slides");
+
+function compareNames(left, right) {
+  return left.localeCompare(right, undefined, { numeric: true });
+}
+
+function readSlideSpec(fileName) {
+  return JSON.parse(fs.readFileSync(fileName, "utf8"));
+}
+
+function getJsonSlideSpecs() {
+  return fs.readdirSync(slidesDir)
+    .filter((fileName) => /^slide-\d+\.json$/.test(fileName))
+    .sort(compareNames)
+    .map((fileName) => readSlideSpec(path.join(slidesDir, fileName)));
+}
 
 function populatePresentation(pres, theme, options = {}) {
   const reports = [];
 
-  for (const slideModule of slideModules) {
-    const result = slideModule.createSlide(pres, theme, options);
+  for (const slideSpec of getJsonSlideSpecs()) {
+    const result = createSlideFromSpec(pres, theme, slideSpec, options);
     if (result && result.report) {
       reports.push(result.report);
     }

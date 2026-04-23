@@ -2216,37 +2216,54 @@ async function ideateDeckStructure(options = {}) {
 
 async function applyDeckStructureCandidate(candidate, options = {}) {
   const plan = Array.isArray(candidate && candidate.slides) ? candidate.slides : [];
+  const promoteIndices = options.promoteIndices !== false;
   const promoteTitles = options.promoteTitles !== false;
+  let indexUpdates = 0;
   let titleUpdates = 0;
 
-  if (promoteTitles) {
+  if (promoteTitles || promoteIndices) {
     for (const entry of plan) {
       if (!entry || typeof entry.slideId !== "string" || !entry.slideId) {
         continue;
       }
 
+      const nextIndex = Number(entry.proposedIndex);
       const nextTitle = sentence(entry.proposedTitle, "", 18);
       if (!nextTitle) {
-        continue;
+        if (!Number.isFinite(nextIndex)) {
+          continue;
+        }
       }
 
       const slideSpec = readSlideSpec(entry.slideId);
+      const currentIndex = Number(slideSpec.index);
       const currentTitle = sentence(slideSpec.title, "", 18);
-      if (normalizeSentence(currentTitle).toLowerCase() === normalizeSentence(nextTitle).toLowerCase()) {
+      const shouldUpdateIndex = promoteIndices && Number.isFinite(nextIndex) && currentIndex !== nextIndex;
+      const shouldUpdateTitle = promoteTitles && nextTitle
+        && normalizeSentence(currentTitle).toLowerCase() !== normalizeSentence(nextTitle).toLowerCase();
+
+      if (!shouldUpdateIndex && !shouldUpdateTitle) {
         continue;
       }
 
       writeSlideSpec(entry.slideId, {
         ...slideSpec,
-        title: nextTitle
+        index: shouldUpdateIndex ? nextIndex : slideSpec.index,
+        title: shouldUpdateTitle ? nextTitle : slideSpec.title
       });
-      titleUpdates += 1;
+      if (shouldUpdateIndex) {
+        indexUpdates += 1;
+      }
+      if (shouldUpdateTitle) {
+        titleUpdates += 1;
+      }
     }
   }
 
   const previews = (await buildAndRenderDeck()).previews;
 
   return {
+    indexUpdates,
     previews,
     titleUpdates
   };

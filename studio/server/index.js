@@ -310,6 +310,7 @@ async function handleDeckStructureApply(req, res) {
     slides: body.slides,
     summary: body.summary
   }, {
+    promoteIndices: body.promoteIndices !== false,
     promoteTitles: body.promoteTitles !== false
   });
   runtimeState.build = {
@@ -318,8 +319,8 @@ async function handleDeckStructureApply(req, res) {
   };
   updateWorkflowState({
     message: body.label
-      ? `Applied deck structure candidate ${body.label} to the saved outline, slide plan, and ${result.titleUpdates} slide title${result.titleUpdates === 1 ? "" : "s"}.`
-      : `Applied deck structure candidate to the saved outline, slide plan, and ${result.titleUpdates} slide title${result.titleUpdates === 1 ? "" : "s"}.`,
+      ? `Applied deck structure candidate ${body.label} to the saved outline, slide plan, ${result.indexUpdates} slide order change${result.indexUpdates === 1 ? "" : "s"}, and ${result.titleUpdates} slide title${result.titleUpdates === 1 ? "" : "s"}.`
+      : `Applied deck structure candidate to the saved outline, slide plan, ${result.indexUpdates} slide order change${result.indexUpdates === 1 ? "" : "s"}, and ${result.titleUpdates} slide title${result.titleUpdates === 1 ? "" : "s"}.`,
     ok: true,
     operation: "apply-deck-structure",
     stage: "completed",
@@ -330,6 +331,7 @@ async function handleDeckStructureApply(req, res) {
   createJsonResponse(res, 200, {
     context,
     previews: result.previews,
+    indexUpdates: result.indexUpdates,
     runtime: serializeRuntimeState()
     ,
     slides: getSlides(),

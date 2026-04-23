@@ -17,8 +17,23 @@ function readSlideSpec(fileName) {
 function getJsonSlideSpecs() {
   return fs.readdirSync(slidesDir)
     .filter((fileName) => /^slide-\d+\.json$/.test(fileName))
-    .sort(compareNames)
-    .map((fileName) => readSlideSpec(path.join(slidesDir, fileName)));
+    .map((fileName) => ({
+      fileName,
+      slideSpec: readSlideSpec(path.join(slidesDir, fileName))
+    }))
+    .sort((left, right) => {
+      const leftIndex = Number(left.slideSpec && left.slideSpec.index);
+      const rightIndex = Number(right.slideSpec && right.slideSpec.index);
+      const normalizedLeft = Number.isFinite(leftIndex) ? leftIndex : Number.MAX_SAFE_INTEGER;
+      const normalizedRight = Number.isFinite(rightIndex) ? rightIndex : Number.MAX_SAFE_INTEGER;
+
+      if (normalizedLeft !== normalizedRight) {
+        return normalizedLeft - normalizedRight;
+      }
+
+      return compareNames(left.fileName, right.fileName);
+    })
+    .map((entry) => entry.slideSpec);
 }
 
 function populatePresentation(pres, theme, options = {}) {

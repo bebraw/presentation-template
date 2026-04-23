@@ -78,8 +78,36 @@ function getSlideFiles() {
     .sort(compareNames);
 }
 
+function readStructuredSlideSortInfo(fileName) {
+  const filePath = path.join(slidesDir, fileName);
+  const document = readStructuredSlideDocumentFile(filePath);
+  const { slideSpec } = splitStructuredSlideDocument(document);
+  const numericIndex = Number(slideSpec && slideSpec.index);
+
+  return {
+    fileName,
+    filePath,
+    sortIndex: Number.isFinite(numericIndex) ? numericIndex : Number.MAX_SAFE_INTEGER,
+    title: slideSpec && slideSpec.title ? slideSpec.title : ""
+  };
+}
+
 function getSlides() {
-  return getSlideFiles().map((fileName, index) => {
+  const slideFiles = getSlideFiles();
+  const orderedFiles = slideFiles.length && slideFiles[0].endsWith(".json")
+    ? slideFiles
+      .map((fileName) => readStructuredSlideSortInfo(fileName))
+      .sort((left, right) => {
+        if (left.sortIndex !== right.sortIndex) {
+          return left.sortIndex - right.sortIndex;
+        }
+
+        return compareNames(left.fileName, right.fileName);
+      })
+      .map((entry) => entry.fileName)
+    : slideFiles;
+
+  return orderedFiles.map((fileName, index) => {
     const filePath = path.join(slidesDir, fileName);
     const slideId = path.basename(fileName, path.extname(fileName));
     const structured = fileName.endsWith(".json");

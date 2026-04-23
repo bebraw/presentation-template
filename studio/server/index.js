@@ -12,7 +12,7 @@ const { getLlmStatus, verifyLlmConnection } = require("./services/llm/client");
 const { clientDir, outputDir } = require("./services/paths");
 const { applyDeckStructurePlan, ensureState, getDeckContext, updateDeckFields, updateSlideContext } = require("./services/state");
 const { getSlide, getSlides, readSlideSource, readSlideSpec, writeSlideSource, writeSlideSpec } = require("./services/slides");
-const { drillWordingSlide, ideateDeckStructure, ideateStructureSlide, ideateThemeSlide, ideateSlide, redoLayoutSlide } = require("./services/operations");
+const { applyDeckStructureCandidate, drillWordingSlide, ideateDeckStructure, ideateStructureSlide, ideateThemeSlide, ideateSlide, redoLayoutSlide } = require("./services/operations");
 const { validateDeck } = require("./services/validate");
 const { applyVariant, captureVariant, listAllVariants, listVariantsForSlide } = require("./services/variants");
 
@@ -304,10 +304,22 @@ async function handleDeckStructureApply(req, res) {
     slides: body.slides,
     summary: body.summary
   });
+  const result = await applyDeckStructureCandidate({
+    label: body.label,
+    outline: body.outline,
+    slides: body.slides,
+    summary: body.summary
+  }, {
+    promoteTitles: body.promoteTitles !== false
+  });
+  runtimeState.build = {
+    ok: true,
+    updatedAt: new Date().toISOString()
+  };
   updateWorkflowState({
     message: body.label
-      ? `Applied deck structure candidate ${body.label} to the saved outline and slide plan.`
-      : "Applied deck structure candidate to the saved outline and slide plan.",
+      ? `Applied deck structure candidate ${body.label} to the saved outline, slide plan, and ${result.titleUpdates} slide title${result.titleUpdates === 1 ? "" : "s"}.`
+      : `Applied deck structure candidate to the saved outline, slide plan, and ${result.titleUpdates} slide title${result.titleUpdates === 1 ? "" : "s"}.`,
     ok: true,
     operation: "apply-deck-structure",
     stage: "completed",
@@ -317,7 +329,11 @@ async function handleDeckStructureApply(req, res) {
 
   createJsonResponse(res, 200, {
     context,
+    previews: result.previews,
     runtime: serializeRuntimeState()
+    ,
+    slides: getSlides(),
+    titleUpdates: result.titleUpdates
   });
 }
 

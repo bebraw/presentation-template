@@ -2214,7 +2214,46 @@ async function ideateDeckStructure(options = {}) {
   };
 }
 
+async function applyDeckStructureCandidate(candidate, options = {}) {
+  const plan = Array.isArray(candidate && candidate.slides) ? candidate.slides : [];
+  const promoteTitles = options.promoteTitles !== false;
+  let titleUpdates = 0;
+
+  if (promoteTitles) {
+    for (const entry of plan) {
+      if (!entry || typeof entry.slideId !== "string" || !entry.slideId) {
+        continue;
+      }
+
+      const nextTitle = sentence(entry.proposedTitle, "", 18);
+      if (!nextTitle) {
+        continue;
+      }
+
+      const slideSpec = readSlideSpec(entry.slideId);
+      const currentTitle = sentence(slideSpec.title, "", 18);
+      if (normalizeSentence(currentTitle).toLowerCase() === normalizeSentence(nextTitle).toLowerCase()) {
+        continue;
+      }
+
+      writeSlideSpec(entry.slideId, {
+        ...slideSpec,
+        title: nextTitle
+      });
+      titleUpdates += 1;
+    }
+  }
+
+  const previews = (await buildAndRenderDeck()).previews;
+
+  return {
+    previews,
+    titleUpdates
+  };
+}
+
 module.exports = {
+  applyDeckStructureCandidate,
   drillWordingSlide,
   ideateDeckStructure,
   ideateStructureSlide,

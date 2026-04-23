@@ -102,7 +102,8 @@ function applyDeckStructurePlan(candidate) {
       structureRole: entry.role || "",
       structureSummary: entry.summary || "",
       proposedIndex: Number.isFinite(entry.proposedIndex) ? entry.proposedIndex : null,
-      proposedTitle: entry.proposedTitle || ""
+      proposedTitle: entry.proposedTitle || "",
+      title: entry.proposedTitle || current.slides[entry.slideId]?.title || ""
     };
   });
 

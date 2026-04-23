@@ -57,6 +57,7 @@ Implemented:
 - stronger pre-apply deck-plan summaries, current/proposed sequence previews, affected-slide preview hints, transient deck-level before-and-after strip summaries, and structured deck-plan diff summaries
 - deck-plan compare cards that now show shared deck-setting diffs alongside slide-file diffs, so candidate-wide tone, brief, constraint, and theme changes are inspectable before apply
 - the first deck-authoring plans now use that path for real shared deck updates, including tone, subject, theme brief, and visible palette shifts in preview
+- key decision, boundary, and operator structure plans now use the same shared deck patch path too, so those deck-level flows steer shared context consistently instead of only slide-file shape
 - grouped deck-plan impact sections so larger candidates read by action type instead of only as one flat plan list
 - slide-level compare summaries that now include structured field-change counts, content-area summaries, and grouped before-and-after change stacks for supported JSON slide types
 - browser-visible workflow progress states through an SSE-backed shared runtime stream instead of request polling

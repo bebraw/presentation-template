@@ -1772,6 +1772,48 @@ function createDeckWideAuthoringPlan(context, definition) {
   });
 }
 
+function createDecisionDeckPatch(context) {
+  return {
+    subject: `Decision support for ${context.audience}`,
+    themeBrief: "keep the deck crisp, direct, and centered on one decision path",
+    tone: "decisive and evidence-led",
+    visualTheme: {
+      accent: "d97a2b",
+      primary: "15304a",
+      progressFill: "15304a",
+      secondary: "215e8b"
+    }
+  };
+}
+
+function createOperatorDeckPatch() {
+  return {
+    subject: "Operator handoff and maintenance routine",
+    themeBrief: "keep the deck sober, maintenance-oriented, and checklist-friendly",
+    tone: "operational and exact",
+    visualTheme: {
+      accent: "4f7a28",
+      panel: "f7faf7",
+      progressFill: "4f7a28",
+      secondary: "325d52"
+    }
+  };
+}
+
+function createBoundaryDeckPatch() {
+  return {
+    subject: "Ownership boundary map",
+    themeBrief: "make boundaries explicit and keep the deck cleanly sectioned",
+    tone: "structural and exact",
+    visualTheme: {
+      accent: "6b8de3",
+      panel: "f5f8ff",
+      progressFill: "275d8c",
+      secondary: "3f67a8"
+    }
+  };
+}
+
 function describeDeckPlanAction({ moved, replaced, retitled }) {
   if (moved && retitled && replaced) {
     return "move-retitle-and-replace";
@@ -2518,6 +2560,7 @@ function createLocalDeckStructureCandidates(context) {
     }),
     createDeckStructurePlan(structureContext, {
       changeLead: "Reframed the deck around ownership boundaries instead of a linear walkthrough.",
+      deckPatch: createBoundaryDeckPatch(),
       focus: [
         "Start by showing what belongs in the deck itself.",
         "Make the validation and boundary logic explicit before the shared runtime details.",
@@ -2545,6 +2588,7 @@ function createLocalDeckStructureCandidates(context) {
     }),
     createDeckStructurePlan(structureContext, {
       changeLead: "Reframed the deck around one decision path rather than a general demo tour.",
+      deckPatch: createDecisionDeckPatch(structureContext),
       focus: [
         "Open with the core decision or claim the deck needs to support.",
         "Show the options or structure that shape that decision.",
@@ -2583,6 +2627,7 @@ function createLocalDeckStructureCandidates(context) {
     }),
     createDeckStructurePlan(structureContext, {
       changeLead: "Reframed the deck around a stronger operator handoff by replacing the closing slide with a checklist scaffold.",
+      deckPatch: createOperatorDeckPatch(),
       focus: [
         "Open with the deck claim and keep the audience anchored on the decision.",
         "Use the structure slide to show the available paths before the proof lands.",
@@ -2649,6 +2694,7 @@ function createLocalDeckStructureCandidates(context) {
     }),
     createDeckStructurePlan(structureContext, {
       changeLead: "Composed a tighter decision path by archiving the outline slide, inserting explicit criteria, and replacing the close with an operator checklist.",
+      deckPatch: createDecisionDeckPatch(structureContext),
       focus: [
         "Open with the decision or claim the audience needs to make.",
         "Insert one compact criteria slide immediately so the audience knows how options will be judged.",
@@ -2805,17 +2851,7 @@ function createLocalDeckStructureCandidates(context) {
         "Make the strongest evidence and operating limits visible on one concentrated slide.",
         "Close on approval, ownership, and the validation step."
       ],
-      deckPatch: {
-        subject: `Decision support for ${structureContext.audience}`,
-        themeBrief: "keep the deck crisp, direct, and centered on one decision path",
-        tone: "decisive and evidence-led",
-        visualTheme: {
-          accent: "d97a2b",
-          primary: "15304a",
-          progressFill: "15304a",
-          secondary: "215e8b"
-        }
-      },
+      deckPatch: createDecisionDeckPatch(structureContext),
       kindLabel: "Deck authoring",
       label: "Decision narrative authoring",
       notes: "Batch-authors every live slide so the whole deck reads as one decision path instead of a demo tour.",
@@ -2941,17 +2977,7 @@ function createLocalDeckStructureCandidates(context) {
         "Show the signals and guardrails that keep the deck stable.",
         "End on the handoff checklist the next editor should follow."
       ],
-      deckPatch: {
-        subject: "Operator handoff and maintenance routine",
-        themeBrief: "keep the deck sober, maintenance-oriented, and checklist-friendly",
-        tone: "operational and exact",
-        visualTheme: {
-          accent: "4f7a28",
-          panel: "f7faf7",
-          progressFill: "4f7a28",
-          secondary: "325d52"
-        }
-      },
+      deckPatch: createOperatorDeckPatch(),
       kindLabel: "Deck authoring",
       label: "Operator handoff authoring",
       notes: "Batch-authors every live slide around ownership boundaries, runtime routine, and the operator-facing validation loop.",

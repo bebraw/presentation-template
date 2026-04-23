@@ -17,6 +17,7 @@ The browser studio baseline is complete.
 - The shared DOM renderer powers browser preview, thumbnails, compare views, preview PNGs, PDF export, and CLI builds.
 - Deck and slide context, design constraints, validation settings, visual theme values, assistant sessions, and structured variants persist in repo-local studio state or slide JSON.
 - Slide-level workflows, deck-planning workflows, assistant-triggered actions, dry-run candidates, safe apply flows, and compare views are available from the browser.
+- Supported structured slides allow direct text edits from the active DOM preview while still saving through the server-controlled slide-spec path.
 - Studio writes are server-controlled and limited to approved slide files, repo-local state, and generated studio artifacts.
 - Geometry, text, render, deck-plan, and media-validation fixtures run through the same quality gate used by the CLI.
 

@@ -1,38 +1,38 @@
 {
   "type": "summary",
   "index": 4,
-  "title": "Next steps",
-  "eyebrow": "Summary",
-  "summary": "Starter path: build locally, reuse the shared primitives, and let the validators guard the PDF.",
-  "resourcesTitle": "Keep nearby",
+  "title": "What this enables",
+  "eyebrow": "Takeaway",
+  "summary": "Deck authors get one guarded local loop for text edits, preview, export, and validation.",
+  "resourcesTitle": "Where the work lives",
   "bullets": [
     {
-      "id": "summary-install",
-      "title": "Install dependencies",
-      "body": "Install once for Playwright, qrcode, and the deck validation tooling."
+      "id": "summary-author",
+      "title": "Author with context",
+      "body": "Edit slide text in preview while keeping intent, notes, theme, and constraints nearby."
     },
     {
-      "id": "summary-build",
-      "title": "Build the deck",
-      "body": "Run npm run build to regenerate the deck PDF after slide or helper changes."
+      "id": "summary-iterate",
+      "title": "Iterate safely",
+      "body": "Generate variants, compare previews and diffs, then apply one candidate."
     },
     {
-      "id": "summary-validate",
-      "title": "Validate visual changes",
-      "body": "Refresh the render baseline after intentional visual changes, then rerun the quality gate."
+      "id": "summary-ship",
+      "title": "Ship with guardrails",
+      "body": "Use the DOM gate to catch layout, text, media, and render drift."
     }
   ],
   "resources": [
     {
-      "id": "summary-output",
-      "title": "Local build output",
-      "body": "slides/output/demo-presentation.pdf",
+      "id": "summary-studio",
+      "title": "Studio app",
+      "body": "studio/client and studio/server",
       "bodyFontSize": 11.2
     },
     {
-      "id": "summary-gate",
-      "title": "Approval surface",
-      "body": "render baseline plus npm run quality:gate",
+      "id": "summary-runtime",
+      "title": "Runtime path",
+      "body": "slide JSON, DOM renderer, PDF export, gate",
       "bodyFontSize": 10.6
     }
   ]

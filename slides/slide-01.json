@@ -1,25 +1,25 @@
 {
   "type": "cover",
   "index": 1,
-  "title": "Presentation Template Demo",
-  "eyebrow": "DOM-first studio",
-  "summary": "A compact deck showing structured slides, the DOM-first renderer, and the native PDF build flow.",
-  "note": "Slides are authored as structured specs and reused across preview, PDF rendering, and validation.",
+  "title": "Presentation Studio",
+  "eyebrow": "Project overview",
+  "summary": "A local browser studio for structured decks with fast previews, guarded edits, and one DOM render path.",
+  "note": "Editing loop: capture context, generate options, compare, apply deliberately, validate.",
   "cards": [
     {
       "id": "cover-card-slides",
-      "title": "Structured slides",
-      "body": "Slides live as compact JSON specs instead of per-slide CommonJS modules."
+      "title": "Structured content",
+      "body": "Slides use compact JSON specs so content stays readable and easy to validate."
     },
     {
       "id": "cover-card-layout",
-      "title": "DOM runtime",
-      "body": "Shared DOM templates and theme rules keep layout decisions out of individual slides."
+      "title": "One render path",
+      "body": "One DOM renderer powers previews, thumbnails, exported images, and the PDF."
     },
     {
       "id": "cover-card-validation",
-      "title": "Validation gate",
-      "body": "Geometry, contrast, rhythm, and render checks keep PDF output stable as the deck evolves."
+      "title": "Guarded workflow",
+      "body": "Workflow actions generate variants, show diffs, and require explicit apply."
     }
   ],
   "variants": [

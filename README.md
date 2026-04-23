@@ -87,6 +87,7 @@ The current implementation is local-first and DOM-first. It currently supports:
 - saved design constraints and shared visual theme values, including explicit progress-bar colors and neutral surface color, that flow back into DOM-first validation and shared deck chrome
 - the included four-slide demo deck stored as slide-spec JSON and rendered directly by the shared slide-spec runtime
 - browser-based editing of supported slides through slide-spec JSON instead of direct JavaScript
+- direct text edits from the rendered slide preview for supported structured slides
 - capture/apply slide variants through structured slide specs for supported slide families, with supported JSON slides saving named variants alongside the active slide spec
 - grouped slide-compare summaries for supported JSON slide types so larger changes read as framed content-area diffs instead of only flat line changes
 

@@ -25,6 +25,7 @@ These are durable presentation design and workflow rules for this repository. Re
 - Keep slide-specific implementation in `slides/`, active runtime logic and shared deck settings in `studio/`, and repo-level command wrappers in `scripts/`.
 - If the deck order changes, update the structured slide indices or other active deck-order source in the same change.
 - If roadmap or outline structure changes, update the corresponding slide content in the same change so deck structure does not drift.
+- When the project purpose, architecture, workflows, or maintenance focus changes, update the active project-story slides and deck context in the same change so the demo deck keeps explaining the current project.
 - For browser studio work, keep `ROADMAP.md` and `STUDIO_STATUS.md` current in the same change.
 - Use `ROADMAP.md` for architecture, rollout order, and the next practical slice.
 - Use `STUDIO_STATUS.md` for the live implementation snapshot, current gaps, and per-phase status.

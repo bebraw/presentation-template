@@ -138,6 +138,7 @@ const domSlideResizeObserver = typeof ResizeObserver === "function"
       });
     })
   : null;
+let activeInlineTextEdit = null;
 
 function getValidationRuleSelects() {
   return Array.from(document.querySelectorAll("[data-validation-rule]"));
@@ -297,6 +298,164 @@ function renderDomSlide(viewport, slideSpec, options = {}) {
     </div>
   `;
   observeDomSlideViewport(viewport.querySelector(".dom-slide-viewport"));
+}
+
+function enableDomSlideTextEditing(viewport) {
+  const slideViewport = viewport ? viewport.querySelector(".dom-slide-viewport") : null;
+  if (!slideViewport || !state.selectedSlideStructured || !state.selectedSlideSpec) {
+    return;
+  }
+
+  slideViewport.classList.add("dom-slide-viewport--editable");
+  slideViewport.querySelectorAll("[data-edit-path]").forEach((element) => {
+    element.tabIndex = 0;
+    element.title = `Double-click to edit ${element.dataset.editLabel || "text"}`;
+  });
+}
+
+function getSlideSpecPathValue(slideSpec, path) {
+  return String(path || "").split(".").reduce((current, segment) => {
+    if (current === null || current === undefined) {
+      return undefined;
+    }
+
+    return current[Number.isInteger(Number(segment)) ? Number(segment) : segment];
+  }, slideSpec);
+}
+
+function cloneSlideSpecWithPath(slideSpec, path, value) {
+  const nextSpec = JSON.parse(JSON.stringify(slideSpec));
+  const segments = String(path || "").split(".");
+  const field = segments.pop();
+  const target = segments.reduce((current, segment) => {
+    if (current === null || current === undefined) {
+      throw new Error(`Cannot edit unknown slide field: ${path}`);
+    }
+
+    return current[Number.isInteger(Number(segment)) ? Number(segment) : segment];
+  }, nextSpec);
+
+  if (!target || field === undefined) {
+    throw new Error(`Cannot edit unknown slide field: ${path}`);
+  }
+
+  target[Number.isInteger(Number(field)) ? Number(field) : field] = value;
+  return nextSpec;
+}
+
+function normalizeInlineText(value) {
+  return String(value || "").replace(/\s+/g, " ").trim();
+}
+
+function applySlideSpecPayload(payload, fallbackSpec) {
+  const nextSpec = payload.slideSpec || fallbackSpec;
+  state.selectedSlideSpec = nextSpec;
+  state.selectedSlideSpecError = payload.slideSpecError || null;
+  state.selectedSlideStructured = payload.structured === true;
+  state.selectedSlideSource = payload.source;
+  if (payload.slide) {
+    state.slides = state.slides.map((slide) => slide.id === payload.slide.id ? payload.slide : slide);
+    state.selectedSlideIndex = payload.slide.index;
+  }
+  patchDomSlideSpec(state.selectedSlideId, nextSpec);
+  state.previews = payload.previews || state.previews;
+}
+
+function selectElementText(element) {
+  const selection = window.getSelection();
+  const range = document.createRange();
+  range.selectNodeContents(element);
+  selection.removeAllRanges();
+  selection.addRange(range);
+}
+
+function beginInlineTextEdit(element, path) {
+  if (activeInlineTextEdit || !state.selectedSlideId || !state.selectedSlideSpec) {
+    return;
+  }
+
+  const original = normalizeInlineText(getSlideSpecPathValue(state.selectedSlideSpec, path) ?? element.textContent);
+  activeInlineTextEdit = { element, path };
+  element.dataset.inlineEditing = "true";
+  element.contentEditable = "plaintext-only";
+  element.spellcheck = true;
+  element.focus();
+  selectElementText(element);
+
+  const finish = async (mode) => {
+    if (activeInlineTextEdit === null) {
+      return;
+    }
+
+    activeInlineTextEdit = null;
+    element.removeEventListener("blur", handleBlur);
+    element.removeEventListener("keydown", handleKeydown);
+    element.contentEditable = "false";
+
+    if (mode === "cancel") {
+      element.textContent = original;
+      delete element.dataset.inlineEditing;
+      elements.operationStatus.textContent = "Inline text edit canceled.";
+      return;
+    }
+
+    const nextText = normalizeInlineText(element.textContent);
+    if (!nextText) {
+      element.textContent = original;
+      delete element.dataset.inlineEditing;
+      elements.operationStatus.textContent = "Inline text edit canceled because the field was empty.";
+      return;
+    }
+
+    if (nextText === original) {
+      element.textContent = original;
+      delete element.dataset.inlineEditing;
+      return;
+    }
+
+    const nextSpec = cloneSlideSpecWithPath(state.selectedSlideSpec, path, nextText);
+    element.dataset.inlineSaving = "true";
+    elements.operationStatus.textContent = `Saving ${element.dataset.editLabel || "slide text"}...`;
+
+    try {
+      const payload = await request(`/api/slides/${state.selectedSlideId}/slide-spec`, {
+        body: JSON.stringify({
+          rebuild: true,
+          slideSpec: nextSpec
+        }),
+        method: "POST"
+      });
+      applySlideSpecPayload(payload, nextSpec);
+      renderSlideFields();
+      renderPreviews();
+      renderVariantComparison();
+      renderStatus();
+      elements.operationStatus.textContent = `Saved ${element.dataset.editLabel || "slide text"}.`;
+    } catch (error) {
+      window.alert(error.message);
+      renderPreviews();
+    }
+  };
+
+  const handleBlur = () => {
+    finish("save").catch((error) => window.alert(error.message));
+  };
+
+  const handleKeydown = (event) => {
+    if (event.key === "Escape") {
+      event.preventDefault();
+      finish("cancel").catch((error) => window.alert(error.message));
+      return;
+    }
+
+    if (event.key === "Enter") {
+      event.preventDefault();
+      element.blur();
+    }
+  };
+
+  element.addEventListener("blur", handleBlur);
+  element.addEventListener("keydown", handleKeydown);
 }
 
 function toColorInputValue(value, fallback = "#000000") {
@@ -1517,6 +1676,7 @@ function renderPreviews() {
       index: activeSlide.index,
       totalSlides: state.slides.length
     });
+    enableDomSlideTextEditing(elements.activePreview);
   } else if (activePage) {
     renderImagePreview(elements.activePreview, `${activePage.url}?t=${encodeURIComponent(state.previews.generatedAt || "")}`, `${activeSlide ? activeSlide.title : "Slide"} preview`);
   } else {
@@ -2138,15 +2298,11 @@ async function saveSlideSpec() {
       }),
       method: "POST"
     });
-    state.selectedSlideSpec = payload.slideSpec || slideSpec;
-    state.selectedSlideSpecError = payload.slideSpecError || null;
-    state.selectedSlideStructured = payload.structured === true;
-    state.selectedSlideSource = payload.source;
-    patchDomSlideSpec(state.selectedSlideId, payload.slideSpec || slideSpec);
-    state.previews = payload.previews;
+    applySlideSpecPayload(payload, slideSpec);
     renderSlideFields();
     renderPreviews();
     renderVariantComparison();
+    renderStatus();
   } finally {
     done();
   }
@@ -2473,6 +2629,15 @@ elements.compareApplyValidateButton.addEventListener("click", () => {
   }).catch((error) => window.alert(error.message));
 });
 elements.saveSlideSpecButton.addEventListener("click", () => saveSlideSpec().catch((error) => window.alert(error.message)));
+elements.activePreview.addEventListener("dblclick", (event) => {
+  const target = event.target.closest("[data-edit-path]");
+  if (!target || !elements.activePreview.contains(target)) {
+    return;
+  }
+
+  event.preventDefault();
+  beginInlineTextEdit(target, target.dataset.editPath);
+});
 elements.captureVariantButton.addEventListener("click", () => captureVariant().catch((error) => window.alert(error.message)));
 elements.assistantSendButton.addEventListener("click", () => sendAssistantMessage().catch((error) => window.alert(error.message)));
 elements.assistantToggle.addEventListener("click", () => {

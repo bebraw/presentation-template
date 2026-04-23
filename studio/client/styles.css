@@ -1002,6 +1002,29 @@ textarea {
   margin: 0;
 }
 
+.dom-slide-viewport--editable [data-edit-path] {
+  cursor: text;
+  outline: 0 solid transparent;
+  outline-offset: 4px;
+  transition: background-color 140ms ease, box-shadow 140ms ease, outline-color 140ms ease;
+}
+
+.dom-slide-viewport--editable [data-edit-path]:hover,
+.dom-slide-viewport--editable [data-edit-path]:focus {
+  background: rgba(242, 143, 59, 0.11);
+  box-shadow: 0 0 0 4px rgba(242, 143, 59, 0.11);
+}
+
+.dom-slide-viewport--editable [data-inline-editing="true"] {
+  background: rgba(255, 255, 255, 0.92);
+  box-shadow: 0 0 0 4px rgba(242, 143, 59, 0.24);
+  outline: 2px solid var(--dom-accent, #f28f3b);
+}
+
+.dom-slide-viewport--editable [data-inline-saving="true"] {
+  opacity: 0.72;
+}
+
 .dom-slide__eyebrow,
 .dom-panel__eyebrow {
   color: var(--dom-secondary, #275d8c);

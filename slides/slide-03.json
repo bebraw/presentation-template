@@ -1,25 +1,25 @@
 {
   "type": "content",
   "index": 3,
-  "title": "Why this setup works",
-  "eyebrow": "Signals",
-  "summary": "Repeatability comes from DOM-first rendering, structured slide specs, and a render-based gate.",
-  "signalsTitle": "Migration signals",
-  "guardrailsTitle": "Operational guardrails",
+  "title": "Why the architecture works",
+  "eyebrow": "System model",
+  "summary": "Repeatability comes from one content model, one render path, server-controlled writes, and validation that reads the rendered deck.",
+  "signalsTitle": "Project strengths",
+  "guardrailsTitle": "Safety rails",
   "signals": [
     {
-      "id": "signal-slides",
-      "label": "Slides",
+      "id": "signal-context",
+      "label": "Context",
       "value": 0.94
     },
     {
-      "id": "signal-runtime",
-      "label": "Runtime",
+      "id": "signal-preview",
+      "label": "Preview",
       "value": 0.89
     },
     {
-      "id": "signal-layout",
-      "label": "Layout",
+      "id": "signal-apply",
+      "label": "Apply",
       "value": 0.91
     },
     {
@@ -30,19 +30,19 @@
   ],
   "guardrails": [
     {
-      "id": "guardrail-modules",
+      "id": "guardrail-specs",
       "label": "slide specs",
       "value": "4"
     },
     {
-      "id": "guardrail-build",
-      "label": "PDF build path",
+      "id": "guardrail-renderer",
+      "label": "render path",
       "value": "1"
     },
     {
-      "id": "guardrail-pptx",
-      "label": "legacy drawers",
-      "value": "0"
+      "id": "guardrail-boundary",
+      "label": "write boundary",
+      "value": "1"
     }
   ],
   "variants": [

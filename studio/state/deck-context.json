@@ -2,13 +2,13 @@
   "deck": {
     "author": "OpenAI Codex",
     "company": "presentation-template",
-    "subject": "Demonstration presentation",
+    "subject": "Browser studio for structured presentation authoring",
     "title": "Presentation Studio",
     "lang": "en-US",
-    "audience": "",
-    "objective": "",
-    "tone": "",
-    "constraints": "",
+    "audience": "Deck authors and maintainers",
+    "objective": "Explain how the project turns deck editing into a local browser workflow with direct text edits, previews, safe apply flows, and DOM-first validation.",
+    "tone": "Direct, practical, engineering-focused",
+    "constraints": "Keep slide copy concise and describe the active project rather than implementation history.",
     "designConstraints": {
       "maxWordsPerSlide": 80,
       "minCaptionGapIn": 0.1,
@@ -48,8 +48,8 @@
       "progressTrack": "d7e6f5",
       "progressFill": "275d8c"
     },
-    "themeBrief": "",
-    "outline": "",
+    "themeBrief": "Clean local-workbench presentation with clear project framing and restrained technical detail.",
+    "outline": "1. What the Presentation Studio is\n2. What workflow it supports, including direct text edits\n3. Why the architecture is repeatable\n4. What the project enables",
     "structureLabel": "",
     "structureSummary": "",
     "structurePlan": []

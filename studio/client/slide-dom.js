@@ -20,6 +20,10 @@
       .replace(/"/g, "&quot;");
   }
 
+  function editAttrs(path, label) {
+    return ` data-edit-path="${escapeHtml(path)}" data-edit-label="${escapeHtml(label || path)}"`;
+  }
+
   function normalizeColor(value, fallback) {
     const normalized = String(value || "").trim().replace(/^#/, "").toLowerCase();
     return /^[0-9a-f]{6}$/.test(normalized) ? normalized : fallback;
@@ -78,18 +82,19 @@
   function renderSectionHeader(slideSpec) {
     return `
       <header class="dom-slide__section-header">
-        <p class="dom-slide__eyebrow">${escapeHtml(slideSpec.eyebrow || "")}</p>
-        <h2 class="dom-slide__title">${escapeHtml(slideSpec.title || "")}</h2>
-        <p class="dom-slide__summary">${escapeHtml(slideSpec.summary || "")}</p>
+        <p class="dom-slide__eyebrow"${editAttrs("eyebrow", "Eyebrow")}>${escapeHtml(slideSpec.eyebrow || "")}</p>
+        <h2 class="dom-slide__title"${editAttrs("title", "Title")}>${escapeHtml(slideSpec.title || "")}</h2>
+        <p class="dom-slide__summary"${editAttrs("summary", "Summary")}>${escapeHtml(slideSpec.summary || "")}</p>
       </header>
     `;
   }
 
-  function renderCompactCard(card) {
+  function renderCompactCard(card, index, basePath) {
+    const path = basePath ? `${basePath}.${index}` : `cards.${index}`;
     return `
       <article class="dom-card">
-        <h3>${escapeHtml(card.title || "")}</h3>
-        <p>${escapeHtml(card.body || "")}</p>
+        <h3${editAttrs(`${path}.title`, "Card title")}>${escapeHtml(card.title || "")}</h3>
+        <p${editAttrs(`${path}.body`, "Card body")}>${escapeHtml(card.body || "")}</p>
       </article>
     `;
   }
@@ -100,13 +105,13 @@
       <div class="dom-slide__cover-grid">
         <section class="dom-slide__cover-copy">
           <div class="dom-slide__cover-rule"></div>
-          <p class="dom-slide__eyebrow">${escapeHtml(slideSpec.eyebrow || "")}</p>
-          <h1 class="dom-slide__cover-title">${escapeHtml(slideSpec.title || "")}</h1>
-          <p class="dom-slide__cover-summary">${escapeHtml(slideSpec.summary || "")}</p>
-          <p class="dom-slide__cover-note">${escapeHtml(slideSpec.note || "")}</p>
+          <p class="dom-slide__eyebrow"${editAttrs("eyebrow", "Eyebrow")}>${escapeHtml(slideSpec.eyebrow || "")}</p>
+          <h1 class="dom-slide__cover-title"${editAttrs("title", "Title")}>${escapeHtml(slideSpec.title || "")}</h1>
+          <p class="dom-slide__cover-summary"${editAttrs("summary", "Summary")}>${escapeHtml(slideSpec.summary || "")}</p>
+          <p class="dom-slide__cover-note"${editAttrs("note", "Note")}>${escapeHtml(slideSpec.note || "")}</p>
         </section>
         <section class="dom-slide__cover-cards">
-          ${cards.map(renderCompactCard).join("")}
+          ${cards.map((card, index) => renderCompactCard(card, index, "cards")).join("")}
         </section>
       </div>
     `;
@@ -118,9 +123,9 @@
       ${renderSectionHeader(slideSpec)}
       <section class="dom-slide__toc-body">
         <div class="dom-slide__toc-cards">
-          ${cards.map(renderCompactCard).join("")}
+          ${cards.map((card, index) => renderCompactCard(card, index, "cards")).join("")}
         </div>
-        <p class="dom-slide__toc-note">${escapeHtml(slideSpec.note || "")}</p>
+        <p class="dom-slide__toc-note"${editAttrs("note", "Note")}>${escapeHtml(slideSpec.note || "")}</p>
       </section>
     `;
   }
@@ -133,14 +138,14 @@
       ${renderSectionHeader(slideSpec)}
       <section class="dom-slide__content-columns">
         <article class="dom-panel dom-panel--signals">
-          <h3>${escapeHtml(slideSpec.signalsTitle || "")}</h3>
+          <h3${editAttrs("signalsTitle", "Signals title")}>${escapeHtml(slideSpec.signalsTitle || "")}</h3>
           <div class="dom-signal-list">
-            ${signals.map((item) => {
+            ${signals.map((item, index) => {
               const value = Math.max(0, Math.min(100, Math.round(Number(item.value || 0) * 100)));
               return `
                 <div class="dom-signal">
                   <div class="dom-signal__meta">
-                    <span>${escapeHtml(item.label || "")}</span>
+                    <span${editAttrs(`signals.${index}.label`, "Signal label")}>${escapeHtml(item.label || "")}</span>
                     <strong>${value}%</strong>
                   </div>
                   <div class="dom-signal__track">
@@ -152,12 +157,12 @@
           </div>
         </article>
         <article class="dom-panel dom-panel--guardrails">
-          <h3>${escapeHtml(slideSpec.guardrailsTitle || "")}</h3>
+          <h3${editAttrs("guardrailsTitle", "Guardrails title")}>${escapeHtml(slideSpec.guardrailsTitle || "")}</h3>
           <div class="dom-guardrail-list">
             ${guardrails.map((item, index) => `
               <div class="dom-guardrail${index < guardrails.length - 1 ? " dom-guardrail--divided" : ""}">
-                <strong>${escapeHtml(item.value || "")}</strong>
-                <span>${escapeHtml(item.label || "")}</span>
+                <strong${editAttrs(`guardrails.${index}.value`, "Guardrail value")}>${escapeHtml(item.value || "")}</strong>
+                <span${editAttrs(`guardrails.${index}.label`, "Guardrail label")}>${escapeHtml(item.label || "")}</span>
               </div>
             `).join("")}
           </div>
@@ -174,20 +179,20 @@
       ${renderSectionHeader(slideSpec)}
       <section class="dom-slide__summary-columns">
         <div class="dom-bullet-list">
-          ${bullets.map((item) => `
+          ${bullets.map((item, index) => `
             <article class="dom-bullet">
               <span class="dom-bullet__dot"></span>
               <div class="dom-bullet__copy">
-                <h3>${escapeHtml(item.title || "")}</h3>
-                <p>${escapeHtml(item.body || "")}</p>
+                <h3${editAttrs(`bullets.${index}.title`, "Bullet title")}>${escapeHtml(item.title || "")}</h3>
+                <p${editAttrs(`bullets.${index}.body`, "Bullet body")}>${escapeHtml(item.body || "")}</p>
               </div>
             </article>
           `).join("")}
         </div>
         <aside class="dom-panel dom-panel--resources">
-          <p class="dom-panel__eyebrow">${escapeHtml(slideSpec.resourcesTitle || "")}</p>
+          <p class="dom-panel__eyebrow"${editAttrs("resourcesTitle", "Resources title")}>${escapeHtml(slideSpec.resourcesTitle || "")}</p>
           <div class="dom-resource-list">
-            ${resources.map(renderCompactCard).join("")}
+            ${resources.map((resource, index) => renderCompactCard(resource, index, "resources")).join("")}
           </div>
         </aside>
       </section>

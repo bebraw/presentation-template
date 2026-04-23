@@ -52,6 +52,7 @@ The browser studio should make these flows faster and more repeatable:
 - ideate a theme
 - ideate a presentation structure
 - ideate or rewrite a slide
+- edit supported slide text directly from the rendered preview
 - drill wording line by line
 - retry or redo layout
 - generate slide variants
@@ -221,6 +222,7 @@ The repository now includes a local browser app that:
 
 - shows real slide previews generated from the current deck
 - stores reusable deck and slide context
+- supports direct text edits from the rendered preview for structured slides
 - exposes common workflows as explicit actions
 - supports safe slide variants and compare/apply flow
 - runs the current validation flow and reports the result clearly

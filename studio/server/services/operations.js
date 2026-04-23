@@ -468,6 +468,320 @@ function createLocalIdeateCandidates(slide, slideType, context, options = {}) {
   });
 }
 
+function collectThemeContext(slide, currentSpec, context) {
+  const deck = context.deck || {};
+  const slideContext = context.slides[slide.id] || {};
+
+  return {
+    audience: sentence(deck.audience, "authors iterating on a local deck"),
+    constraints: sentence(splitLines(deck.constraints)[0], "keep the generator as the source of truth"),
+    intent: sentence(slideContext.intent, "make the slide's job obvious before adding detail"),
+    mustInclude: sentence(splitLines(slideContext.mustInclude)[0], "keep the main point visible"),
+    note: sentence(splitLines(slideContext.notes)[0], "compare the candidate before applying it"),
+    objective: sentence(deck.objective, "shorten the edit loop without hiding the source"),
+    themeBrief: sentence(deck.themeBrief, "keep the slide quiet, readable, and deliberate"),
+    title: slideContext.title || currentSpec.title || slide.title,
+    tone: sentence(deck.tone, "calm and exact")
+  };
+}
+
+function createThemeDirections(slide, currentSpec, context) {
+  const themeContext = collectThemeContext(slide, currentSpec, context);
+  const reviewNote = sentence(themeContext.note, "compare the candidate before applying it");
+
+  return [
+    {
+      label: "Editorial theme",
+      notes: "Turns the slide toward a sharper editorial point of view and clearer reading rhythm.",
+      promptSummary: "Uses the saved theme brief, tone, and audience to push the slide toward an editorial treatment.",
+      eyebrow: "Editorial",
+      note: `${themeContext.constraints}. ${reviewNote}.`,
+      summary: `Frame the slide with a sharper point of view for ${themeContext.audience}.`,
+      title: themeContext.title,
+      cards: [
+        {
+          body: toBody(`Lead with ${themeContext.intent}.`, "Lead with the core claim."),
+          id: `${slide.id}-theme-editorial-card-1`,
+          title: "Point of view"
+        },
+        {
+          body: toBody(`Keep the tone ${themeContext.tone}.`, "Keep the voice calm and exact."),
+          id: `${slide.id}-theme-editorial-card-2`,
+          title: "Voice"
+        },
+        {
+          body: toBody(`Keep ${themeContext.mustInclude}.`, "Keep the main point in frame."),
+          id: `${slide.id}-theme-editorial-card-3`,
+          title: "Keep in frame"
+        }
+      ],
+      bullets: [
+        {
+          body: toBody(`Open with ${themeContext.intent}.`, "Open with the claim."),
+          id: `${slide.id}-theme-editorial-bullet-1`,
+          title: "Lead the claim"
+        },
+        {
+          body: toBody(`Use ${themeContext.themeBrief}.`, "Let the theme support readability."),
+          id: `${slide.id}-theme-editorial-bullet-2`,
+          title: "Shape the surface"
+        },
+        {
+          body: toBody(reviewNote, "Compare before applying."),
+          id: `${slide.id}-theme-editorial-bullet-3`,
+          title: "Review before keep"
+        }
+      ],
+      resources: [
+        {
+          body: "studio/state/deck-context.json",
+          bodyFontSize: 11.2,
+          id: `${slide.id}-theme-editorial-resource-1`,
+          title: "Theme brief"
+        },
+        {
+          body: "studio/output/variant-previews/",
+          bodyFontSize: 10.6,
+          id: `${slide.id}-theme-editorial-resource-2`,
+          title: "Preview pass"
+        }
+      ],
+      signals: [
+        { id: `${slide.id}-theme-editorial-signal-1`, label: "voice", value: 0.93 },
+        { id: `${slide.id}-theme-editorial-signal-2`, label: "focus", value: 0.9 },
+        { id: `${slide.id}-theme-editorial-signal-3`, label: "proof", value: 0.84 },
+        { id: `${slide.id}-theme-editorial-signal-4`, label: "rhythm", value: 0.88 }
+      ],
+      guardrails: [
+        { id: `${slide.id}-theme-editorial-guardrail-1`, label: "tone", value: themeContext.tone },
+        { id: `${slide.id}-theme-editorial-guardrail-2`, label: "theme brief", value: "1" },
+        { id: `${slide.id}-theme-editorial-guardrail-3`, label: "apply step", value: "1" }
+      ]
+    },
+    {
+      label: "Systems theme",
+      notes: "Reframes the slide around repeatability, shared rules, and the system behind the surface.",
+      promptSummary: "Uses the deck objective, constraints, and theme brief to push the slide toward a systems treatment.",
+      eyebrow: "Systems",
+      note: `${themeContext.objective}. ${reviewNote}.`,
+      summary: "Treat the slide as part of one repeatable system rather than a one-off visual.",
+      title: themeContext.title,
+      cards: [
+        {
+          body: toBody(themeContext.themeBrief, "Keep the theme deliberate and reusable."),
+          id: `${slide.id}-theme-systems-card-1`,
+          title: "Shared rule"
+        },
+        {
+          body: toBody(themeContext.constraints, "Keep the runtime as the source of truth."),
+          id: `${slide.id}-theme-systems-card-2`,
+          title: "Boundary"
+        },
+        {
+          body: toBody(themeContext.objective, "Shorten the loop without hiding the source."),
+          id: `${slide.id}-theme-systems-card-3`,
+          title: "Loop"
+        }
+      ],
+      bullets: [
+        {
+          body: toBody("Let the shared system carry more of the visual work.", "Let the system do the work."),
+          id: `${slide.id}-theme-systems-bullet-1`,
+          title: "Rely on patterns"
+        },
+        {
+          body: toBody(themeContext.constraints, "Keep the main boundary visible."),
+          id: `${slide.id}-theme-systems-bullet-2`,
+          title: "Keep one boundary"
+        },
+        {
+          body: toBody(reviewNote, "Compare before promoting one option."),
+          id: `${slide.id}-theme-systems-bullet-3`,
+          title: "Promote once"
+        }
+      ],
+      resources: [
+        {
+          body: "generator/deck.js",
+          bodyFontSize: 11.2,
+          id: `${slide.id}-theme-systems-resource-1`,
+          title: "System root"
+        },
+        {
+          body: slide.structured ? `${slide.fileName} :: variants[]` : "studio/state/variants.json",
+          bodyFontSize: 10.6,
+          id: `${slide.id}-theme-systems-resource-2`,
+          title: "Theme variants"
+        }
+      ],
+      signals: [
+        { id: `${slide.id}-theme-systems-signal-1`, label: "system", value: 0.94 },
+        { id: `${slide.id}-theme-systems-signal-2`, label: "reuse", value: 0.9 },
+        { id: `${slide.id}-theme-systems-signal-3`, label: "clarity", value: 0.85 },
+        { id: `${slide.id}-theme-systems-signal-4`, label: "guardrails", value: 0.92 }
+      ],
+      guardrails: [
+        { id: `${slide.id}-theme-systems-guardrail-1`, label: "shared rules", value: "1" },
+        { id: `${slide.id}-theme-systems-guardrail-2`, label: "runtime boundary", value: "1" },
+        { id: `${slide.id}-theme-systems-guardrail-3`, label: "preview pass", value: "1" }
+      ]
+    },
+    {
+      label: "Workshop theme",
+      notes: "Pushes the slide toward review, discussion, and handoff instead of polished broadcast only.",
+      promptSummary: "Uses slide notes, must-include points, and audience to frame the slide as a working session surface.",
+      eyebrow: "Workshop",
+      note: `${themeContext.mustInclude}. ${reviewNote}.`,
+      summary: "Frame the slide for review and handoff so the next decision is easier to make.",
+      title: themeContext.title,
+      cards: [
+        {
+          body: toBody(`Make ${themeContext.mustInclude}.`, "Make the key point obvious."),
+          id: `${slide.id}-theme-workshop-card-1`,
+          title: "Decision point"
+        },
+        {
+          body: toBody(`Aim the slide at ${themeContext.audience}.`, "Aim the slide at the next operator."),
+          id: `${slide.id}-theme-workshop-card-2`,
+          title: "Audience"
+        },
+        {
+          body: toBody(reviewNote, "Compare the candidate before keeping it."),
+          id: `${slide.id}-theme-workshop-card-3`,
+          title: "Handoff"
+        }
+      ],
+      bullets: [
+        {
+          body: toBody("Use the slide to drive one concrete discussion.", "Drive one concrete discussion."),
+          id: `${slide.id}-theme-workshop-bullet-1`,
+          title: "Set the question"
+        },
+        {
+          body: toBody(`Keep the surface ${themeContext.tone}.`, "Keep the surface calm and exact."),
+          id: `${slide.id}-theme-workshop-bullet-2`,
+          title: "Keep it legible"
+        },
+        {
+          body: toBody(themeContext.mustInclude, "Keep the main point visible."),
+          id: `${slide.id}-theme-workshop-bullet-3`,
+          title: "Keep the anchor"
+        }
+      ],
+      resources: [
+        {
+          body: "slides/ plus compare/apply flow",
+          bodyFontSize: 10.8,
+          id: `${slide.id}-theme-workshop-resource-1`,
+          title: "Working surface"
+        },
+        {
+          body: "npm run quality:gate",
+          bodyFontSize: 11.2,
+          id: `${slide.id}-theme-workshop-resource-2`,
+          title: "Final check"
+        }
+      ],
+      signals: [
+        { id: `${slide.id}-theme-workshop-signal-1`, label: "handoff", value: 0.9 },
+        { id: `${slide.id}-theme-workshop-signal-2`, label: "discussion", value: 0.87 },
+        { id: `${slide.id}-theme-workshop-signal-3`, label: "clarity", value: 0.91 },
+        { id: `${slide.id}-theme-workshop-signal-4`, label: "apply", value: 0.82 }
+      ],
+      guardrails: [
+        { id: `${slide.id}-theme-workshop-guardrail-1`, label: "must-show", value: "1" },
+        { id: `${slide.id}-theme-workshop-guardrail-2`, label: "review step", value: "1" },
+        { id: `${slide.id}-theme-workshop-guardrail-3`, label: "quality gate", value: "1" }
+      ]
+    }
+  ];
+}
+
+function buildThemeSlideSpec(slideType, theme) {
+  switch (slideType) {
+    case "cover":
+    case "toc":
+      return validateSlideSpec({
+        cards: theme.cards,
+        eyebrow: theme.eyebrow,
+        note: theme.note,
+        summary: theme.summary,
+        title: theme.title,
+        type: slideType
+      });
+    case "content":
+      return validateSlideSpec({
+        eyebrow: theme.eyebrow,
+        guardrails: theme.guardrails,
+        guardrailsTitle: `${theme.label} guardrails`,
+        signals: theme.signals,
+        signalsTitle: `${theme.label} signals`,
+        summary: theme.summary,
+        title: theme.title,
+        type: "content"
+      });
+    case "summary":
+      return validateSlideSpec({
+        bullets: theme.bullets,
+        eyebrow: theme.eyebrow,
+        resources: theme.resources,
+        resourcesTitle: `${theme.label} references`,
+        summary: theme.summary,
+        title: theme.title,
+        type: "summary"
+      });
+    default:
+      throw new Error(`Ideate Theme does not support slide type "${slideType}" yet`);
+  }
+}
+
+function buildThemeChangeSummary(slideType, theme, options = {}) {
+  const modeLabel = describeVariantPersistence(options);
+
+  switch (slideType) {
+    case "cover":
+    case "toc":
+      return [
+        `Reframed the slide around the ${theme.label.toLowerCase()}.`,
+        "Rewrote the section framing and the three cards to fit the new theme direction.",
+        "Kept the current slide family while changing the thematic treatment.",
+        modeLabel
+      ];
+    case "content":
+      return [
+        `Reframed the signal slide around the ${theme.label.toLowerCase()}.`,
+        "Retitled the signals and guardrails panels and replaced their labels to match the new theme.",
+        "Kept the two-column structure while changing the theme language.",
+        modeLabel
+      ];
+    case "summary":
+      return [
+        `Reframed the summary slide around the ${theme.label.toLowerCase()}.`,
+        "Rewrote the checklist and supporting references around the new theme direction.",
+        "Kept the same summary slide family while changing the thematic treatment.",
+        modeLabel
+      ];
+    default:
+      return [
+        `Reframed the slide around the ${theme.label.toLowerCase()}.`,
+        modeLabel
+      ];
+  }
+}
+
+function createLocalThemeCandidates(slide, currentSpec, context, options = {}) {
+  return createThemeDirections(slide, currentSpec, context).map((theme) => ({
+    changeSummary: buildThemeChangeSummary(currentSpec.type, theme, options),
+    generator: "local",
+    label: theme.label,
+    model: null,
+    notes: theme.notes,
+    promptSummary: theme.promptSummary,
+    provider: "local",
+    slideSpec: buildThemeSlideSpec(currentSpec.type, theme)
+  }));
+}
+
 async function createLlmIdeateCandidates(slide, slideType, source, context) {
   const prompts = buildIdeateSlidePrompts({
     context,
@@ -1114,6 +1428,59 @@ async function drillWordingSlide(slideId, options = {}) {
   };
 }
 
+async function ideateThemeSlide(slideId, options = {}) {
+  if (ideateSlideLocks.has(slideId)) {
+    throw new Error(`Another workflow is already running for ${slideId}`);
+  }
+
+  ideateSlideLocks.add(slideId);
+  const slide = getSlide(slideId);
+  const originalSlideSpec = readSlideSpec(slideId);
+  const context = getDeckContext();
+  const createdVariants = [];
+  let previews = null;
+  const dryRun = options.dryRun !== false;
+  const generation = {
+    available: false,
+    fallbackReason: null,
+    mode: "local",
+    model: null,
+    provider: "local",
+    requestedMode: normalizeGenerationMode(options.generationMode || "local")
+  };
+
+  try {
+    const candidates = createLocalThemeCandidates(slide, originalSlideSpec, context, {
+      dryRun,
+      persistToSlide: slide.structured
+    });
+    const variants = await materializeCandidatesToVariants(slideId, candidates, {
+      dryRun,
+      labelFormatter: (label) => `${label} ${dryRun ? "dry run" : "variant"}`,
+      operation: "ideate-theme"
+    });
+    createdVariants.push(...variants);
+  } finally {
+    try {
+      writeSlideSpec(slideId, originalSlideSpec);
+      previews = (await buildAndRenderDeck()).previews;
+    } finally {
+      ideateSlideLocks.delete(slideId);
+    }
+  }
+
+  return {
+    dryRun,
+    generation,
+    previews,
+    slideId,
+    summary: dryRun
+      ? `Generated ${createdVariants.length} dry-run theme variants for ${slide.title} using local theme rules.`
+      : `Generated ${createdVariants.length} theme variants for ${slide.title} using local theme rules.`,
+    variants: createdVariants
+  };
+}
+
 async function redoLayoutSlide(slideId, options = {}) {
   if (ideateSlideLocks.has(slideId)) {
     throw new Error(`Another workflow is already running for ${slideId}`);
@@ -1169,6 +1536,7 @@ async function redoLayoutSlide(slideId, options = {}) {
 
 module.exports = {
   drillWordingSlide,
+  ideateThemeSlide,
   ideateSlide,
   redoLayoutSlide
 };

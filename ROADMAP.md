@@ -42,18 +42,19 @@ Implemented:
 - the included four-slide demo deck ported to JSON slide specs and rendered directly from that structured content in both the studio and the PDF build
 - structured local `Drill Wording` workflow with assistant routing and compareable dry-run variants
 - structured local `Redo Layout` workflow with direct browser action, assistant routing, and compareable dry-run variants
+- structured local `Ideate Theme` workflow with direct browser action, assistant routing, and compareable dry-run variants
 - broader assistant intent handling for short layout-oriented requests such as `redo layout`, `rebalance`, and `rearrange`
 
 Not implemented yet:
 
-- explicit workflow operations such as `Ideate Theme` and `Ideate Structure`
+- explicit workflow operations such as `Ideate Structure`
 
 ## Next Focus
 
 The next practical slice should deepen the structured workflow surface now that the live LLM path is verified:
 
-1. let the assistant route to an additional structured workflow such as `Ideate Theme`
-2. add richer assistant action states so long-running operations can report progress before previews are ready
+1. add richer assistant action states so long-running operations can report progress before previews are ready
+2. let the assistant route to another structured workflow such as `Ideate Structure`
 3. keep the server responsible for validating slide specs, preview rendering, variant storage, and apply gating
 
 ## Product Intent
@@ -382,6 +383,7 @@ Status: partial
 Implemented so far:
 
 - `Ideate Slide` workflow action for the selected slide
+- `Ideate Theme` workflow action for the selected slide through both the browser UI and the assistant
 - `Drill Wording` workflow action through the assistant and server API
 - generated multi-option source variants from stored deck and slide context
 - schema-backed slide-spec generation and materialization for `cover`, `toc`, `content`, and `summary`
@@ -393,7 +395,7 @@ Implemented so far:
 
 Still needed:
 
-- additional named workflow operations such as `Ideate Theme` and `Ideate Structure`
+- additional named workflow operations such as `Ideate Structure`
 - stronger operation-specific change summaries and fuller diff support
 - legacy-variant cleanup so older entries in `studio/state/variants.json` can be folded fully into slide-local storage
 

@@ -46,6 +46,7 @@ const elements = {
   ideateDryRun: document.getElementById("ideate-dry-run"),
   ideateGenerationMode: document.getElementById("ideate-generation-mode"),
   ideateSlideButton: document.getElementById("ideate-slide-button"),
+  ideateThemeButton: document.getElementById("ideate-theme-button"),
   deckAudience: document.getElementById("deck-audience"),
   deckConstraints: document.getElementById("deck-constraints"),
   deckObjective: document.getElementById("deck-objective"),
@@ -140,6 +141,7 @@ function renderStatus() {
     : "No slide selected";
   elements.selectionStatus.dataset.state = selected ? "ok" : "idle";
   elements.ideateSlideButton.disabled = !selected;
+  elements.ideateThemeButton.disabled = !selected;
   elements.redoLayoutButton.disabled = !selected;
   elements.captureVariantButton.disabled = !selected;
   elements.saveSlideSpecButton.disabled = !selected;
@@ -458,6 +460,10 @@ function describeVariantKind(variant) {
 
   if (variant.operation === "drill-wording") {
     return `${prefix}wording pass`;
+  }
+
+  if (variant.operation === "ideate-theme") {
+    return `${prefix}theme pass`;
   }
 
   if (variant.operation === "redo-layout") {
@@ -875,6 +881,40 @@ async function ideateSlide() {
   }
 }
 
+async function ideateTheme() {
+  if (!state.selectedSlideId) {
+    return;
+  }
+
+  const done = setBusy(elements.ideateThemeButton, "Generating...");
+  try {
+    const payload = await request("/api/operations/ideate-theme", {
+      body: JSON.stringify({
+        dryRun: elements.ideateDryRun.checked,
+        generationMode: elements.ideateGenerationMode.value,
+        slideId: state.selectedSlideId
+      }),
+      method: "POST"
+    });
+    state.previews = payload.previews;
+    state.runtime = payload.runtime;
+    clearTransientVariants(state.selectedSlideId);
+    state.transientVariants = [
+      ...(payload.transientVariants || []),
+      ...state.transientVariants
+    ];
+    state.variants = payload.variants;
+    const preferred = getPreferredVariant(getSlideVariants());
+    state.selectedVariantId = preferred ? preferred.id : null;
+    elements.operationStatus.textContent = payload.summary;
+    renderStatus();
+    renderPreviews();
+    renderVariants();
+  } finally {
+    done();
+  }
+}
+
 async function redoLayout() {
   if (!state.selectedSlideId) {
     return;
@@ -963,6 +1003,7 @@ elements.checkLlmButton.addEventListener("click", () => checkLlmProvider().catch
 elements.validateButton.addEventListener("click", () => validate(false).catch((error) => window.alert(error.message)));
 elements.validateRenderButton.addEventListener("click", () => validate(true).catch((error) => window.alert(error.message)));
 elements.ideateSlideButton.addEventListener("click", () => ideateSlide().catch((error) => window.alert(error.message)));
+elements.ideateThemeButton.addEventListener("click", () => ideateTheme().catch((error) => window.alert(error.message)));
 elements.redoLayoutButton.addEventListener("click", () => redoLayout().catch((error) => window.alert(error.message)));
 elements.compareApplyButton.addEventListener("click", () => {
   const variant = getSelectedVariant();

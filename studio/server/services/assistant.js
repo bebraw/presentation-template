@@ -1,6 +1,6 @@
 const { getDeckContext } = require("./state");
 const { getSlide, getSlides } = require("./slides");
-const { drillWordingSlide, ideateSlide, redoLayoutSlide } = require("./operations");
+const { drillWordingSlide, ideateThemeSlide, ideateSlide, redoLayoutSlide } = require("./operations");
 const { validateDeck } = require("./validate");
 const { appendSessionMessages, createMessage, getSession } = require("./sessions");
 
@@ -17,6 +17,10 @@ function detectIntent(message) {
 
   if (/(tighten|wording|clarity|clearer|condense copy|shorten copy|drill)/.test(normalized)) {
     return "drill-wording";
+  }
+
+  if (/(ideate theme|theme variants|retheme|theme direction|theme pass)/.test(normalized)) {
+    return "ideate-theme";
   }
 
   if (/(redo layout|rework layout|layout|reflow|rebalance|rearrange|reshuffle)/.test(normalized)) {
@@ -42,8 +46,8 @@ function buildHelpReply(options = {}) {
 
   return [
     slideLine,
-    "Ask me to ideate variants, redo the selected slide layout, tighten wording, or run validation.",
-    "Examples: `Ideate three variants for this slide`, `Redo the layout on this slide`, `Tighten the wording on this slide`, `Validate the deck`."
+    "Ask me to ideate variants, ideate a theme, redo the selected slide layout, tighten wording, or run validation.",
+    "Examples: `Ideate three variants for this slide`, `Ideate theme variants for this slide`, `Redo the layout on this slide`, `Tighten the wording on this slide`, `Validate the deck`."
   ].join(" ");
 }
 
@@ -67,6 +71,14 @@ function buildDrillWordingReply(result, slide) {
     result.summary,
     `The assistant kept the current structure and targeted wording changes on ${slide.index}. ${slide.title}.`,
     "Use the compare area to inspect one tighter copy pass before applying it."
+  ].join(" ");
+}
+
+function buildIdeateThemeReply(result, slide) {
+  return [
+    result.summary,
+    `The assistant kept the current slide family and generated theme-first variants for ${slide.index}. ${slide.title}.`,
+    "Use the compare area to inspect which theme direction you want before applying one."
   ].join(" ");
 }
 
@@ -140,6 +152,36 @@ async function handleAssistantMessage(options = {}) {
   }
 
   const slide = getSlide(options.slideId);
+
+  if (intent === "ideate-theme") {
+    const result = await ideateThemeSlide(options.slideId, {
+      dryRun: options.dryRun !== false,
+      generationMode: options.generationMode
+    });
+    const reply = createMessage("assistant", buildIdeateThemeReply(result, slide), {
+      action: {
+        dryRun: result.dryRun,
+        generation: result.generation,
+        slideId: options.slideId,
+        status: "completed",
+        type: "ideate-theme",
+        variantCount: result.variants.length
+      }
+    });
+    const session = appendSessionMessages(sessionId, [reply]);
+
+    return {
+      action: reply.action,
+      context: getDeckContext(),
+      previews: result.previews,
+      reply,
+      session,
+      slideId: result.slideId,
+      summary: result.summary,
+      transientVariants: result.dryRun ? result.variants : [],
+      variants: result.dryRun ? [] : result.variants
+    };
+  }
 
   if (intent === "drill-wording") {
     const result = await drillWordingSlide(options.slideId, {
@@ -246,6 +288,11 @@ function getAssistantSuggestions() {
       id: "suggestion-wording",
       label: "Tighten wording",
       prompt: slides.length ? "Tighten the wording on this slide." : "Tighten the wording on the selected slide."
+    },
+    {
+      id: "suggestion-theme",
+      label: "Ideate theme",
+      prompt: slides.length ? "Ideate theme variants for this slide." : "Ideate theme variants for the selected slide."
     },
     {
       id: "suggestion-layout",

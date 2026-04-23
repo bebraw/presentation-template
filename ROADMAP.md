@@ -25,6 +25,7 @@ Use that file for:
 - notable studio UI workflow-shape changes such as folding the workflow assistant into a side rail instead of leaving it inline
 - notable studio UI workflow-shape changes such as folding the structured draft editor into its own side rail instead of leaving it inline
 - notable studio UI workflow-shape changes such as moving the validation report into its own docked view instead of leaving it inline
+- notable studio UI workflow-shape changes such as moving the deck brief into its own planning view instead of leaving it inline
 
 Keep this roadmap focused on architecture, rollout order, and the next slice to build.
 

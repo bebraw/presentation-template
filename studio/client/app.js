@@ -19,6 +19,7 @@ const state = {
   transientVariants: [],
   ui: {
     assistantOpen: false,
+    deckBriefOpen: false,
     structuredDraftOpen: false,
     validationOpen: false
   },
@@ -52,6 +53,8 @@ const elements = {
   compareVariantLabel: document.getElementById("compare-variant-label"),
   compareVariantMeta: document.getElementById("compare-variant-meta"),
   compareVariantPreview: document.getElementById("compare-variant-preview"),
+  deckBriefDrawer: document.getElementById("deck-brief-drawer"),
+  deckBriefToggle: document.getElementById("deck-brief-toggle"),
   deckStructureList: document.getElementById("deck-structure-list"),
   deckStructureNote: document.getElementById("deck-structure-note"),
   ideateDryRun: document.getElementById("ideate-dry-run"),
@@ -241,6 +244,38 @@ function persistValidationDrawerPreference() {
   } catch (error) {
     // Ignore unavailable localStorage in restricted environments.
   }
+}
+
+function loadDeckBriefDrawerPreference() {
+  try {
+    return window.localStorage.getItem("studio.deckBriefDrawerOpen") === "true";
+  } catch (error) {
+    return false;
+  }
+}
+
+function persistDeckBriefDrawerPreference() {
+  try {
+    window.localStorage.setItem("studio.deckBriefDrawerOpen", String(state.ui.deckBriefOpen));
+  } catch (error) {
+    // Ignore unavailable localStorage in restricted environments.
+  }
+}
+
+function renderDeckBriefDrawer() {
+  document.body.classList.toggle("deck-brief-open", state.ui.deckBriefOpen);
+  elements.deckBriefDrawer.dataset.open = state.ui.deckBriefOpen ? "true" : "false";
+  elements.deckBriefToggle.setAttribute("aria-expanded", state.ui.deckBriefOpen ? "true" : "false");
+  elements.deckBriefToggle.setAttribute(
+    "aria-label",
+    state.ui.deckBriefOpen ? "Close deck brief view" : "Open deck brief view"
+  );
+}
+
+function setDeckBriefDrawerOpen(open) {
+  state.ui.deckBriefOpen = Boolean(open);
+  persistDeckBriefDrawerPreference();
+  renderDeckBriefDrawer();
 }
 
 function renderAssistantDrawer() {
@@ -1524,6 +1559,9 @@ elements.assistantSendButton.addEventListener("click", () => sendAssistantMessag
 elements.assistantToggle.addEventListener("click", () => {
   setAssistantDrawerOpen(!state.ui.assistantOpen);
 });
+elements.deckBriefToggle.addEventListener("click", () => {
+  setDeckBriefDrawerOpen(!state.ui.deckBriefOpen);
+});
 elements.structuredDraftToggle.addEventListener("click", () => {
   setStructuredDraftDrawerOpen(!state.ui.structuredDraftOpen);
 });
@@ -1538,6 +1576,9 @@ document.addEventListener("keydown", (event) => {
     if (state.ui.assistantOpen) {
       setAssistantDrawerOpen(false);
     }
+    if (state.ui.deckBriefOpen) {
+      setDeckBriefDrawerOpen(false);
+    }
     if (state.ui.structuredDraftOpen) {
       setStructuredDraftDrawerOpen(false);
     }
@@ -1547,9 +1588,11 @@ document.addEventListener("keydown", (event) => {
   }
 });
 
+state.ui.deckBriefOpen = loadDeckBriefDrawerPreference();
 state.ui.assistantOpen = loadAssistantDrawerPreference();
 state.ui.structuredDraftOpen = loadStructuredDraftDrawerPreference();
 state.ui.validationOpen = loadValidationDrawerPreference();
+renderDeckBriefDrawer();
 renderAssistantDrawer();
 renderStructuredDraftDrawer();
 renderValidationDrawer();

@@ -18,6 +18,7 @@ Implemented:
 - explicit slide workflows: `Ideate Slide`, `Drill Wording`, `Redo Layout`, `Ideate Theme`, and `Ideate Structure`
 - a separated workflow surface where variant generation and variant comparison live in distinct views
 - a fold-out right-side workflow assistant rail with a persistent open or closed state instead of an in-flow chat block
+- a top-mounted deck-brief planning rail with a persistent open or closed state instead of an inline deck context block
 - a fold-out left-side structured-draft rail with a persistent open or closed state instead of an inline JSON editor block
 - a bottom-docked validation report view with a persistent open or closed state instead of an inline report block
 - side-by-side compare view with current-vs-candidate previews, source-change summaries, and apply-or-validate actions

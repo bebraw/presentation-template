@@ -59,56 +59,6 @@
             <div class="section-heading">
               <div>
                 <p class="eyebrow">Context</p>
-                <h2>Deck brief</h2>
-              </div>
-            </div>
-
-            <div class="field-grid">
-              <label class="field">
-                <span>Title</span>
-                <input id="deck-title" type="text">
-              </label>
-              <label class="field">
-                <span>Audience</span>
-                <input id="deck-audience" type="text">
-              </label>
-            </div>
-
-            <label class="field">
-              <span>Objective</span>
-              <textarea id="deck-objective"></textarea>
-            </label>
-
-            <label class="field">
-              <span>Tone</span>
-              <input id="deck-tone" type="text">
-            </label>
-
-            <label class="field">
-              <span>Constraints</span>
-              <textarea id="deck-constraints"></textarea>
-            </label>
-
-            <label class="field">
-              <span>Theme brief</span>
-              <textarea id="deck-theme-brief"></textarea>
-            </label>
-
-            <label class="field">
-              <span>Outline</span>
-              <textarea id="deck-outline"></textarea>
-            </label>
-
-            <div class="button-row compact">
-              <button id="save-deck-context-button" class="secondary">Save deck context</button>
-              <button id="ideate-deck-structure-button">Ideate presentation structure</button>
-            </div>
-          </article>
-
-          <article class="editorial-block">
-            <div class="section-heading">
-              <div>
-                <p class="eyebrow">Context</p>
                 <h2>Selected slide</h2>
               </div>
             </div>
@@ -258,6 +208,73 @@
         </section>
       </main>
     </div>
+
+    <aside class="deck-brief-drawer" id="deck-brief-drawer" aria-label="Deck brief planning view">
+      <button
+        class="deck-brief-toggle"
+        id="deck-brief-toggle"
+        type="button"
+        aria-controls="deck-brief-panel"
+        aria-expanded="false"
+        aria-label="Open deck brief view"
+      >
+        <span class="deck-brief-toggle-icon" aria-hidden="true">▼</span>
+        <span class="deck-brief-toggle-label">Deck Brief</span>
+      </button>
+
+      <div class="deck-brief-panel" id="deck-brief-panel">
+        <div class="deck-brief-panel-head">
+          <div>
+            <p class="eyebrow">Context</p>
+            <h2>Deck Brief</h2>
+          </div>
+          <p class="deck-brief-panel-note">
+            Keep the presentation title, audience, objective, tone, constraints, theme, and outline together in one planning surface before generating deck-level structure changes.
+          </p>
+        </div>
+
+        <div class="field-grid">
+          <label class="field">
+            <span>Title</span>
+            <input id="deck-title" type="text">
+          </label>
+          <label class="field">
+            <span>Audience</span>
+            <input id="deck-audience" type="text">
+          </label>
+        </div>
+
+        <label class="field">
+          <span>Objective</span>
+          <textarea id="deck-objective"></textarea>
+        </label>
+
+        <label class="field">
+          <span>Tone</span>
+          <input id="deck-tone" type="text">
+        </label>
+
+        <label class="field">
+          <span>Constraints</span>
+          <textarea id="deck-constraints"></textarea>
+        </label>
+
+        <label class="field">
+          <span>Theme brief</span>
+          <textarea id="deck-theme-brief"></textarea>
+        </label>
+
+        <label class="field">
+          <span>Outline</span>
+          <textarea id="deck-outline"></textarea>
+        </label>
+
+        <div class="button-row compact">
+          <button id="save-deck-context-button" class="secondary">Save deck context</button>
+          <button id="ideate-deck-structure-button">Ideate presentation structure</button>
+        </div>
+      </div>
+    </aside>
 
     <aside class="validation-drawer" id="validation-drawer" aria-label="Validation report">
       <button

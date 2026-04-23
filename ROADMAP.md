@@ -42,8 +42,8 @@ The first DOM-pivot slices are now in place:
 The next practical slice should tighten what is left after the main DOM cutover:
 
 1. extend DOM validation beyond the current bounds, padding, font-size, and word-count checks if more layout-specific rules are still needed
-2. decide what should happen to generator-only helpers that are now mostly serving the baseline render gate, contact sheets, and compatibility flows
-3. trim stale generator-first architecture notes so the repo no longer describes the DOM path as a sidecar renderer
+2. audit and remove legacy generator-only runtime pieces that are no longer on the active build, preview, or validation path
+3. keep the remaining baseline-comparison helpers narrow instead of letting generic studio preview utilities drift back under `generator/`
 
 ## Product Intent
 
@@ -71,7 +71,8 @@ Current implementation is now hybrid during migration:
 - studio geometry and text validation for supported slide families now run through Playwright DOM inspection in [`studio/server/services/dom-validate.js`](./studio/server/services/dom-validate.js)
 - [`generator/compile.js`](./generator/compile.js) now builds the deck PDF through that same Playwright-backed DOM renderer
 - the CLI geometry and text validation entrypoints now also call that DOM validator instead of the older generator-side slide drawer
-- [`generator/render-utils.js`](./generator/render-utils.js) still produces raster page snapshots for the baseline render gate, deck-plan strips, and compatibility fallback
+- studio preview strips and contact sheets now use [`studio/server/services/page-artifacts.js`](./studio/server/services/page-artifacts.js) instead of importing those generic helpers from the generator runtime
+- [`generator/render-utils.js`](./generator/render-utils.js) still produces raster page snapshots for the baseline render gate and compatibility fallback
 - the optional render-baseline comparison now checks the current DOM-built PDF against those approved raster snapshots instead of building a second generator-side validation PDF
 
 Target architecture is DOM-first:

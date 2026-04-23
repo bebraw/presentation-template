@@ -34,6 +34,7 @@ Implemented:
 - Playwright-backed studio geometry/text validation for supported slide families, with studio validation now failing explicitly instead of falling back to generator-side slide drawing
 - CLI `npm run build` now writes the deck PDF through the same Playwright-backed DOM renderer instead of the old generator-side PDF path
 - CLI geometry and text validation entrypoints now use the same DOM validation path as the studio instead of generator-side slide drawing
+- studio-side preview strips, contact sheets, and page manifests now use `studio/server/services/page-artifacts.js` instead of importing those generic helpers from `generator/render-utils.js`
 - dry-run ideation mode that renders transient variants without saving them to the variant store
 - explicit before-and-after source diff panes plus operation-specific change summaries in the compare area
 - per-slide workflow locking so overlapping ideation requests do not race on the working slide source
@@ -65,8 +66,8 @@ Next major direction:
 
 - keep slide-spec JSON as the source content model for supported slides
 - extend DOM validation where the older generator checks still covered layout-specific rules that matter
-- decide what should happen to generator-only helpers that remain only for the baseline render gate and legacy fallback flows
-- trim stale generator-first architecture notes so the DOM renderer is no longer described as a secondary path
+- audit and remove legacy generator-only runtime pieces that are no longer on the active build, preview, or validation path
+- keep generic studio preview helpers out of `generator/` so the remaining baseline utilities stay narrow
 
 ## Phase Snapshot
 
@@ -164,4 +165,4 @@ What still needs polish:
 
 1. broader deck-level composition flows where more shared deck behavior should respond to saved planning context
 2. richer diff and summary support across more workflow types
-3. the remaining DOM-first cleanup work around validation depth, baseline helpers, and stale generator-first assumptions
+3. the remaining DOM-first cleanup work around validation depth, baseline helpers, and legacy runtime removal

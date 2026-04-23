@@ -2,9 +2,9 @@ const fs = require("fs");
 const path = require("path");
 const { chromium } = require("playwright");
 const { pdfFile } = require("../../../generator/output-config");
-const { createContactSheet, ensureDir, listPages, resetDir } = require("../../../generator/render-utils");
 const { renderDeckDocument, renderSlideDocument } = require("../../client/slide-dom");
 const { clientDir, contactSheetFile, outputDir, previewDir } = require("./paths");
+const { createContactSheet, ensureDir, listPages, resetDir } = require("./page-artifacts");
 
 function readInlineStyles() {
   return fs.readFileSync(path.join(clientDir, "styles.css"), "utf8");

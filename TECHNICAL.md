@@ -19,7 +19,7 @@ Build the presentation:
 npm run build
 ```
 
-Run layout and text validation:
+Run DOM-backed geometry and text validation:
 
 ```bash
 npm run validate
@@ -47,8 +47,9 @@ If you add presentation diagrams or other deck graphics, author them as Graphviz
 
 ## Development Layout
 
-- `slides/slide-01.js` to `slides/slide-04.js` hold the demo deck content.
-- `generator/` holds the build, rendering, and validation runtime.
+- `slides/slide-01.json` to `slides/slide-04.json` hold the demo deck content.
+- `studio/` holds the browser studio, shared DOM renderer, Playwright export path, and DOM validation runtime.
+- `generator/` now mainly holds CLI entrypoints, raster-baseline utilities, diagram generation, theme resolution, and legacy transitional runtime pieces.
 - `skills/pdf-slide-generator/SKILL.md` contains the deck-generation workflow guidance.
 - `skills/slide-clarity-drill/` contains the wording-tightening skill used for line-by-line slide copy refinement.
 - `archive/demo-presentation.pdf` stores the checked-in PDF snapshot for linking and archival.
@@ -80,6 +81,7 @@ If you add presentation diagrams or other deck graphics, author them as Graphviz
 │   └── validation.js
 ├── package.json
 ├── README.md
+├── STUDIO_STATUS.md
 ├── TECHNICAL.md
 ├── skills/
 │   ├── pdf-slide-generator/
@@ -92,21 +94,21 @@ If you add presentation diagrams or other deck graphics, author them as Graphviz
     ├── assets/
     │   └── diagrams/
     ├── output/
-    ├── slide-01.js
-    ├── slide-02.js
-    ├── slide-03.js
-    └── slide-04.js
+    ├── slide-01.json
+    ├── slide-02.json
+    ├── slide-03.json
+    └── slide-04.json
 ```
 
 ## Notes
 
-- Slide content lives in `slides/`, while the build and validation runtime lives in `generator/`.
+- Slide content lives in `slides/`, while the active authoring/runtime path now lives primarily in `studio/`.
 - Diagram graphics in `slides/assets/diagrams/` must come from Graphviz `.dot` sources; do not hand-maintain the generated PNGs.
-- The production build path renders PDF directly through `pdfkit`.
+- The production build path now renders PDF through Playwright and the shared DOM slide renderer.
 - The deck uses `Avenir Next` for both display and body text.
-- Shared slide spacing now lives in `generator/layout.js`, while reusable drawing primitives stay in `generator/helpers.js`.
+- Shared palette and deck metadata resolution still live in `generator/theme.js`, while the authoritative slide layout/runtime now lives in `studio/client/slide-dom.js`.
 - `slides/output/` is git-ignored, so generated binaries stay local.
 - `archive/demo-presentation.pdf` stores the checked-in PDF snapshot for linking and archival.
 - `generator/render-baseline/` stores the approved render baseline for the current deck output.
-- `npm run quality:gate` runs geometry/text validation before checking the generated PDF against the approved render baseline.
-- If you extend the deck, duplicate an existing slide module and add it to `generator/deck.js`.
+- `npm run quality:gate` runs DOM-backed geometry/text validation before checking the generated PDF against the approved render baseline.
+- If you extend the deck, follow the JSON slide-spec path and keep `generator/deck.js` changes limited to legacy cleanup rather than new authoritative slide wiring.

@@ -15,7 +15,7 @@ const {
   ensureAllowedDir,
   removeAllowedPath
 } = require("./write-boundary");
-const { createContactSheet, listPages } = require("../../../generator/render-utils");
+const { createContactSheet, listPages } = require("./page-artifacts");
 
 const ideateSlideLocks = new Set();
 const allowedGenerationModes = new Set(["auto", "local", "llm"]);

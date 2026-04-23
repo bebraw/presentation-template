@@ -1,12 +1,9 @@
 const fs = require("fs");
 const path = require("path");
 const { spawnSync } = require("child_process");
-const {
-  ensureDir,
-  listPages
-} = require("../../../generator/render-utils");
 const { exportDeckPdfFromDom, renderDeckPreviewImagesFromDom } = require("./dom-export");
 const { getDomPreviewState } = require("./dom-preview");
+const { ensureDir, listPages } = require("./page-artifacts");
 const {
   contactSheetFile,
   outputDir,

@@ -12,7 +12,7 @@ const { getLlmStatus, verifyLlmConnection } = require("./services/llm/client");
 const { clientDir, outputDir } = require("./services/paths");
 const { ensureState, getDeckContext, updateDeckFields, updateSlideContext } = require("./services/state");
 const { getSlide, getSlides, readSlideSource, readSlideSpec, writeSlideSource, writeSlideSpec } = require("./services/slides");
-const { drillWordingSlide, ideateStructureSlide, ideateThemeSlide, ideateSlide, redoLayoutSlide } = require("./services/operations");
+const { drillWordingSlide, ideateDeckStructure, ideateStructureSlide, ideateThemeSlide, ideateSlide, redoLayoutSlide } = require("./services/operations");
 const { validateDeck } = require("./services/validate");
 const { applyVariant, captureVariant, listAllVariants, listVariantsForSlide } = require("./services/variants");
 
@@ -292,6 +292,32 @@ async function handleDeckContextUpdate(req, res) {
   createJsonResponse(res, 200, { context });
 }
 
+async function handleDeckStructureApply(req, res) {
+  const body = await readJsonBody(req);
+  if (typeof body.outline !== "string" || !body.outline.trim()) {
+    throw new Error("Expected a non-empty outline when applying a deck structure candidate");
+  }
+
+  const context = updateDeckFields({
+    outline: body.outline
+  });
+  updateWorkflowState({
+    message: body.label
+      ? `Applied deck structure candidate ${body.label} to the saved outline.`
+      : "Applied deck structure candidate to the saved outline.",
+    ok: true,
+    operation: "apply-deck-structure",
+    stage: "completed",
+    status: "completed"
+  });
+  runtimeState.lastError = null;
+
+  createJsonResponse(res, 200, {
+    context,
+    runtime: serializeRuntimeState()
+  });
+}
+
 async function handleSlideContextUpdate(req, res, slideId) {
   const body = await readJsonBody(req);
   const context = updateSlideContext(slideId, body || {});
@@ -490,6 +516,34 @@ async function handleIdeateTheme(req, res) {
   });
 }
 
+async function handleIdeateDeckStructure(req, res) {
+  const body = await readJsonBody(req);
+  const reportProgress = createWorkflowProgressReporter({
+    dryRun: body.dryRun !== false,
+    operation: "ideate-deck-structure"
+  });
+  const result = await ideateDeckStructure({
+    dryRun: body.dryRun !== false,
+    onProgress: reportProgress
+  });
+  updateWorkflowState({
+    dryRun: body.dryRun !== false,
+    generation: result.generation,
+    message: result.summary,
+    ok: true,
+    operation: "ideate-deck-structure",
+    stage: "completed",
+    status: "completed"
+  });
+  runtimeState.lastError = null;
+
+  createJsonResponse(res, 200, {
+    deckStructureCandidates: result.candidates,
+    runtime: serializeRuntimeState(),
+    summary: result.summary
+  });
+}
+
 async function handleIdeateStructure(req, res) {
   const body = await readJsonBody(req);
   if (typeof body.slideId !== "string" || !body.slideId) {
@@ -628,6 +682,18 @@ async function handleAssistantSend(req, res) {
     });
   }
 
+  if (result.action && result.action.type === "ideate-deck-structure") {
+    updateWorkflowState({
+      dryRun: result.action.dryRun,
+      generation: result.action.generation,
+      message: result.reply && result.reply.content ? result.reply.content : "Assistant deck-structure workflow completed.",
+      ok: true,
+      operation: "assistant-ideate-deck-structure",
+      stage: "completed",
+      status: "completed"
+    });
+  }
+
   if (result.action && result.action.type === "validate" && result.validation) {
     runtimeState.validation = {
       includeRender: result.action.includeRender,
@@ -648,6 +714,8 @@ async function handleAssistantSend(req, res) {
 
   createJsonResponse(res, 200, {
     action: result.action,
+    context: result.context || getDeckContext(),
+    deckStructureCandidates: Array.isArray(result.deckStructureCandidates) ? result.deckStructureCandidates : [],
     previews: result.previews || getPreviewManifest(),
     reply: result.reply,
     runtime: serializeRuntimeState(),
@@ -689,6 +757,11 @@ async function handleApi(req, res, url) {
 
   if (req.method === "POST" && url.pathname === "/api/context") {
     await handleDeckContextUpdate(req, res);
+    return;
+  }
+
+  if (req.method === "POST" && url.pathname === "/api/context/deck-structure/apply") {
+    await handleDeckStructureApply(req, res);
     return;
   }
 
@@ -766,6 +839,11 @@ async function handleApi(req, res, url) {
 
   if (req.method === "POST" && url.pathname === "/api/operations/ideate-theme") {
     await handleIdeateTheme(req, res);
+    return;
+  }
+
+  if (req.method === "POST" && url.pathname === "/api/operations/ideate-deck-structure") {
+    await handleIdeateDeckStructure(req, res);
     return;
   }
 

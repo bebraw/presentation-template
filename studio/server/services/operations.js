@@ -1552,6 +1552,146 @@ function createLocalStructureCandidates(slide, currentSpec, context, options = {
   }
 }
 
+function toOutlineLines(value) {
+  return unique(splitLines(value)).map((line) => sentence(line, "Untitled section", 8));
+}
+
+function collectDeckStructureContext(context) {
+  const deck = context.deck || {};
+  const slides = getSlides();
+  const outlineLines = toOutlineLines(deck.outline);
+
+  return {
+    audience: sentence(deck.audience, "the next editor"),
+    constraints: sentence(splitLines(deck.constraints)[0], "keep the generator as the source of truth"),
+    objective: sentence(deck.objective, "turn deck editing into a repeatable studio loop"),
+    outlineLines,
+    slides: slides.map((slide, index) => {
+      const slideContext = context.slides[slide.id] || {};
+      let slideSpec = null;
+      try {
+        slideSpec = readSlideSpec(slide.id);
+      } catch (error) {
+        slideSpec = null;
+      }
+      return {
+        currentTitle: slideContext.title || (slideSpec && slideSpec.title) || slide.title,
+        id: slide.id,
+        index: slide.index,
+        intent: sentence(slideContext.intent, slideSpec && slideSpec.summary ? slideSpec.summary : "make the slide's job clear"),
+        outlineLine: outlineLines[index] || sentence(slideSpec && slideSpec.title ? slideSpec.title : slide.title, "Untitled section", 8),
+        summary: sentence(slideSpec && slideSpec.summary ? slideSpec.summary : slide.title, slideSpec && slideSpec.title ? slideSpec.title : slide.title, 12),
+        type: slideSpec && slideSpec.type ? slideSpec.type : null
+      };
+    }),
+    themeBrief: sentence(deck.themeBrief, "keep the surface quiet, readable, and deliberate"),
+    title: sentence(deck.title, "Presentation Studio", 10),
+    tone: sentence(deck.tone, "calm and exact")
+  };
+}
+
+function createDeckStructurePlan(context, definition) {
+  const slides = context.slides.map((slide, index) => {
+    const role = definition.roles[index] || `Beat ${index + 1}`;
+    const title = definition.titles[index] || slide.outlineLine || slide.currentTitle;
+    const focus = definition.focus[index] || slide.intent;
+    return {
+      currentTitle: slide.currentTitle,
+      index: slide.index,
+      proposedTitle: title,
+      role,
+      slideId: slide.id,
+      summary: focus
+    };
+  });
+
+  return {
+    changeSummary: [
+      definition.changeLead,
+      "Reframed the deck at the outline level without touching slide files or generator composition.",
+      "Designed to be applied back to the saved deck outline first, before any slide-level rewrite.",
+      "Applying this candidate updates deck context only."
+    ],
+    id: `deck-structure-${definition.label.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "")}`,
+    label: definition.label,
+    notes: definition.notes,
+    outline: slides.map((slide) => slide.proposedTitle).join("\n"),
+    promptSummary: definition.promptSummary,
+    slides,
+    summary: definition.summary
+  };
+}
+
+function createLocalDeckStructureCandidates(context) {
+  const structureContext = collectDeckStructureContext(context);
+  const currentLines = structureContext.slides.map((slide) => slide.outlineLine);
+  const currentTitles = structureContext.slides.map((slide) => slide.currentTitle);
+  const fallbackTitles = currentLines.length ? currentLines : currentTitles;
+
+  return [
+    createDeckStructurePlan(structureContext, {
+      changeLead: "Reframed the deck as a clearer start-to-finish operating sequence.",
+      focus: [
+        `Open with the main claim for ${structureContext.audience}.`,
+        "Show the shared system that makes the claim hold together.",
+        "Put the strongest evidence and constraints in one place.",
+        "Close on the operating or handoff path."
+      ],
+      label: "Sequence-led structure",
+      notes: "Turns the deck into a stepwise path from framing through proof and handoff.",
+      promptSummary: "Uses the deck objective and saved outline to build a cleaner sequence across the whole deck.",
+      roles: ["Frame", "System", "Proof", "Handoff"],
+      summary: `Organize the deck as a sequence that moves from ${fallbackTitles[0] || "framing"} toward ${fallbackTitles[fallbackTitles.length - 1] || "handoff"}.`,
+      titles: [
+        fallbackTitles[0] || "Why this matters",
+        fallbackTitles[1] || "Shared system",
+        fallbackTitles[2] || "Proof and guardrails",
+        fallbackTitles[3] || "What to do next"
+      ]
+    }),
+    createDeckStructurePlan(structureContext, {
+      changeLead: "Reframed the deck around ownership boundaries instead of a linear walkthrough.",
+      focus: [
+        "Start by showing what belongs in the deck itself.",
+        "Clarify which concerns belong to the shared runtime.",
+        "Make the validation and boundary logic explicit.",
+        "Close on what the next operator should keep in view."
+      ],
+      label: "Boundary-led structure",
+      notes: "Frames the presentation around authorship, runtime, validation, and handoff boundaries.",
+      promptSummary: "Uses deck constraints, theme brief, and current slide roles to build a clearer ownership map.",
+      roles: ["Authoring", "Runtime", "Guardrails", "Handoff"],
+      summary: `Organize the deck as a boundary map so ${structureContext.constraints}.`,
+      titles: [
+        "Slide-owned content",
+        "Shared runtime system",
+        "Validation guardrails",
+        "Editor handoff"
+      ]
+    }),
+    createDeckStructurePlan(structureContext, {
+      changeLead: "Reframed the deck around one decision path rather than a general demo tour.",
+      focus: [
+        "Open with the core decision or claim the deck needs to support.",
+        "Show the options or structure that shape that decision.",
+        "Make the strongest proof and operational limits explicit.",
+        "Close on the action the team should take next."
+      ],
+      label: "Decision-led structure",
+      notes: "Turns the presentation into a decision-support flow aimed at a concrete next move.",
+      promptSummary: "Uses audience, objective, and saved notes to build a more decision-oriented presentation structure.",
+      roles: ["Decision", "Options", "Evidence", "Action"],
+      summary: `Organize the deck around one decision path for ${structureContext.audience}, then close on the next action.`,
+      titles: [
+        "The decision to make",
+        "The structure options",
+        "The proof and limits",
+        "The next action"
+      ]
+    })
+  ];
+}
+
 function serializeSlideSpec(slideSpec) {
   return `${JSON.stringify(slideSpec, null, 2)}\n`;
 }
@@ -2003,8 +2143,43 @@ async function ideateStructureSlide(slideId, options = {}) {
   };
 }
 
+async function ideateDeckStructure(options = {}) {
+  const context = getDeckContext();
+  const dryRun = options.dryRun !== false;
+  const generation = {
+    available: false,
+    fallbackReason: null,
+    mode: "local",
+    model: null,
+    provider: "local",
+    requestedMode: "local"
+  };
+
+  reportProgress(options, {
+    message: "Gathering deck brief, outline, and current slide roles...",
+    stage: "gathering-context"
+  });
+
+  reportProgress(options, {
+    message: "Generating presentation-structure candidates...",
+    stage: "generating-variants"
+  });
+
+  const candidates = createLocalDeckStructureCandidates(context);
+
+  return {
+    candidates,
+    dryRun,
+    generation,
+    summary: dryRun
+      ? `Generated ${candidates.length} dry-run presentation-structure candidates from the saved deck context.`
+      : `Generated ${candidates.length} presentation-structure candidates from the saved deck context.`
+  };
+}
+
 module.exports = {
   drillWordingSlide,
+  ideateDeckStructure,
   ideateStructureSlide,
   ideateThemeSlide,
   ideateSlide,

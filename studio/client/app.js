@@ -4,8 +4,10 @@ const state = {
     suggestions: []
   },
   context: null,
+  deckStructureCandidates: [],
   previews: { pages: [] },
   runtime: null,
+  selectedDeckStructureId: null,
   selectedSlideId: null,
   selectedSlideIndex: 1,
   selectedSlideSpec: null,
@@ -43,7 +45,10 @@ const elements = {
   compareVariantLabel: document.getElementById("compare-variant-label"),
   compareVariantMeta: document.getElementById("compare-variant-meta"),
   compareVariantPreview: document.getElementById("compare-variant-preview"),
+  deckStructureList: document.getElementById("deck-structure-list"),
+  deckStructureNote: document.getElementById("deck-structure-note"),
   ideateDryRun: document.getElementById("ideate-dry-run"),
+  ideateDeckStructureButton: document.getElementById("ideate-deck-structure-button"),
   ideateGenerationMode: document.getElementById("ideate-generation-mode"),
   ideateSlideButton: document.getElementById("ideate-slide-button"),
   ideateStructureButton: document.getElementById("ideate-structure-button"),
@@ -371,6 +376,65 @@ function renderDeckFields() {
   elements.deckOutline.value = deck.outline || "";
 }
 
+function renderDeckStructureCandidates() {
+  const candidates = Array.isArray(state.deckStructureCandidates) ? state.deckStructureCandidates : [];
+  elements.deckStructureList.innerHTML = "";
+
+  if (!candidates.length) {
+    elements.deckStructureList.innerHTML = "<div class=\"variant-card\"><strong>No deck structure candidates yet</strong><span>Use the deck-level workflow to generate 2-3 outline options from the saved brief and current slides.</span></div>";
+    return;
+  }
+
+  candidates.forEach((candidate, index) => {
+    const card = document.createElement("div");
+    card.className = `variant-card${candidate.id === state.selectedDeckStructureId ? " active" : ""}`;
+    const outlineLines = String(candidate.outline || "").split("\n").filter(Boolean);
+    const plan = Array.isArray(candidate.slides) ? candidate.slides : [];
+    card.innerHTML = `
+      <p class="variant-kind">Deck structure</p>
+      <strong>${escapeHtml(candidate.label || `Candidate ${index + 1}`)}</strong>
+      <span class="variant-meta">${escapeHtml(candidate.summary || candidate.promptSummary || candidate.notes || "No summary")}</span>
+      <div class="deck-structure-outline">
+        ${outlineLines.map((line, lineIndex) => `<div class="deck-structure-outline-line"><strong>${lineIndex + 1}.</strong><span>${escapeHtml(line)}</span></div>`).join("")}
+      </div>
+      <div class="deck-structure-plan">
+        ${plan.map((slide) => `
+          <div class="deck-structure-step">
+            <strong>${slide.index}. ${escapeHtml(slide.proposedTitle || slide.currentTitle || "Untitled")}</strong>
+            <span>${escapeHtml(slide.role || "Role")}</span>
+            <span>Current: ${escapeHtml(slide.currentTitle || "Untitled")}</span>
+            <span>${escapeHtml(slide.summary || "")}</span>
+          </div>
+        `).join("")}
+      </div>
+      <div class="variant-actions">
+        <button type="button" class="secondary" data-action="inspect">Inspect</button>
+        <button type="button" data-action="apply">Apply to outline</button>
+      </div>
+    `;
+
+    card.querySelector("[data-action=\"inspect\"]").addEventListener("click", () => {
+      state.selectedDeckStructureId = candidate.id;
+      elements.operationStatus.textContent = `Inspecting deck structure candidate ${candidate.label}.`;
+      renderDeckStructureCandidates();
+    });
+
+    const applyButton = card.querySelector("[data-action=\"apply\"]");
+    applyButton.addEventListener("click", async () => {
+      const done = setBusy(applyButton, "Applying...");
+      try {
+        await applyDeckStructureCandidate(candidate);
+      } catch (error) {
+        window.alert(error.message);
+      } finally {
+        done();
+      }
+    });
+
+    elements.deckStructureList.appendChild(card);
+  });
+}
+
 function renderAssistant() {
   const session = state.assistant.session;
   const suggestions = Array.isArray(state.assistant.suggestions) ? state.assistant.suggestions : [];
@@ -683,8 +747,10 @@ async function refreshState() {
   const payload = await request("/api/state");
   state.assistant = payload.assistant || { session: null, suggestions: [] };
   state.context = payload.context;
+  state.deckStructureCandidates = [];
   state.previews = payload.previews;
   state.runtime = payload.runtime;
+  state.selectedDeckStructureId = null;
   state.slides = payload.slides;
   state.transientVariants = [];
   state.variants = payload.variants;
@@ -699,6 +765,7 @@ async function refreshState() {
   }
 
   renderDeckFields();
+  renderDeckStructureCandidates();
   renderAssistant();
   renderStatus();
   renderPreviews();
@@ -726,7 +793,10 @@ async function saveDeckContext() {
   });
 
   state.context = payload.context;
+  state.deckStructureCandidates = [];
+  state.selectedDeckStructureId = null;
   renderDeckFields();
+  renderDeckStructureCandidates();
 }
 
 async function saveSlideContext() {
@@ -760,6 +830,24 @@ async function buildDeck() {
   } finally {
     done();
   }
+}
+
+async function applyDeckStructureCandidate(candidate) {
+  const payload = await request("/api/context/deck-structure/apply", {
+    body: JSON.stringify({
+      label: candidate.label,
+      outline: candidate.outline
+    }),
+    method: "POST"
+  });
+
+  state.context = payload.context;
+  state.runtime = payload.runtime || state.runtime;
+  state.selectedDeckStructureId = candidate.id;
+  elements.operationStatus.textContent = `Applied deck structure candidate ${candidate.label} to the saved outline.`;
+  renderDeckFields();
+  renderDeckStructureCandidates();
+  renderStatus();
 }
 
 async function validate(includeRender) {
@@ -981,6 +1069,26 @@ async function ideateTheme() {
   }
 }
 
+async function ideateDeckStructure() {
+  const done = setBusy(elements.ideateDeckStructureButton, "Generating...");
+  try {
+    const payload = await runWithRuntimePolling(() => request("/api/operations/ideate-deck-structure", {
+      body: JSON.stringify({
+        dryRun: true
+      }),
+      method: "POST"
+    }));
+    state.deckStructureCandidates = payload.deckStructureCandidates || [];
+    state.runtime = payload.runtime;
+    state.selectedDeckStructureId = state.deckStructureCandidates[0] ? state.deckStructureCandidates[0].id : null;
+    elements.operationStatus.textContent = payload.summary;
+    renderDeckStructureCandidates();
+    renderStatus();
+  } finally {
+    done();
+  }
+}
+
 async function ideateStructure() {
   if (!state.selectedSlideId) {
     return;
@@ -1071,10 +1179,15 @@ async function sendAssistantMessage() {
       session: payload.session,
       suggestions: payload.suggestions || state.assistant.suggestions
     };
+    state.context = payload.context || state.context;
     state.previews = payload.previews;
     state.runtime = payload.runtime;
     if (payload.validation) {
       state.validation = payload.validation;
+    }
+    if (payload.action && payload.action.type === "ideate-deck-structure") {
+      state.deckStructureCandidates = payload.deckStructureCandidates || [];
+      state.selectedDeckStructureId = state.deckStructureCandidates[0] ? state.deckStructureCandidates[0].id : null;
     }
     clearTransientVariants(state.selectedSlideId);
     state.transientVariants = [
@@ -1088,6 +1201,8 @@ async function sendAssistantMessage() {
     elements.operationStatus.textContent = payload.reply && payload.reply.content
       ? payload.reply.content
       : "Assistant action completed.";
+    renderDeckFields();
+    renderDeckStructureCandidates();
     renderAssistant();
     renderStatus();
     renderPreviews();
@@ -1100,6 +1215,7 @@ async function sendAssistantMessage() {
 
 elements.buildButton.addEventListener("click", () => buildDeck().catch((error) => window.alert(error.message)));
 elements.checkLlmButton.addEventListener("click", () => checkLlmProvider().catch((error) => window.alert(error.message)));
+elements.ideateDeckStructureButton.addEventListener("click", () => ideateDeckStructure().catch((error) => window.alert(error.message)));
 elements.validateButton.addEventListener("click", () => validate(false).catch((error) => window.alert(error.message)));
 elements.validateRenderButton.addEventListener("click", () => validate(true).catch((error) => window.alert(error.message)));
 elements.ideateSlideButton.addEventListener("click", () => ideateSlide().catch((error) => window.alert(error.message)));

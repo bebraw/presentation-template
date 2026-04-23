@@ -1,6 +1,6 @@
 const { getDeckContext } = require("./state");
 const { getSlide, getSlides } = require("./slides");
-const { drillWordingSlide, ideateStructureSlide, ideateThemeSlide, ideateSlide, redoLayoutSlide } = require("./operations");
+const { drillWordingSlide, ideateDeckStructure, ideateStructureSlide, ideateThemeSlide, ideateSlide, redoLayoutSlide } = require("./operations");
 const { validateDeck } = require("./validate");
 const { appendSessionMessages, createMessage, getSession } = require("./sessions");
 
@@ -17,6 +17,10 @@ function detectIntent(message) {
 
   if (/(tighten|wording|clarity|clearer|condense copy|shorten copy|drill)/.test(normalized)) {
     return "drill-wording";
+  }
+
+  if (/(presentation structure|deck structure|deck outline|ideate outline|outline variants|structure for this deck)/.test(normalized)) {
+    return "ideate-deck-structure";
   }
 
   if (/(ideate structure|structure variants|restructure|structural pass|structure pass)/.test(normalized)) {
@@ -50,8 +54,8 @@ function buildHelpReply(options = {}) {
 
   return [
     slideLine,
-    "Ask me to ideate variants, ideate structure or theme directions, redo the selected slide layout, tighten wording, or run validation.",
-    "Examples: `Ideate three variants for this slide`, `Ideate structure variants for this slide`, `Ideate theme variants for this slide`, `Redo the layout on this slide`, `Tighten the wording on this slide`, `Validate the deck`."
+    "Ask me to ideate deck structure, ideate slide variants, ideate structure or theme directions, redo the selected slide layout, tighten wording, or run validation.",
+    "Examples: `Ideate presentation structure for this deck`, `Ideate three variants for this slide`, `Ideate structure variants for this slide`, `Ideate theme variants for this slide`, `Redo the layout on this slide`, `Tighten the wording on this slide`, `Validate the deck`."
   ].join(" ");
 }
 
@@ -91,6 +95,14 @@ function buildIdeateStructureReply(result, slide) {
     result.summary,
     `The assistant kept the current slide family and generated structure-first variants for ${slide.index}. ${slide.title}.`,
     "Use the compare area to inspect which structure reads best before applying one."
+  ].join(" ");
+}
+
+function buildIdeateDeckStructureReply(result) {
+  return [
+    result.summary,
+    "The assistant kept this pass at the deck-outline level and did not touch slide files or generator composition.",
+    "Use the deck structure area to inspect one candidate and apply it back to the saved outline when it reads right."
   ].join(" ");
 }
 
@@ -144,6 +156,32 @@ async function handleAssistantMessage(options = {}) {
       reply,
       session,
       validation
+    };
+  }
+
+  if (intent === "ideate-deck-structure") {
+    const result = await ideateDeckStructure({
+      dryRun: options.dryRun !== false,
+      onProgress: options.onProgress
+    });
+    const reply = createMessage("assistant", buildIdeateDeckStructureReply(result), {
+      action: {
+        dryRun: result.dryRun,
+        generation: result.generation,
+        status: "completed",
+        type: "ideate-deck-structure",
+        variantCount: result.candidates.length
+      }
+    });
+    const session = appendSessionMessages(sessionId, [reply]);
+
+    return {
+      action: reply.action,
+      context: getDeckContext(),
+      deckStructureCandidates: result.candidates,
+      reply,
+      session,
+      summary: result.summary
     };
   }
 
@@ -326,6 +364,11 @@ function getAssistantSession(sessionId = "default") {
 function getAssistantSuggestions() {
   const slides = getSlides();
   return [
+    {
+      id: "suggestion-deck-structure",
+      label: "Ideate deck structure",
+      prompt: "Ideate presentation structure for this deck."
+    },
     {
       id: "suggestion-ideate",
       label: "Ideate this slide",

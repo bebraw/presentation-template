@@ -607,6 +607,53 @@ textarea {
   margin-top: 0;
 }
 
+.deck-structure-outline,
+.deck-structure-plan {
+  display: grid;
+  gap: 0.55rem;
+}
+
+.deck-structure-outline {
+  padding-top: 0.25rem;
+  border-top: 1px solid var(--app-line);
+}
+
+.deck-structure-outline-line,
+.deck-structure-step {
+  display: grid;
+  gap: 0.18rem;
+}
+
+.deck-structure-outline-line {
+  grid-template-columns: auto minmax(0, 1fr);
+  column-gap: 0.5rem;
+  align-items: start;
+}
+
+.deck-structure-outline-line strong,
+.deck-structure-step strong {
+  margin: 0;
+  font-size: 0.88rem;
+  line-height: 1.4;
+}
+
+.deck-structure-outline-line span,
+.deck-structure-step span {
+  color: var(--app-soft-text);
+  font-size: 0.82rem;
+  line-height: 1.45;
+}
+
+.deck-structure-step {
+  padding-top: 0.55rem;
+  border-top: 1px solid rgba(18, 22, 28, 0.06);
+}
+
+.deck-structure-step:first-child {
+  border-top: 0;
+  padding-top: 0;
+}
+
 .report {
   min-height: 15rem;
   max-height: 20rem;

@@ -19,7 +19,8 @@ const state = {
   transientVariants: [],
   ui: {
     assistantOpen: false,
-    structuredDraftOpen: false
+    structuredDraftOpen: false,
+    validationOpen: false
   },
   validation: null,
   variants: []
@@ -87,8 +88,10 @@ const elements = {
   structuredDraftDrawer: document.getElementById("structured-draft-drawer"),
   structuredDraftToggle: document.getElementById("structured-draft-toggle"),
   thumbRail: document.getElementById("thumb-rail"),
+  validationDrawer: document.getElementById("validation-drawer"),
   validateButton: document.getElementById("validate-button"),
   validateRenderButton: document.getElementById("validate-render-button"),
+  validationToggle: document.getElementById("validation-toggle"),
   validationStatus: document.getElementById("validation-status"),
   variantLabel: document.getElementById("variant-label"),
   variantList: document.getElementById("variant-list")
@@ -224,6 +227,22 @@ function persistStructuredDraftDrawerPreference() {
   }
 }
 
+function loadValidationDrawerPreference() {
+  try {
+    return window.localStorage.getItem("studio.validationDrawerOpen") === "true";
+  } catch (error) {
+    return false;
+  }
+}
+
+function persistValidationDrawerPreference() {
+  try {
+    window.localStorage.setItem("studio.validationDrawerOpen", String(state.ui.validationOpen));
+  } catch (error) {
+    // Ignore unavailable localStorage in restricted environments.
+  }
+}
+
 function renderAssistantDrawer() {
   document.body.classList.toggle("assistant-open", state.ui.assistantOpen);
   elements.assistantDrawer.dataset.open = state.ui.assistantOpen ? "true" : "false";
@@ -254,6 +273,22 @@ function setStructuredDraftDrawerOpen(open) {
   state.ui.structuredDraftOpen = Boolean(open);
   persistStructuredDraftDrawerPreference();
   renderStructuredDraftDrawer();
+}
+
+function renderValidationDrawer() {
+  document.body.classList.toggle("validation-open", state.ui.validationOpen);
+  elements.validationDrawer.dataset.open = state.ui.validationOpen ? "true" : "false";
+  elements.validationToggle.setAttribute("aria-expanded", state.ui.validationOpen ? "true" : "false");
+  elements.validationToggle.setAttribute(
+    "aria-label",
+    state.ui.validationOpen ? "Close validation report" : "Open validation report"
+  );
+}
+
+function setValidationDrawerOpen(open) {
+  state.ui.validationOpen = Boolean(open);
+  persistValidationDrawerPreference();
+  renderValidationDrawer();
 }
 
 function getSlideVariants() {
@@ -913,6 +948,7 @@ function renderValidation() {
   });
 
   elements.reportBox.textContent = lines.join("\n");
+  setValidationDrawerOpen(true);
 }
 
 function syncSelectedSlideToActiveList() {
@@ -1421,6 +1457,7 @@ async function sendAssistantMessage() {
     state.runtime = payload.runtime;
     if (payload.validation) {
       state.validation = payload.validation;
+      setValidationDrawerOpen(true);
     }
     if (payload.action && payload.action.type === "ideate-deck-structure") {
       state.deckStructureCandidates = payload.deckStructureCandidates || [];
@@ -1490,6 +1527,9 @@ elements.assistantToggle.addEventListener("click", () => {
 elements.structuredDraftToggle.addEventListener("click", () => {
   setStructuredDraftDrawerOpen(!state.ui.structuredDraftOpen);
 });
+elements.validationToggle.addEventListener("click", () => {
+  setValidationDrawerOpen(!state.ui.validationOpen);
+});
 elements.saveDeckContextButton.addEventListener("click", () => saveDeckContext().catch((error) => window.alert(error.message)));
 elements.saveSlideContextButton.addEventListener("click", () => saveSlideContext().catch((error) => window.alert(error.message)));
 
@@ -1501,13 +1541,18 @@ document.addEventListener("keydown", (event) => {
     if (state.ui.structuredDraftOpen) {
       setStructuredDraftDrawerOpen(false);
     }
+    if (state.ui.validationOpen) {
+      setValidationDrawerOpen(false);
+    }
   }
 });
 
 state.ui.assistantOpen = loadAssistantDrawerPreference();
 state.ui.structuredDraftOpen = loadStructuredDraftDrawerPreference();
+state.ui.validationOpen = loadValidationDrawerPreference();
 renderAssistantDrawer();
 renderStructuredDraftDrawer();
+renderValidationDrawer();
 
 refreshState()
   .then(async () => {

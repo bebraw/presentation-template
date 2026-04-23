@@ -255,19 +255,37 @@
             </div>
           </article>
 
-          <article class="editorial-block">
-            <div class="section-heading">
-              <div>
-                <p class="eyebrow">Validation</p>
-                <h2>Report</h2>
-              </div>
-            </div>
-
-            <pre class="report" id="report-box">No validation run yet.</pre>
-          </article>
         </section>
       </main>
     </div>
+
+    <aside class="validation-drawer" id="validation-drawer" aria-label="Validation report">
+      <button
+        class="validation-toggle"
+        id="validation-toggle"
+        type="button"
+        aria-controls="validation-panel"
+        aria-expanded="false"
+        aria-label="Open validation report"
+      >
+        <span class="validation-toggle-icon" aria-hidden="true">▲</span>
+        <span class="validation-toggle-label">Validation Report</span>
+      </button>
+
+      <div class="validation-panel" id="validation-panel">
+        <div class="validation-panel-head">
+          <div>
+            <p class="eyebrow">Validation</p>
+            <h2>Report</h2>
+          </div>
+          <p class="validation-panel-note">
+            Geometry, text, and optional render validation continue to run against the real deck pipeline. Review the latest result here without keeping the raw report inline in the workspace.
+          </p>
+        </div>
+
+        <pre class="report validation-report" id="report-box">No validation run yet.</pre>
+      </div>
+    </aside>
 
     <aside class="structured-draft-drawer" id="structured-draft-drawer" aria-label="Structured draft editor">
       <button

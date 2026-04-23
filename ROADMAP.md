@@ -33,15 +33,18 @@ Implemented:
 Not implemented yet:
 
 - explicit workflow operations such as `Ideate Theme`, `Ideate Structure`, `Drill Wording`, and layout-variant generation
+- LLM-backed workflow generation and assistant-style response handling
+- a structured slide-spec layer so the studio and assistant do not have to expose raw JavaScript for common slide edits
 
 ## Next Focus
 
-The next practical slice should widen the workflow surface beyond `Ideate Slide` while keeping the same safe compare/apply loop:
+The next practical slice should connect the studio to an LLM without giving up the current safe execution model:
 
-1. add a second explicit workflow such as `Ideate Theme` or `Redo Layout` instead of keeping all structured generation in one slide-only action
-2. carry the same dry-run, compare, and apply-or-validate path into every new workflow operation
-3. tighten the diff UX so larger slide sources stay readable during comparison
-4. keep operation outputs legible in slide terms, not only source terms
+1. add a server-side LLM client and prompt layer behind a narrow workflow interface
+2. add a schema-backed slide-spec layer for common slide types so user actions and LLM outputs do not need to manipulate JavaScript directly
+3. make `Ideate Slide` work through either deterministic local generation or an LLM-backed generator path
+4. keep the server responsible for validation, preview rendering, variant storage, and apply gating
+5. add a lightweight assistant session API so user actions can feel conversational without turning the browser app into raw chat
 
 ## Product Intent
 
@@ -70,6 +73,140 @@ The app should wrap the existing runtime rather than replace it:
 - validation continues to reuse the existing geometry, text, and render checks under [`generator/`](./generator)
 
 The studio is a control plane around the current generator, not a second rendering system.
+
+## LLM Integration Plan
+
+The studio should use an LLM as a planner and content generator, not as the runtime itself.
+
+Keep these boundaries:
+
+- the browser sends user intent and workflow actions
+- the studio server gathers context, builds prompts, calls the LLM, and validates outputs
+- the current deck generator remains the executor that renders previews and final output
+- variant apply, rebuild, and validation remain server-controlled operations
+
+### Execution Model
+
+For LLM-backed actions, the request flow should be:
+
+1. client sends an action such as `ideate slide`, `redo layout`, or `tighten wording`
+2. server gathers the context pack for that action
+3. server calls the LLM with a structured prompt and schema
+4. server validates and materializes the returned candidate into variant data or source edits
+5. server renders previews, stores artifacts, and returns compare-ready results to the client
+
+This keeps the user experience conversational while preserving deterministic enforcement at the server boundary.
+
+### Context Pack
+
+Each LLM request should include only the context needed for the current action:
+
+- deck brief, audience, objective, tone, constraints, and theme brief
+- selected slide context such as intent, notes, must-include points, and layout hints
+- current slide source
+- nearby slide titles or adjacent slide summaries when structure matters
+- operation type and explicit output constraints
+
+Avoid sending the whole repository by default. Build small operation-specific context packs instead.
+
+### Output Contract
+
+Do not start by letting the LLM emit arbitrary JavaScript for any file.
+
+Prefer a constrained output shape first:
+
+- `label`
+- `rationale`
+- `changeSummary`
+- slide-type-specific payload fields such as cards, bullets, eyebrow, summary, or note
+
+The server should then convert that structured payload into slide source using local materializers. Raw source generation can be added later as an advanced path once the constrained path is reliable.
+
+### Slide Spec Layer
+
+For common slide patterns, add a structured slide-spec layer before introducing any custom DSL.
+
+Start with JSON plus schema validation rather than inventing a new language immediately. The goal is:
+
+- let the studio and assistant read and write slide intent as structured data
+- validate candidate edits before they become source
+- compile structured slide specs into the existing slide runtime on the server
+- keep raw JavaScript as an escape hatch for advanced or irregular slides
+
+This should begin with the slide families already present in the deck:
+
+- `cover`
+- `toc`
+- `content`
+- `summary`
+
+Each type should have a clear schema for fields such as:
+
+- `title`
+- `eyebrow`
+- `summary`
+- `cards`
+- `bullets`
+- `signals`
+- `guardrails`
+- `resources`
+- `note`
+
+The server should own the materialization step from slide spec to source. That keeps layout rules and generator constraints in one place instead of leaking them into the UI or prompts.
+
+A custom DSL should be considered only later if JSON becomes too awkward for composition, references, or layout relationships.
+
+### Assistant Session Layer
+
+To replicate a chat-like experience, add a thin session layer on top of workflow actions:
+
+- persist message history in a repo-local session store
+- expose an assistant endpoint that accepts user messages plus current studio selection
+- let the assistant either answer in text, trigger a workflow, or return both text and variants
+- stream intermediate states such as `gathering context`, `generating variants`, `rendering preview`, and `validation passed`
+
+This should feel like an assistant inside the studio, not a separate general-purpose chatbot.
+
+### Safety Rules
+
+The server must remain the gatekeeper:
+
+- allow edits only to approved workflow targets
+- validate syntax before previewing or storing
+- rebuild previews through the existing generator
+- keep dry-run and saved-variant behavior explicit
+- require explicit apply for promotion into the working slide
+- reject overlapping operations that touch the same slide or file set
+
+### Initial File Plan
+
+Add these modules first:
+
+- `studio/server/services/llm/client.js`
+- `studio/server/services/llm/prompts.js`
+- `studio/server/services/llm/schemas.js`
+- `studio/server/services/assistant.js`
+- `studio/server/services/sessions.js`
+- `studio/server/services/slide-specs/`
+
+Refactor `Ideate Slide` into smaller stages:
+
+- collect operation inputs
+- generate candidates through either local rules or the LLM path
+- validate and normalize candidates as slide specs for supported slide types
+- materialize candidates into source or structured variant payloads
+- render and validate
+- store and return compare-ready variants
+
+### Rollout Order
+
+Implement in this order:
+
+1. add a slide-spec schema layer for `cover`, `toc`, `content`, and `summary`
+2. add LLM client, prompt builder, and schema validation without changing the UI flow
+3. put `Ideate Slide` behind a feature flag that can use the LLM path or the current deterministic fallback
+4. add assistant-style endpoints and session persistence for conversational actions
+5. extend the same pattern to `Drill Wording`, `Redo Layout`, and `Ideate Theme`
 
 ## Target Outcome
 

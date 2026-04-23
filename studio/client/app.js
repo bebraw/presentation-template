@@ -67,7 +67,10 @@ const elements = {
   ideateStructureButton: document.getElementById("ideate-structure-button"),
   ideateThemeButton: document.getElementById("ideate-theme-button"),
   deckAudience: document.getElementById("deck-audience"),
+  deckAuthor: document.getElementById("deck-author"),
+  deckCompany: document.getElementById("deck-company"),
   deckConstraints: document.getElementById("deck-constraints"),
+  deckLang: document.getElementById("deck-lang"),
   deckObjective: document.getElementById("deck-objective"),
   deckOutline: document.getElementById("deck-outline"),
   deckThemeBrief: document.getElementById("deck-theme-brief"),
@@ -652,7 +655,10 @@ function renderDeckFields() {
   const visualTheme = deck.visualTheme || {};
   elements.deckTitle.value = deck.title || "";
   elements.deckAudience.value = deck.audience || "";
+  elements.deckAuthor.value = deck.author || "";
+  elements.deckCompany.value = deck.company || "";
   elements.deckObjective.value = deck.objective || "";
+  elements.deckLang.value = deck.lang || "";
   elements.deckTone.value = deck.tone || "";
   elements.deckConstraints.value = deck.constraints || "";
   elements.designMinFontSize.value = designConstraints.minFontSizePt ?? "";
@@ -1246,6 +1252,8 @@ async function saveDeckContext() {
     body: JSON.stringify({
       deck: {
         audience: elements.deckAudience.value,
+        author: elements.deckAuthor.value,
+        company: elements.deckCompany.value,
         constraints: elements.deckConstraints.value,
         designConstraints: {
           maxWordsPerSlide: elements.designMaxWords.value,
@@ -1257,6 +1265,7 @@ async function saveDeckContext() {
         objective: elements.deckObjective.value,
         outline: elements.deckOutline.value,
         themeBrief: elements.deckThemeBrief.value,
+        lang: elements.deckLang.value,
         visualTheme: {
           accent: elements.themeAccent.value,
           bg: elements.themeBg.value,

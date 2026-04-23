@@ -2,7 +2,14 @@ const fs = require("fs");
 const path = require("path");
 const PptxGenJS = require("pptxgenjs");
 const { createSlideFromSpec } = require("../slides/render-slide-spec");
-const { bodyFont, deckMeta, displayFont, resolveTheme, theme } = require("./theme");
+const {
+  bodyFont,
+  deckMeta,
+  defaultDeckLanguage,
+  displayFont,
+  resolveTheme,
+  theme
+} = require("./theme");
 
 const slidesDir = path.join(__dirname, "..", "slides");
 const deckContextFile = path.join(__dirname, "..", "studio", "state", "deck-context.json");
@@ -49,11 +56,17 @@ function getJsonSlideSpecs() {
 function resolveDeckMeta() {
   const context = readDeckContext();
   const deck = context && context.deck && typeof context.deck === "object" ? context.deck : {};
+  const author = typeof deck.author === "string" ? deck.author.trim() : "";
+  const company = typeof deck.company === "string" ? deck.company.trim() : "";
+  const lang = typeof deck.lang === "string" ? deck.lang.trim() : "";
   const title = typeof deck.title === "string" ? deck.title.trim() : "";
   const objective = typeof deck.objective === "string" ? deck.objective.trim() : "";
 
   return {
     ...deckMeta,
+    author: author || deckMeta.author,
+    company: company || deckMeta.company,
+    lang: lang || defaultDeckLanguage,
     subject: objective || deckMeta.subject,
     title: title || deckMeta.title
   };
@@ -97,11 +110,11 @@ function createPresentation(options = {}) {
   pres.company = resolvedDeckMeta.company;
   pres.subject = resolvedDeckMeta.subject;
   pres.title = resolvedDeckMeta.title;
-  pres.lang = "en-US";
+  pres.lang = resolvedDeckMeta.lang;
   pres.theme = {
     headFontFace: displayFont,
     bodyFontFace: bodyFont,
-    lang: "en-US"
+    lang: resolvedDeckMeta.lang
   };
 
   return populatePresentation(pres, resolvedTheme, {

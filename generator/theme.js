@@ -23,6 +23,7 @@ const deckMeta = {
   company: "presentation-template",
   subject: "Demonstration presentation"
 };
+const defaultDeckLanguage = "en-US";
 
 const displayFont = "Avenir Next";
 const bodyFont = "Avenir Next";
@@ -81,6 +82,7 @@ function resolveTheme(overrides = {}) {
 module.exports = {
   bodyFont,
   deckMeta,
+  defaultDeckLanguage,
   displayFont,
   fontFace,
   normalizeVisualTheme,

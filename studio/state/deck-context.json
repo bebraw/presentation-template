@@ -1,6 +1,9 @@
 {
   "deck": {
+    "author": "OpenAI Codex",
+    "company": "presentation-template",
     "title": "Presentation Studio",
+    "lang": "en-US",
     "audience": "",
     "objective": "",
     "tone": "",
@@ -25,7 +28,10 @@
       "progressFill": "275d8c"
     },
     "themeBrief": "",
-    "outline": ""
+    "outline": "",
+    "structureLabel": "",
+    "structureSummary": "",
+    "structurePlan": []
   },
   "slides": {}
 }

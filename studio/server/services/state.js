@@ -6,6 +6,8 @@ const {
   normalizeDesignConstraints
 } = require("../../../generator/design-constraints");
 const {
+  deckMeta,
+  defaultDeckLanguage,
   normalizeVisualTheme,
   theme: defaultVisualTheme
 } = require("../../../generator/theme");
@@ -19,7 +21,10 @@ const variantsFile = path.join(stateDir, "variants.json");
 
 const defaultDeckContext = {
   deck: {
+    author: deckMeta.author,
+    company: deckMeta.company,
     title: "Presentation Studio",
+    lang: defaultDeckLanguage,
     audience: "",
     objective: "",
     tone: "",

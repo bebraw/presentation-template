@@ -320,6 +320,7 @@ function createPdfPresentation(options = {}) {
   };
   pres.author = resolvedDeckMeta.author;
   pres.company = resolvedDeckMeta.company;
+  pres.lang = resolvedDeckMeta.lang;
   pres.subject = resolvedDeckMeta.subject;
   pres.title = resolvedDeckMeta.title;
   return populatePresentation(pres, pres.theme, options);

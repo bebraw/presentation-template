@@ -14,6 +14,7 @@ Implemented:
 - geometry, text, and optional render validation through the studio API
 - persisted deck and slide context in `studio/state/deck-context.json`
 - shared generator metadata and progress chrome that now read live deck context and active slide totals instead of relying only on hardcoded defaults
+- saved deck author, company, and language metadata in deck context that now drive shared PPT/PDF document metadata instead of generator defaults
 - saved design constraints in deck context for minimum font size, spacing floors, and maximum words per slide, wired into studio validation and the CLI quality gate
 - saved visual theme values in deck context that now drive the shared generator palette for slide chrome, panel surfaces, and progress colors
 - capture/apply variant snapshots, with structured slide variants stored alongside slide JSON and legacy structured variants migrated out of `studio/state/variants.json`
@@ -141,5 +142,5 @@ What already works:
 
 What still needs polish:
 
-1. broader deck-level composition flows where more shared generator behavior should respond to saved planning context
-2. richer diff and summary support across more workflow types
+1. richer diff and summary support across more workflow types
+2. broader deck-level composition flows where more shared generator behavior should respond to saved planning context

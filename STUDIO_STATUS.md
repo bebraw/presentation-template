@@ -4,7 +4,7 @@ This file tracks the live implementation snapshot for the browser studio.
 
 Use [`ROADMAP.md`](./ROADMAP.md) for architecture, rollout order, and the next build slice.
 
-Current implementation is now hybrid. Supported JSON slide families render through a shared DOM runtime in the studio and through a standalone `/deck-preview` document, studio-triggered PDF export plus preview PNG generation run through Playwright on that same DOM renderer, and studio geometry/text validation for those slide families now uses DOM inspection as well. The CLI build path and the optional baseline render gate still depend on the older generator-side runtime.
+Current implementation is now hybrid. Supported JSON slide families render through a shared DOM runtime in the studio and through a standalone `/deck-preview` document, studio-triggered PDF export plus preview PNG generation run through Playwright on that same DOM renderer, studio geometry/text validation for those slide families uses DOM inspection, and the CLI PDF build path now uses the same DOM renderer too. The optional baseline render gate still depends on the older generator-side runtime.
 
 ## Snapshot
 
@@ -32,6 +32,7 @@ Implemented:
 - DOM-rendered current slide preview, thumbnail rail, variant cards, and compare panes for supported structured slides instead of relying on passed-around preview images
 - Playwright-backed studio PDF export and preview PNG generation from the same DOM renderer used by the browser preview surface
 - Playwright-backed studio geometry/text validation for supported slide families, with generator validation kept only as a fallback and for the baseline render gate
+- CLI `npm run build` now writes the deck PDF through the same Playwright-backed DOM renderer instead of the old generator-side PDF path
 - dry-run ideation mode that renders transient variants without saving them to the variant store
 - explicit before-and-after source diff panes plus operation-specific change summaries in the compare area
 - per-slide workflow locking so overlapping ideation requests do not race on the working slide source
@@ -55,15 +56,15 @@ Implemented:
 Current gaps:
 
 - repo-aware deck-level workflows beyond the current file-safe compose and rewrite actions, especially where more shared generator behavior should respond to saved planning context
-- the CLI build path and the optional baseline render gate still depend on the older generator-side runtime
+- the optional baseline render gate still depends on the older generator-side runtime
 
 ## Planned Rework
 
 Next major direction:
 
 - keep slide-spec JSON as the source content model for supported slides
-- keep extending the shared DOM renderer beyond studio preview, studio export, and studio validation into the CLI build path if that migration is worth the churn
-- retire generator-side slide drawing and generator-first preview for supported slide families once the CLI path is ready
+- retire generator-side slide drawing and generator-first preview for supported slide families now that the CLI path is ready
+- decide what should happen to generator-only helpers that remain only for the baseline render gate and legacy fallback flows
 - deepen DOM validation only where the current bounds/padding/font-size/word-count checks are still insufficient
 
 ## Phase Snapshot

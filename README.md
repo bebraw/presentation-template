@@ -96,9 +96,9 @@ The studio now renders supported structured slides through a shared DOM renderer
 http://127.0.0.1:4173/deck-preview
 ```
 
-Studio-triggered PDF export and preview PNG generation now also use that DOM renderer through Playwright, and studio geometry/text validation for supported structured slides now uses DOM inspection as well. The CLI `npm run build` path and the optional baseline render gate still use the older generator/runtime path.
+Studio-triggered PDF export and preview PNG generation now also use that DOM renderer through Playwright, studio geometry/text validation for supported structured slides now uses DOM inspection as well, and the CLI `npm run build` path now writes the deck PDF through the same DOM renderer. The optional baseline render gate still uses the older generator/runtime path.
 
-The next planned architecture step is to decide whether the CLI build path should also move onto that same DOM renderer. See [ROADMAP.md](ROADMAP.md) for the migration plan.
+The next planned architecture step is to retire the remaining generator-first preview and slide-drawing path for supported slide families, while deciding what stays around only for the baseline render gate. See [ROADMAP.md](ROADMAP.md) for the migration plan.
 
 Studio write targets are intentionally narrow. The server only mutates:
 

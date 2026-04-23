@@ -1,11 +1,8 @@
-const fs = require("fs");
-const { createPdfPresentation } = require("./pdf-renderer");
-const { outputDir, pdfFile } = require("./output-config");
+const { exportDeckPdfFromDom } = require("../studio/server/services/dom-export");
+const { getDomPreviewState } = require("../studio/server/services/dom-preview");
 
 async function main() {
-  const { pres } = createPdfPresentation();
-  fs.mkdirSync(outputDir, { recursive: true });
-  await pres.writeFile({ fileName: pdfFile });
+  const { pdfFile } = await exportDeckPdfFromDom(getDomPreviewState());
   process.stdout.write(`${pdfFile}\n`);
 }
 

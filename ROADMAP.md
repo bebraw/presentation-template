@@ -37,11 +37,11 @@ The first DOM-pivot slice is now in place:
 3. the server exposes the same renderer through a standalone `/deck-preview` document path
 4. studio-triggered PDF export and preview PNG generation now run through that DOM renderer via Playwright
 
-The next practical slice should finish the pivot from studio-only DOM rendering into shared build ownership:
+The next practical slice should finish the pivot from shared PDF generation into full generator retirement for supported slide families:
 
-1. decide how much of the CLI `build` path should move from `generator/compile.js` to the same Playwright-backed DOM renderer
-2. retire the remaining generator-first preview and slide-drawing path for supported slide families once the CLI path is ready
-3. extend DOM validation beyond the current bounds, padding, font-size, and word-count checks if more layout-specific rules are still needed
+1. retire the remaining generator-first preview and slide-drawing path for supported slide families once the CLI path is ready
+2. extend DOM validation beyond the current bounds, padding, font-size, and word-count checks if more layout-specific rules are still needed
+3. decide what should happen to generator-only helpers that are now only serving the baseline render gate and legacy fallback flows
 
 ## Product Intent
 
@@ -67,7 +67,7 @@ Current implementation is now hybrid during migration:
 - supported JSON slide families render through [`studio/client/slide-dom.js`](./studio/client/slide-dom.js) for studio preview and the standalone `/deck-preview` document
 - studio-triggered PDF export and preview PNG generation now run through Playwright in [`studio/server/services/dom-export.js`](./studio/server/services/dom-export.js)
 - studio geometry and text validation for supported slide families now run through Playwright DOM inspection in [`studio/server/services/dom-validate.js`](./studio/server/services/dom-validate.js)
-- [`generator/deck.js`](./generator/deck.js) and [`generator/compile.js`](./generator/compile.js) still own the CLI build path
+- [`generator/compile.js`](./generator/compile.js) now builds the deck PDF through that same Playwright-backed DOM renderer
 - [`generator/render-utils.js`](./generator/render-utils.js) still produces raster preview pages for the baseline render gate, deck-plan strips, and compatibility fallback
 - the optional render-baseline comparison still reuses the generator-owned path under [`generator/`](./generator)
 

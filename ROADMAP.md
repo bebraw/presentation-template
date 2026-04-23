@@ -29,22 +29,23 @@ Implemented:
 - dry-run ideation mode that renders transient variants without saving them to the variant store
 - explicit before-and-after source diff panes plus operation-specific change summaries in the compare area
 - per-slide workflow locking so overlapping ideation requests do not race on the working slide source
+- schema-backed slide-spec materialization for `cover`, `toc`, `content`, and `summary` so common workflow variants can be represented as structured data before becoming source
+- `Ideate Slide` variants now carry validated slide specs alongside generated source for supported slide families
 
 Not implemented yet:
 
 - explicit workflow operations such as `Ideate Theme`, `Ideate Structure`, `Drill Wording`, and layout-variant generation
 - LLM-backed workflow generation and assistant-style response handling
-- a structured slide-spec layer so the studio and assistant do not have to expose raw JavaScript for common slide edits
 
 ## Next Focus
 
-The next practical slice should connect the studio to an LLM without giving up the current safe execution model:
+The next practical slice should connect the studio to an LLM on top of the new slide-spec layer without giving up the current safe execution model:
 
 1. add a server-side LLM client and prompt layer behind a narrow workflow interface
-2. add a schema-backed slide-spec layer for common slide types so user actions and LLM outputs do not need to manipulate JavaScript directly
-3. make `Ideate Slide` work through either deterministic local generation or an LLM-backed generator path
-4. keep the server responsible for validation, preview rendering, variant storage, and apply gating
-5. add a lightweight assistant session API so user actions can feel conversational without turning the browser app into raw chat
+2. make `Ideate Slide` work through either deterministic local slide-spec generation or an LLM-backed generator path
+3. keep the server responsible for validating slide specs, preview rendering, variant storage, and apply gating
+4. add a lightweight assistant session API so user actions can feel conversational without turning the browser app into raw chat
+5. extend the structured slide-spec path to additional workflows such as `Drill Wording`, `Redo Layout`, and `Ideate Theme`
 
 ## Product Intent
 
@@ -362,6 +363,7 @@ Implemented so far:
 
 - `Ideate Slide` workflow action for the selected slide
 - generated multi-option source variants from stored deck and slide context
+- schema-backed slide-spec generation and materialization for `cover`, `toc`, `content`, and `summary`
 - preview images for generated variants without overwriting the working slide
 - side-by-side compare view, source-change summary, and apply-plus-validate flow for one chosen variant
 

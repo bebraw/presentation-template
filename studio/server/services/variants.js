@@ -35,6 +35,7 @@ function captureVariant(options) {
     previewImage: options.previewImage || null,
     promptSummary: options.promptSummary || "",
     slideId,
+    slideSpec: options.slideSpec || null,
     source,
     updatedAt: timestamp
   };

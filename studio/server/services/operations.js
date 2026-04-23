@@ -4,6 +4,7 @@ const { buildAndRenderDeck } = require("./build");
 const { outputDir, previewDir, variantPreviewDir } = require("./paths");
 const { getDeckContext } = require("./state");
 const { getSlide, readSlideSource, writeSlideSource } = require("./slides");
+const { extractSlideTypeFromSource, materializeSlideSpec, validateSlideSpec } = require("./slide-specs");
 const { captureVariant, updateVariant } = require("./variants");
 const { ensureDir, listPages } = require("../../../generator/render-utils");
 
@@ -12,12 +13,6 @@ const ideateSlideLocks = new Set();
 function asAssetUrl(fileName) {
   const relativePath = path.relative(outputDir, fileName).split(path.sep).join("/");
   return `/studio-output/${relativePath}`;
-}
-
-function escapeString(value) {
-  return String(value)
-    .replace(/\\/g, "\\\\")
-    .replace(/"/g, "\\\"");
 }
 
 function splitLines(value) {
@@ -53,60 +48,6 @@ function toBody(value, fallback) {
   return sentence(value, fallback, 14);
 }
 
-function replaceConstArray(source, constName, items) {
-  const pattern = new RegExp(`const ${constName} = \\[[\\s\\S]*?\\n\\];`);
-  if (!pattern.test(source)) {
-    throw new Error(`Could not find array constant ${constName}`);
-  }
-
-  const body = items.map((item) => {
-    const lines = Object.entries(item).map(([key, value], index, entries) => {
-      if (typeof value === "number") {
-        return `    ${key}: ${value}${index < entries.length - 1 ? "," : ""}`;
-      }
-
-      return `    ${key}: "${escapeString(value)}"${index < entries.length - 1 ? "," : ""}`;
-    });
-
-    return ["  {", ...lines, "  }"].join("\n");
-  }).join(",\n");
-
-  return source.replace(pattern, `const ${constName} = [\n${body}\n];`);
-}
-
-function replaceSlideTitle(source, nextTitle) {
-  return source.replace(
-    /(const slideConfig = \{[\s\S]*?title:\s*")([^"]*)(")/,
-    `$1${escapeString(nextTitle)}$3`
-  );
-}
-
-function replaceSectionTitle(source, eyebrow, body) {
-  const pattern = /addSectionTitle\(\s*canvas,\s*theme,\s*"[^"]*",\s*slideConfig\.title,\s*"[^"]*"\s*\)/;
-  if (!pattern.test(source)) {
-    throw new Error("Could not find addSectionTitle call");
-  }
-
-  return source.replace(pattern, [
-    "addSectionTitle(",
-    "    canvas,",
-    "    theme,",
-    `    "${escapeString(eyebrow)}",`,
-    "    slideConfig.title,",
-    `    "${escapeString(body)}"`,
-    "  )"
-  ].join("\n"));
-}
-
-function replaceAddTextValue(source, id, nextText) {
-  const pattern = new RegExp(`(canvas\\.addText\\("${id}",\\s*")([^"]*)(")`);
-  if (!pattern.test(source)) {
-    throw new Error(`Could not find text block ${id}`);
-  }
-
-  return source.replace(pattern, `$1${escapeString(nextText)}$3`);
-}
-
 function ensureJavaScriptSyntax(source) {
   try {
     // Parse candidate source before storing or previewing it.
@@ -114,11 +55,6 @@ function ensureJavaScriptSyntax(source) {
   } catch (error) {
     throw new Error(`Generated variant source is invalid: ${error.message}`);
   }
-}
-
-function extractSlideType(source) {
-  const match = source.match(/type:\s*"([^"]+)"/);
-  return match ? match[1] : "unknown";
 }
 
 function createIdeaThemes(slide, context) {
@@ -367,56 +303,49 @@ function createIdeaThemes(slide, context) {
   ];
 }
 
-function buildCoverVariant(source, theme) {
-  let next = replaceSlideTitle(source, theme.title);
-  next = replaceConstArray(next, "capabilityCards", theme.cards);
-  next = replaceAddTextValue(next, "cover-eyebrow", theme.eyebrow);
-  next = replaceAddTextValue(next, "cover-summary", theme.summary);
-  next = replaceAddTextValue(next, "cover-footnote", theme.notes);
-  return next;
-}
-
-function buildTocVariant(source, theme) {
-  let next = replaceSlideTitle(source, theme.title);
-  next = replaceSectionTitle(next, theme.eyebrow, theme.summary);
-  next = replaceConstArray(next, "outlineCards", theme.cards);
-  next = replaceAddTextValue(next, "outline-note", theme.notes);
-  return next;
-}
-
-function buildContentVariant(source, theme) {
-  let next = replaceSlideTitle(source, theme.title);
-  next = replaceSectionTitle(next, theme.eyebrow, theme.summary);
-  next = replaceConstArray(next, "signalBars", theme.signals);
-  next = replaceConstArray(next, "guardrails", theme.guardrails);
-  next = replaceAddTextValue(next, "content-signals-title", `${theme.label} signals`);
-  next = replaceAddTextValue(next, "content-guardrails-title", "Workflow guardrails");
-  return next;
-}
-
-function buildSummaryVariant(source, theme) {
-  let next = replaceSlideTitle(source, theme.title);
-  next = replaceSectionTitle(next, theme.eyebrow, theme.summary);
-  next = replaceConstArray(next, "checklistItems", theme.bullets);
-  next = replaceConstArray(next, "resourceCards", theme.resources);
-  next = replaceAddTextValue(next, "summary-resources-title", "Keep nearby");
-  return next;
-}
-
-function buildVariantSource(source, theme) {
-  const type = extractSlideType(source);
-
-  switch (type) {
+function buildIdeaSlideSpec(slideType, theme) {
+  switch (slideType) {
     case "cover":
-      return buildCoverVariant(source, theme);
+      return validateSlideSpec({
+        cards: theme.cards,
+        eyebrow: theme.eyebrow,
+        note: theme.notes,
+        summary: theme.summary,
+        title: theme.title,
+        type: "cover"
+      });
     case "toc":
-      return buildTocVariant(source, theme);
+      return validateSlideSpec({
+        cards: theme.cards,
+        eyebrow: theme.eyebrow,
+        note: theme.notes,
+        summary: theme.summary,
+        title: theme.title,
+        type: "toc"
+      });
     case "content":
-      return buildContentVariant(source, theme);
+      return validateSlideSpec({
+        eyebrow: theme.eyebrow,
+        guardrails: theme.guardrails,
+        guardrailsTitle: "Workflow guardrails",
+        signals: theme.signals,
+        signalsTitle: `${theme.label} signals`,
+        summary: theme.summary,
+        title: theme.title,
+        type: "content"
+      });
     case "summary":
-      return buildSummaryVariant(source, theme);
+      return validateSlideSpec({
+        bullets: theme.bullets,
+        eyebrow: theme.eyebrow,
+        resources: theme.resources,
+        resourcesTitle: "Keep nearby",
+        summary: theme.summary,
+        title: theme.title,
+        type: "summary"
+      });
     default:
-      throw new Error(`Ideate Slide does not support slide type "${type}" yet`);
+      throw new Error(`Ideate Slide does not support slide type "${slideType}" yet`);
   }
 }
 
@@ -474,6 +403,7 @@ function createTransientVariant(options) {
     previewImage: options.previewImage || null,
     promptSummary: options.promptSummary || "",
     slideId: options.slideId,
+    slideSpec: options.slideSpec || null,
     source: options.source,
     updatedAt: timestamp
   };
@@ -519,11 +449,12 @@ async function ideateSlide(slideId, options = {}) {
   const createdVariants = [];
   let previews = null;
   const dryRun = options.dryRun === true;
+  const slideType = extractSlideTypeFromSource(originalSource);
 
   try {
     for (const theme of themes) {
-      const slideType = extractSlideType(originalSource);
-      const source = buildVariantSource(originalSource, theme);
+      const slideSpec = buildIdeaSlideSpec(slideType, theme);
+      const source = materializeSlideSpec(originalSource, slideSpec);
       ensureJavaScriptSyntax(source);
       const changeSummary = buildChangeSummary(slideType, theme, { dryRun });
 
@@ -536,6 +467,7 @@ async function ideateSlide(slideId, options = {}) {
           operation: "ideate-slide",
           promptSummary: theme.promptSummary,
           slideId,
+          slideSpec,
           source
         });
         const previewImage = await renderVariantPreview(slideId, source, variant.id);
@@ -554,6 +486,7 @@ async function ideateSlide(slideId, options = {}) {
         operation: "ideate-slide",
         promptSummary: theme.promptSummary,
         slideId,
+        slideSpec,
         source
       });
       const previewImage = await renderVariantPreview(slideId, source, variant.id);

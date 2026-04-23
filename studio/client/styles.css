@@ -2110,15 +2110,76 @@ input[type="color"]::-moz-color-swatch {
 
 .validation-rule-details summary {
   display: flex;
-  align-items: baseline;
+  gap: 1rem;
+  align-items: center;
+  justify-content: space-between;
   cursor: pointer;
+  padding: 0.72rem 0;
   color: var(--app-text);
+  list-style: none;
+}
+
+.validation-rule-details summary::-webkit-details-marker {
+  display: none;
+}
+
+.disclosure-copy {
+  display: grid;
+  gap: 0.16rem;
+}
+
+.disclosure-copy strong {
+  font-size: 0.94rem;
   font-weight: 650;
-  list-style-position: outside;
+}
+
+.disclosure-copy small {
+  color: var(--app-soft-text);
+  font-size: 0.78rem;
+  line-height: 1.35;
+}
+
+.disclosure-action {
+  display: inline-flex;
+  flex: 0 0 auto;
+  gap: 0.45rem;
+  align-items: center;
+  padding: 0.44rem 0.68rem;
+  border: 1px solid var(--app-line);
+  border-radius: 999px;
+  color: var(--app-text);
+  font-size: 0.78rem;
+  font-weight: 650;
+  line-height: 1;
+}
+
+.validation-rule-details[open] .disclosure-action {
+  border-color: var(--app-line-strong);
+  background: rgba(18, 22, 28, 0.035);
+}
+
+.disclosure-action-open {
+  display: none;
+}
+
+.validation-rule-details[open] .disclosure-action-closed {
+  display: none;
+}
+
+.validation-rule-details[open] .disclosure-action-open {
+  display: inline;
+}
+
+.disclosure-action-mark::before {
+  content: "+";
+}
+
+.validation-rule-details[open] .disclosure-action-mark::before {
+  content: "-";
 }
 
 .validation-rule-details .field-grid {
-  margin-top: 1rem;
+  margin-top: 0.8rem;
 }
 
 .report {

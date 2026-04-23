@@ -298,6 +298,7 @@ Current implementation uses a centered white-canvas workspace with page-level se
 - a compact slide-variant workbench that keeps generation modes, dry-run/provider controls, workflow progress, candidate counts, and review state close together
 - compact, scrollable slide-candidate rows for fast alternative inspection before opening the full compare view
 - a consolidated validation console that keeps run actions, summary status, actionable report details, and compact settings on one focused page
+- an explicit validation override disclosure control for rule-severity settings
 - a compact deck-planning console that keeps brief, outline, palette swatches, guardrails, and deck-plan results close without expanding every plan detail by default
 
 Visual rules for the current studio UI:

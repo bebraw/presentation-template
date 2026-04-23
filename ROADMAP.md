@@ -439,7 +439,7 @@ Acceptance criteria:
 - each operation produces a previewable result
 - operation inputs come primarily from stored context rather than ad hoc typing
 
-Status: partial
+Status: complete
 
 Live implementation detail for this phase lives in [`STUDIO_STATUS.md`](./STUDIO_STATUS.md).
 
@@ -541,7 +541,7 @@ Exit condition:
 
 The current implementation now exceeds this original slice. Remaining work is polish and broader deck-level composition, not basic feasibility.
 
-Status: in progress
+Status: complete
 
 ## Proposed Directory Layout
 

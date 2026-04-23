@@ -23,7 +23,7 @@ The browser studio baseline is complete.
 - The validation page is consolidated into a check console plus compact settings section, with rule-severity overrides behind a disclosure and reports focused on actionable details.
 - Validation rule severity overrides use an explicit show/hide disclosure control so the advanced settings are discoverable without staying open.
 - Deck planning is consolidated into a compact planning console with visible palette swatches, tucked-away design guardrails, and deck-plan details hidden until inspection.
-- Slide candidate review uses compact scrollable rows with thumbnail previews so alternatives can be scanned quickly before opening the full compare view.
+- Slide candidate review and visual comparison share one workspace: compact scrollable rows drive the adjacent current-versus-candidate preview and diff pane.
 - Selected-slide context is collapsed by default into a compact disclosure, leaving the active preview and workflow surfaces higher on the page.
 - Workflow chat uses compact drawer copy, shorter empty state and message labels, and shorter canned workflow replies.
 - Studio writes are server-controlled and limited to approved slide files, repo-local state, and generated studio artifacts.

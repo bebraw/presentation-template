@@ -173,51 +173,40 @@
                   Structured-slide variants are stored with each slide document.
                 </p>
 
-                <div class="variant-list workflow-variant-list" id="variant-list"></div>
-              </div>
-            </article>
+                <div class="variant-review-workspace">
+                  <div class="variant-list workflow-variant-list" id="variant-list"></div>
 
-            <article class="editorial-block editorial-block-wide">
-              <div class="section-heading">
-                <div>
-                  <p class="eyebrow">Workflow</p>
-                  <h2>Variant Comparison</h2>
-                </div>
-              </div>
+                  <div class="workflow-compare" id="workflow-compare">
+                    <p class="section-note" id="compare-empty">
+                      Select a candidate to compare it against the current slide.
+                    </p>
 
-              <p class="section-note">
-                Select a generated or captured option to inspect the current slide against one candidate, then apply it with or without validation.
-              </p>
+                    <div class="compare-grid" id="compare-grid" hidden>
+                      <section class="compare-pane">
+                        <p class="eyebrow">Current</p>
+                        <h3 id="compare-current-label">Current slide</h3>
+                        <div class="compare-preview" id="compare-current-preview"></div>
+                      </section>
 
-              <div class="workflow-compare" id="workflow-compare">
-                <p class="section-note" id="compare-empty">
-                  Generate or select a variant to compare it against the current slide.
-                </p>
+                      <section class="compare-pane">
+                        <p class="eyebrow">Candidate</p>
+                        <h3 id="compare-variant-label">Variant</h3>
+                        <p class="compare-meta" id="compare-variant-meta"></p>
+                        <div class="compare-preview" id="compare-variant-preview"></div>
+                      </section>
+                    </div>
 
-                <div class="compare-grid" id="compare-grid" hidden>
-                  <section class="compare-pane">
-                    <p class="eyebrow">Current</p>
-                    <h3 id="compare-current-label">Current slide</h3>
-                    <div class="compare-preview" id="compare-current-preview"></div>
-                  </section>
-
-                  <section class="compare-pane">
-                    <p class="eyebrow">Candidate</p>
-                    <h3 id="compare-variant-label">Variant</h3>
-                    <p class="compare-meta" id="compare-variant-meta"></p>
-                    <div class="compare-preview" id="compare-variant-preview"></div>
-                  </section>
-                </div>
-
-                <div class="compare-summary" id="compare-summary" hidden>
-                  <div class="compare-stats" id="compare-stats"></div>
-                  <div class="compare-change-summary" id="compare-change-summary"></div>
-                  <div class="compare-decision-support" id="compare-decision-support"></div>
-                  <div class="compare-source-grid" id="compare-source-grid"></div>
-                  <div class="compare-highlights" id="compare-highlights"></div>
-                  <div class="button-row compact compare-actions">
-                    <button id="compare-apply-button">Apply variant</button>
-                    <button id="compare-apply-validate-button" class="secondary">Apply + validate</button>
+                    <div class="compare-summary" id="compare-summary" hidden>
+                      <div class="compare-stats" id="compare-stats"></div>
+                      <div class="compare-change-summary" id="compare-change-summary"></div>
+                      <div class="compare-decision-support" id="compare-decision-support"></div>
+                      <div class="compare-source-grid" id="compare-source-grid"></div>
+                      <div class="compare-highlights" id="compare-highlights"></div>
+                      <div class="button-row compact compare-actions">
+                        <button id="compare-apply-button">Apply variant</button>
+                        <button id="compare-apply-validate-button" class="secondary">Apply + validate</button>
+                      </div>
+                    </div>
                   </div>
                 </div>
               </div>

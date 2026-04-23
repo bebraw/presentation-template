@@ -641,6 +641,14 @@ input[type="color"]::-moz-color-swatch {
   border-top: 1px solid var(--app-line);
 }
 
+.variant-review-workspace {
+  display: grid;
+  grid-template-columns: minmax(18rem, 0.82fr) minmax(0, 1.35fr);
+  gap: 1rem;
+  align-items: start;
+  margin-top: 0.8rem;
+}
+
 .workflow-variants-head {
   display: flex;
   gap: 1rem;
@@ -664,9 +672,12 @@ input[type="color"]::-moz-color-swatch {
 }
 
 .workflow-compare {
-  margin-top: 1.5rem;
-  padding-top: 1.2rem;
-  border-top: 1px solid var(--app-line);
+  margin-top: 0;
+  min-width: 0;
+  max-height: clamp(24rem, 66vh, 44rem);
+  overflow: auto;
+  padding: 0 0.35rem 0 0;
+  border-top: 0;
 }
 
 .structured-draft-drawer {
@@ -897,6 +908,11 @@ input[type="color"]::-moz-color-swatch {
   margin-top: 1rem;
 }
 
+.variant-review-workspace .compare-grid {
+  gap: 0.75rem;
+  margin-top: 0;
+}
+
 .compare-pane {
   display: grid;
   gap: 0.5rem;
@@ -909,10 +925,23 @@ input[type="color"]::-moz-color-swatch {
   font-weight: 600;
 }
 
+.variant-review-workspace .compare-pane h3 {
+  font-size: 0.9rem;
+}
+
 .compare-meta {
   margin: 0;
   color: var(--app-soft-text);
   line-height: 1.5;
+}
+
+.variant-review-workspace .compare-meta {
+  display: -webkit-box;
+  overflow: hidden;
+  font-size: 0.78rem;
+  line-height: 1.35;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
 }
 
 .compare-preview {
@@ -927,6 +956,11 @@ input[type="color"]::-moz-color-swatch {
   margin-top: 1rem;
   padding-top: 1rem;
   border-top: 1px solid var(--app-line);
+}
+
+.variant-review-workspace .compare-summary {
+  margin-top: 0.75rem;
+  padding-top: 0.75rem;
 }
 
 .compare-change-summary {
@@ -2237,6 +2271,10 @@ input[type="color"]::-moz-color-swatch {
   }
 
   .slide-context-text-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .variant-review-workspace {
     grid-template-columns: 1fr;
   }
 

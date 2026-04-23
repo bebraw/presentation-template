@@ -14,6 +14,12 @@ const { ensureDir, listPages } = require("../../../generator/render-utils");
 const ideateSlideLocks = new Set();
 const allowedGenerationModes = new Set(["auto", "local", "llm"]);
 
+function reportProgress(options, progress) {
+  if (typeof options.onProgress === "function") {
+    options.onProgress(progress);
+  }
+}
+
 function asAssetUrl(fileName) {
   const relativePath = path.relative(outputDir, fileName).split(path.sep).join("/");
   return `/studio-output/${relativePath}`;
@@ -1341,12 +1347,28 @@ async function ideateSlide(slideId, options = {}) {
   const generation = resolveGeneration(options);
 
   try {
+    reportProgress(options, {
+      message: "Gathering saved context for ideation...",
+      stage: "gathering-context"
+    });
+
+    reportProgress(options, {
+      message: generation.mode === "llm"
+        ? `Generating slide variants with ${generation.provider} ${generation.model}...`
+        : "Generating slide variants from saved context...",
+      stage: "generating-variants"
+    });
     const candidates = generation.mode === "llm"
       ? await createLlmIdeateCandidates(slide, slideType, serializeSlideSpec(originalSlideSpec), context)
       : createLocalIdeateCandidates(slide, slideType, context, {
         dryRun,
         persistToSlide: slide.structured
       });
+
+    reportProgress(options, {
+      message: `Rendering ${candidates.length} candidate preview${candidates.length === 1 ? "" : "s"}...`,
+      stage: "rendering-variants"
+    });
     const variants = await materializeCandidatesToVariants(slideId, candidates, {
       dryRun,
       labelFormatter: (label) => generation.mode === "llm"
@@ -1357,6 +1379,10 @@ async function ideateSlide(slideId, options = {}) {
     createdVariants.push(...variants);
   } finally {
     try {
+      reportProgress(options, {
+        message: "Restoring the working slide and rebuilding previews...",
+        stage: "rebuilding-previews"
+      });
       writeSlideSpec(slideId, originalSlideSpec);
       previews = (await buildAndRenderDeck()).previews;
     } finally {
@@ -1397,9 +1423,21 @@ async function drillWordingSlide(slideId, options = {}) {
   };
 
   try {
+    reportProgress(options, {
+      message: "Gathering the current slide copy for wording passes...",
+      stage: "gathering-context"
+    });
+    reportProgress(options, {
+      message: "Generating wording variants...",
+      stage: "generating-variants"
+    });
     const candidates = createLocalWordingCandidates(originalSlideSpec, {
       dryRun,
       persistToSlide: slide.structured
+    });
+    reportProgress(options, {
+      message: `Rendering ${candidates.length} wording preview${candidates.length === 1 ? "" : "s"}...`,
+      stage: "rendering-variants"
     });
     const variants = await materializeCandidatesToVariants(slideId, candidates, {
       dryRun,
@@ -1409,6 +1447,10 @@ async function drillWordingSlide(slideId, options = {}) {
     createdVariants.push(...variants);
   } finally {
     try {
+      reportProgress(options, {
+        message: "Restoring the working slide and rebuilding previews...",
+        stage: "rebuilding-previews"
+      });
       writeSlideSpec(slideId, originalSlideSpec);
       previews = (await buildAndRenderDeck()).previews;
     } finally {
@@ -1450,9 +1492,21 @@ async function ideateThemeSlide(slideId, options = {}) {
   };
 
   try {
+    reportProgress(options, {
+      message: "Gathering saved theme context for the selected slide...",
+      stage: "gathering-context"
+    });
+    reportProgress(options, {
+      message: "Generating theme variants from the saved deck brief...",
+      stage: "generating-variants"
+    });
     const candidates = createLocalThemeCandidates(slide, originalSlideSpec, context, {
       dryRun,
       persistToSlide: slide.structured
+    });
+    reportProgress(options, {
+      message: `Rendering ${candidates.length} theme preview${candidates.length === 1 ? "" : "s"}...`,
+      stage: "rendering-variants"
     });
     const variants = await materializeCandidatesToVariants(slideId, candidates, {
       dryRun,
@@ -1462,6 +1516,10 @@ async function ideateThemeSlide(slideId, options = {}) {
     createdVariants.push(...variants);
   } finally {
     try {
+      reportProgress(options, {
+        message: "Restoring the working slide and rebuilding previews...",
+        stage: "rebuilding-previews"
+      });
       writeSlideSpec(slideId, originalSlideSpec);
       previews = (await buildAndRenderDeck()).previews;
     } finally {
@@ -1503,9 +1561,21 @@ async function redoLayoutSlide(slideId, options = {}) {
   };
 
   try {
+    reportProgress(options, {
+      message: "Gathering current layout context...",
+      stage: "gathering-context"
+    });
+    reportProgress(options, {
+      message: "Generating layout variants...",
+      stage: "generating-variants"
+    });
     const candidates = createLocalLayoutCandidates(slide, originalSlideSpec, context, {
       dryRun,
       persistToSlide: slide.structured
+    });
+    reportProgress(options, {
+      message: `Rendering ${candidates.length} layout preview${candidates.length === 1 ? "" : "s"}...`,
+      stage: "rendering-variants"
     });
     const variants = await materializeCandidatesToVariants(slideId, candidates, {
       dryRun,
@@ -1515,6 +1585,10 @@ async function redoLayoutSlide(slideId, options = {}) {
     createdVariants.push(...variants);
   } finally {
     try {
+      reportProgress(options, {
+        message: "Restoring the working slide and rebuilding previews...",
+        stage: "rebuilding-previews"
+      });
       writeSlideSpec(slideId, originalSlideSpec);
       previews = (await buildAndRenderDeck()).previews;
     } finally {

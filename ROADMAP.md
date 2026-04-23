@@ -44,6 +44,7 @@ Implemented:
 - structured local `Redo Layout` workflow with direct browser action, assistant routing, and compareable dry-run variants
 - structured local `Ideate Theme` workflow with direct browser action, assistant routing, and compareable dry-run variants
 - broader assistant intent handling for short layout-oriented requests such as `redo layout`, `rebalance`, and `rearrange`
+- browser-visible workflow progress states through the shared runtime endpoint so direct operations and assistant-triggered actions can report stages before previews are ready
 
 Not implemented yet:
 
@@ -53,9 +54,9 @@ Not implemented yet:
 
 The next practical slice should deepen the structured workflow surface now that the live LLM path is verified:
 
-1. add richer assistant action states so long-running operations can report progress before previews are ready
-2. let the assistant route to another structured workflow such as `Ideate Structure`
-3. keep the server responsible for validating slide specs, preview rendering, variant storage, and apply gating
+1. let the assistant route to another structured workflow such as `Ideate Structure`
+2. keep the server responsible for validating slide specs, preview rendering, variant storage, and apply gating
+3. decide whether progress reporting should stay polling-based or move to streaming once more workflows exist
 
 ## Product Intent
 
@@ -185,7 +186,7 @@ To replicate a chat-like experience, add a thin session layer on top of workflow
 - persist message history in a repo-local session store
 - expose an assistant endpoint that accepts user messages plus current studio selection
 - let the assistant either answer in text, trigger a workflow, or return both text and variants
-- stream intermediate states such as `gathering context`, `generating variants`, `rendering preview`, and `validation passed`
+- expose intermediate states such as `gathering context`, `generating variants`, `rendering preview`, and `validation passed` through the shared runtime state, with streaming as a later upgrade if polling becomes too limiting
 
 This should feel like an assistant inside the studio, not a separate general-purpose chatbot.
 
@@ -553,6 +554,7 @@ studio/
 Initial backend routes:
 
 - `POST /api/build`
+- `GET /api/runtime`
 - `POST /api/validate`
 - `GET /api/preview/deck`
 - `GET /api/preview/slide/:index`

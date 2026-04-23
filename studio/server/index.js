@@ -30,6 +30,25 @@ const runtimeState = {
   workflow: null
 };
 
+function updateWorkflowState(nextWorkflow) {
+  runtimeState.workflow = {
+    ...(runtimeState.workflow || {}),
+    ...nextWorkflow,
+    updatedAt: new Date().toISOString()
+  };
+}
+
+function createWorkflowProgressReporter(baseState) {
+  return (progress) => {
+    updateWorkflowState({
+      ...baseState,
+      ok: false,
+      status: "running",
+      ...progress
+    });
+  };
+}
+
 function serializeRuntimeState() {
   const llm = getLlmStatus();
   return {
@@ -164,6 +183,16 @@ async function handleBuild(res) {
 
 async function handleValidate(req, res) {
   const body = await readJsonBody(req);
+  updateWorkflowState({
+    includeRender: body.includeRender === true,
+    message: body.includeRender === true
+      ? "Running full render validation..."
+      : "Running geometry and text validation...",
+    ok: false,
+    operation: "validate",
+    stage: body.includeRender === true ? "validating-render" : "validating-geometry-text",
+    status: "running"
+  });
   const result = await validateDeck({
     includeRender: body.includeRender === true
   });
@@ -173,8 +202,19 @@ async function handleValidate(req, res) {
     ok: result.ok,
     updatedAt: new Date().toISOString()
   };
+  updateWorkflowState({
+    includeRender: body.includeRender === true,
+    message: result.ok ? "Validation completed without blocking issues." : "Validation completed and found issues.",
+    ok: result.ok,
+    operation: "validate",
+    stage: "completed",
+    status: "completed"
+  });
   runtimeState.lastError = null;
-  createJsonResponse(res, 200, result);
+  createJsonResponse(res, 200, {
+    ...result,
+    runtime: serializeRuntimeState()
+  });
 }
 
 async function handleLlmCheck(res) {
@@ -315,22 +355,30 @@ async function handleIdeateSlide(req, res) {
     throw new Error("Expected slideId when ideating a slide");
   }
 
+  const reportProgress = createWorkflowProgressReporter({
+    dryRun: body.dryRun === true,
+    operation: "ideate-slide",
+    slideId: body.slideId
+  });
   const result = await ideateSlide(body.slideId, {
     generationMode: body.generationMode,
-    dryRun: body.dryRun === true
+    dryRun: body.dryRun === true,
+    onProgress: reportProgress
   });
   runtimeState.build = {
     ok: true,
     updatedAt: new Date().toISOString()
   };
-  runtimeState.workflow = {
+  updateWorkflowState({
     dryRun: body.dryRun === true,
     generation: result.generation,
+    message: result.summary,
     ok: true,
     operation: "ideate-slide",
     slideId: body.slideId,
-    updatedAt: new Date().toISOString()
-  };
+    stage: "completed",
+    status: "completed"
+  });
   runtimeState.lastError = null;
 
   createJsonResponse(res, 200, {
@@ -354,22 +402,30 @@ async function handleDrillWording(req, res) {
     throw new Error("Expected slideId when drilling wording");
   }
 
+  const reportProgress = createWorkflowProgressReporter({
+    dryRun: body.dryRun !== false,
+    operation: "drill-wording",
+    slideId: body.slideId
+  });
   const result = await drillWordingSlide(body.slideId, {
     generationMode: body.generationMode,
-    dryRun: body.dryRun !== false
+    dryRun: body.dryRun !== false,
+    onProgress: reportProgress
   });
   runtimeState.build = {
     ok: true,
     updatedAt: new Date().toISOString()
   };
-  runtimeState.workflow = {
+  updateWorkflowState({
     dryRun: body.dryRun !== false,
     generation: result.generation,
+    message: result.summary,
     ok: true,
     operation: "drill-wording",
     slideId: body.slideId,
-    updatedAt: new Date().toISOString()
-  };
+    stage: "completed",
+    status: "completed"
+  });
   runtimeState.lastError = null;
 
   createJsonResponse(res, 200, {
@@ -393,22 +449,30 @@ async function handleIdeateTheme(req, res) {
     throw new Error("Expected slideId when ideating a theme");
   }
 
+  const reportProgress = createWorkflowProgressReporter({
+    dryRun: body.dryRun !== false,
+    operation: "ideate-theme",
+    slideId: body.slideId
+  });
   const result = await ideateThemeSlide(body.slideId, {
     generationMode: body.generationMode,
-    dryRun: body.dryRun !== false
+    dryRun: body.dryRun !== false,
+    onProgress: reportProgress
   });
   runtimeState.build = {
     ok: true,
     updatedAt: new Date().toISOString()
   };
-  runtimeState.workflow = {
+  updateWorkflowState({
     dryRun: body.dryRun !== false,
     generation: result.generation,
+    message: result.summary,
     ok: true,
     operation: "ideate-theme",
     slideId: body.slideId,
-    updatedAt: new Date().toISOString()
-  };
+    stage: "completed",
+    status: "completed"
+  });
   runtimeState.lastError = null;
 
   createJsonResponse(res, 200, {
@@ -432,22 +496,30 @@ async function handleRedoLayout(req, res) {
     throw new Error("Expected slideId when redoing layout");
   }
 
+  const reportProgress = createWorkflowProgressReporter({
+    dryRun: body.dryRun !== false,
+    operation: "redo-layout",
+    slideId: body.slideId
+  });
   const result = await redoLayoutSlide(body.slideId, {
     generationMode: body.generationMode,
-    dryRun: body.dryRun !== false
+    dryRun: body.dryRun !== false,
+    onProgress: reportProgress
   });
   runtimeState.build = {
     ok: true,
     updatedAt: new Date().toISOString()
   };
-  runtimeState.workflow = {
+  updateWorkflowState({
     dryRun: body.dryRun !== false,
     generation: result.generation,
+    message: result.summary,
     ok: true,
     operation: "redo-layout",
     slideId: body.slideId,
-    updatedAt: new Date().toISOString()
-  };
+    stage: "completed",
+    status: "completed"
+  });
   runtimeState.lastError = null;
 
   createJsonResponse(res, 200, {
@@ -483,6 +555,11 @@ async function handleAssistantSend(req, res) {
     dryRun: body.dryRun !== false,
     generationMode: body.generationMode,
     message: body.message,
+    onProgress: createWorkflowProgressReporter({
+      dryRun: body.dryRun !== false,
+      operation: "assistant-workflow",
+      slideId: typeof body.slideId === "string" && body.slideId ? body.slideId : null
+    }),
     sessionId: typeof body.sessionId === "string" && body.sessionId ? body.sessionId : "default",
     slideId: typeof body.slideId === "string" && body.slideId ? body.slideId : null
   });
@@ -492,14 +569,16 @@ async function handleAssistantSend(req, res) {
       ok: true,
       updatedAt: new Date().toISOString()
     };
-    runtimeState.workflow = {
+    updateWorkflowState({
       dryRun: result.action.dryRun,
       generation: result.action.generation,
+      message: result.reply && result.reply.content ? result.reply.content : "Assistant workflow completed.",
       ok: true,
       operation: `assistant-${result.action.type}`,
       slideId: result.action.slideId,
-      updatedAt: new Date().toISOString()
-    };
+      stage: "completed",
+      status: "completed"
+    });
   }
 
   if (result.action && result.action.type === "validate" && result.validation) {
@@ -508,6 +587,14 @@ async function handleAssistantSend(req, res) {
       ok: result.validation.ok,
       updatedAt: new Date().toISOString()
     };
+    updateWorkflowState({
+      includeRender: result.action.includeRender,
+      message: result.validation.ok ? "Assistant validation completed without blocking issues." : "Assistant validation completed and found issues.",
+      ok: result.validation.ok,
+      operation: "assistant-validate",
+      stage: "completed",
+      status: "completed"
+    });
   }
 
   runtimeState.lastError = null;
@@ -528,6 +615,13 @@ async function handleAssistantSend(req, res) {
 async function handleApi(req, res, url) {
   if (req.method === "GET" && url.pathname === "/api/state") {
     createJsonResponse(res, 200, getWorkspaceState());
+    return;
+  }
+
+  if (req.method === "GET" && url.pathname === "/api/runtime") {
+    createJsonResponse(res, 200, {
+      runtime: serializeRuntimeState()
+    });
     return;
   }
 
@@ -676,6 +770,14 @@ async function requestHandler(req, res) {
 
     handleStatic(req, res, url);
   } catch (error) {
+    if (runtimeState.workflow && runtimeState.workflow.status === "running") {
+      updateWorkflowState({
+        message: error.message,
+        ok: false,
+        stage: "failed",
+        status: "failed"
+      });
+    }
     runtimeState.lastError = {
       message: error.message,
       updatedAt: new Date().toISOString()

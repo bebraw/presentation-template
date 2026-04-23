@@ -156,7 +156,8 @@ async function handleAssistantMessage(options = {}) {
   if (intent === "ideate-theme") {
     const result = await ideateThemeSlide(options.slideId, {
       dryRun: options.dryRun !== false,
-      generationMode: options.generationMode
+      generationMode: options.generationMode,
+      onProgress: options.onProgress
     });
     const reply = createMessage("assistant", buildIdeateThemeReply(result, slide), {
       action: {
@@ -186,7 +187,8 @@ async function handleAssistantMessage(options = {}) {
   if (intent === "drill-wording") {
     const result = await drillWordingSlide(options.slideId, {
       dryRun: options.dryRun !== false,
-      generationMode: options.generationMode
+      generationMode: options.generationMode,
+      onProgress: options.onProgress
     });
     const reply = createMessage("assistant", buildDrillWordingReply(result, slide), {
       action: {
@@ -216,7 +218,8 @@ async function handleAssistantMessage(options = {}) {
   if (intent === "redo-layout") {
     const result = await redoLayoutSlide(options.slideId, {
       dryRun: options.dryRun !== false,
-      generationMode: options.generationMode
+      generationMode: options.generationMode,
+      onProgress: options.onProgress
     });
     const reply = createMessage("assistant", buildRedoLayoutReply(result, slide), {
       action: {
@@ -245,7 +248,8 @@ async function handleAssistantMessage(options = {}) {
 
   const result = await ideateSlide(options.slideId, {
     dryRun: options.dryRun !== false,
-    generationMode: options.generationMode
+    generationMode: options.generationMode,
+    onProgress: options.onProgress
   });
   const reply = createMessage("assistant", buildIdeateReply(result, slide), {
     action: {

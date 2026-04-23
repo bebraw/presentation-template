@@ -107,6 +107,10 @@ function setBusy(button, label) {
   };
 }
 
+function delay(ms) {
+  return new Promise((resolve) => window.setTimeout(resolve, ms));
+}
+
 function escapeHtml(value) {
   return String(value)
     .replace(/&/g, "&amp;")
@@ -243,6 +247,66 @@ function summarizeDiff(currentSource, variantSource) {
 
 function clearTransientVariants(slideId) {
   state.transientVariants = state.transientVariants.filter((variant) => variant.slideId !== slideId);
+}
+
+function describeWorkflowProgress(workflow) {
+  if (!workflow) {
+    return "";
+  }
+
+  if (workflow.message) {
+    return workflow.message;
+  }
+
+  const fallback = ({
+    "gathering-context": "Gathering context...",
+    "generating-variants": "Generating variants...",
+    "rendering-variants": "Rendering previews...",
+    "rebuilding-previews": "Rebuilding previews...",
+    "validating-geometry-text": "Running validation...",
+    "validating-render": "Running full render validation...",
+    completed: "Workflow completed."
+  })[workflow.stage];
+
+  return fallback || "Working...";
+}
+
+function startRuntimePolling() {
+  let cancelled = false;
+
+  const loop = (async () => {
+    while (!cancelled) {
+      try {
+        const payload = await request("/api/runtime");
+        state.runtime = payload.runtime;
+        renderStatus();
+
+        const workflow = payload.runtime && payload.runtime.workflow;
+        if (workflow && workflow.status === "running") {
+          elements.operationStatus.textContent = describeWorkflowProgress(workflow);
+        }
+      } catch (error) {
+        // Ignore polling errors while the primary request is in flight.
+      }
+
+      await delay(700);
+    }
+  })();
+
+  return async () => {
+    cancelled = true;
+    await loop.catch(() => {});
+  };
+}
+
+async function runWithRuntimePolling(task) {
+  const stopPolling = startRuntimePolling();
+
+  try {
+    return await task();
+  } finally {
+    await stopPolling();
+  }
 }
 
 function replacePersistedVariantsForSlide(slideId, variants) {
@@ -696,16 +760,12 @@ async function validate(includeRender) {
   const button = includeRender ? elements.validateRenderButton : elements.validateButton;
   const done = setBusy(button, includeRender ? "Running render gate..." : "Validating...");
   try {
-    const payload = await request("/api/validate", {
+    const payload = await runWithRuntimePolling(() => request("/api/validate", {
       body: JSON.stringify({ includeRender }),
       method: "POST"
-    });
+    }));
     state.previews = payload.previews;
-    state.runtime.validation = {
-      includeRender,
-      ok: payload.ok,
-      updatedAt: new Date().toISOString()
-    };
+    state.runtime = payload.runtime || state.runtime;
     state.validation = payload;
     renderStatus();
     renderPreviews();
@@ -854,14 +914,14 @@ async function ideateSlide() {
 
   const done = setBusy(elements.ideateSlideButton, "Generating...");
   try {
-    const payload = await request("/api/operations/ideate-slide", {
+    const payload = await runWithRuntimePolling(() => request("/api/operations/ideate-slide", {
       body: JSON.stringify({
         dryRun: elements.ideateDryRun.checked,
         generationMode: elements.ideateGenerationMode.value,
         slideId: state.selectedSlideId
       }),
       method: "POST"
-    });
+    }));
     state.previews = payload.previews;
     state.runtime = payload.runtime;
     clearTransientVariants(state.selectedSlideId);
@@ -888,14 +948,14 @@ async function ideateTheme() {
 
   const done = setBusy(elements.ideateThemeButton, "Generating...");
   try {
-    const payload = await request("/api/operations/ideate-theme", {
+    const payload = await runWithRuntimePolling(() => request("/api/operations/ideate-theme", {
       body: JSON.stringify({
         dryRun: elements.ideateDryRun.checked,
         generationMode: elements.ideateGenerationMode.value,
         slideId: state.selectedSlideId
       }),
       method: "POST"
-    });
+    }));
     state.previews = payload.previews;
     state.runtime = payload.runtime;
     clearTransientVariants(state.selectedSlideId);
@@ -922,14 +982,14 @@ async function redoLayout() {
 
   const done = setBusy(elements.redoLayoutButton, "Generating...");
   try {
-    const payload = await request("/api/operations/redo-layout", {
+    const payload = await runWithRuntimePolling(() => request("/api/operations/redo-layout", {
       body: JSON.stringify({
         dryRun: elements.ideateDryRun.checked,
         generationMode: elements.ideateGenerationMode.value,
         slideId: state.selectedSlideId
       }),
       method: "POST"
-    });
+    }));
     state.previews = payload.previews;
     state.runtime = payload.runtime;
     clearTransientVariants(state.selectedSlideId);
@@ -957,7 +1017,7 @@ async function sendAssistantMessage() {
 
   const done = setBusy(elements.assistantSendButton, "Sending...");
   try {
-    const payload = await request("/api/assistant/message", {
+    const payload = await runWithRuntimePolling(() => request("/api/assistant/message", {
       body: JSON.stringify({
         dryRun: elements.ideateDryRun.checked,
         generationMode: elements.ideateGenerationMode.value,
@@ -966,7 +1026,7 @@ async function sendAssistantMessage() {
         slideId: state.selectedSlideId
       }),
       method: "POST"
-    });
+    }));
     state.assistant = {
       session: payload.session,
       suggestions: payload.suggestions || state.assistant.suggestions

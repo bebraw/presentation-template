@@ -2805,6 +2805,17 @@ function createLocalDeckStructureCandidates(context) {
         "Make the strongest evidence and operating limits visible on one concentrated slide.",
         "Close on approval, ownership, and the validation step."
       ],
+      deckPatch: {
+        subject: `Decision support for ${structureContext.audience}`,
+        themeBrief: "keep the deck crisp, direct, and centered on one decision path",
+        tone: "decisive and evidence-led",
+        visualTheme: {
+          accent: "d97a2b",
+          primary: "15304a",
+          progressFill: "15304a",
+          secondary: "215e8b"
+        }
+      },
       kindLabel: "Deck authoring",
       label: "Decision narrative authoring",
       notes: "Batch-authors every live slide so the whole deck reads as one decision path instead of a demo tour.",
@@ -2930,6 +2941,17 @@ function createLocalDeckStructureCandidates(context) {
         "Show the signals and guardrails that keep the deck stable.",
         "End on the handoff checklist the next editor should follow."
       ],
+      deckPatch: {
+        subject: "Operator handoff and maintenance routine",
+        themeBrief: "keep the deck sober, maintenance-oriented, and checklist-friendly",
+        tone: "operational and exact",
+        visualTheme: {
+          accent: "4f7a28",
+          panel: "f7faf7",
+          progressFill: "4f7a28",
+          secondary: "325d52"
+        }
+      },
       kindLabel: "Deck authoring",
       label: "Operator handoff authoring",
       notes: "Batch-authors every live slide around ownership boundaries, runtime routine, and the operator-facing validation loop.",

@@ -414,7 +414,7 @@ function renderDeckStructureCandidates() {
       </div>
       <div class="variant-actions">
         <button type="button" class="secondary" data-action="inspect">Inspect</button>
-        <button type="button" data-action="apply">Apply plan + scaffolds + titles + order</button>
+        <button type="button" data-action="apply">Apply plan + scaffolds + replacements + titles + order</button>
       </div>
     `;
 
@@ -844,6 +844,7 @@ async function applyDeckStructureCandidate(candidate) {
       outline: candidate.outline,
       promoteInsertions: true,
       promoteIndices: true,
+      promoteReplacements: true,
       promoteTitles: true,
       slides: candidate.slides,
       summary: candidate.summary
@@ -856,7 +857,7 @@ async function applyDeckStructureCandidate(candidate) {
   state.runtime = payload.runtime || state.runtime;
   state.slides = payload.slides || state.slides;
   state.selectedDeckStructureId = candidate.id;
-  elements.operationStatus.textContent = `Applied deck structure candidate ${candidate.label} to the saved outline, slide plan, ${payload.insertedSlides || 0} inserted slide${payload.insertedSlides === 1 ? "" : "s"}, ${payload.indexUpdates || 0} slide order change${payload.indexUpdates === 1 ? "" : "s"}, and ${payload.titleUpdates || 0} slide title${payload.titleUpdates === 1 ? "" : "s"}.`;
+  elements.operationStatus.textContent = `Applied deck structure candidate ${candidate.label} to the saved outline, slide plan, ${payload.insertedSlides || 0} inserted slide${payload.insertedSlides === 1 ? "" : "s"}, ${payload.replacedSlides || 0} replaced slide${payload.replacedSlides === 1 ? "" : "s"}, ${payload.indexUpdates || 0} slide order change${payload.indexUpdates === 1 ? "" : "s"}, and ${payload.titleUpdates || 0} slide title${payload.titleUpdates === 1 ? "" : "s"}.`;
   renderDeckFields();
   renderDeckStructureCandidates();
   renderPreviews();

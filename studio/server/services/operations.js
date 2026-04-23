@@ -1613,11 +1613,89 @@ function createInsertedDecisionCriteriaSlide(context, proposedIndex) {
   });
 }
 
+function createReplacementOperatorChecklistSlide(context, proposedIndex, proposedTitle) {
+  const proofSlide = context.slides.find((slide) => slide.index === 3);
+  const proofTitle = proofSlide ? proofSlide.currentTitle : "the proof block";
+
+  return validateSlideSpec({
+    bullets: [
+      {
+        body: `Restate the main decision with ${proofTitle} attached as the supporting evidence.`,
+        id: "operator-checklist-bullet-1",
+        title: "State the call"
+      },
+      {
+        body: "Carry forward the guardrails and the one apply path before asking for sign-off.",
+        id: "operator-checklist-bullet-2",
+        title: "Carry the guardrails"
+      },
+      {
+        body: "Close with the explicit next owner, timing, and preview check that keeps the deck honest.",
+        id: "operator-checklist-bullet-3",
+        title: "Name the next move"
+      }
+    ],
+    eyebrow: "Operator checklist",
+    index: proposedIndex,
+    resources: [
+      {
+        body: "Saved outline plus promoted slide titles and order",
+        id: "operator-checklist-resource-1",
+        title: "Plan source",
+        bodyFontSize: 10.8
+      },
+      {
+        body: "Preview rebuild plus npm run quality:gate",
+        id: "operator-checklist-resource-2",
+        title: "Approval gate",
+        bodyFontSize: 10.8
+      }
+    ],
+    resourcesTitle: "Keep nearby",
+    summary: `Replace the closing slide with one operator-ready checklist that turns ${proofTitle} into an explicit handoff.`,
+    title: proposedTitle || "Operator checklist",
+    type: "summary"
+  });
+}
+
+function describeDeckPlanAction({ moved, replaced, retitled }) {
+  if (moved && retitled && replaced) {
+    return "move-retitle-and-replace";
+  }
+
+  if (moved && replaced) {
+    return "move-and-replace";
+  }
+
+  if (retitled && replaced) {
+    return "retitle-and-replace";
+  }
+
+  if (replaced) {
+    return "replace";
+  }
+
+  if (moved && retitled) {
+    return "move-and-retitle";
+  }
+
+  if (moved) {
+    return "move";
+  }
+
+  if (retitled) {
+    return "retitle";
+  }
+
+  return "keep";
+}
+
 function buildDeckPlanEntries(context, definition) {
   const order = Array.isArray(definition.order) && definition.order.length === context.slides.length
     ? definition.order
     : context.slides.map((_, index) => index);
   const insertions = Array.isArray(definition.insertions) ? definition.insertions.slice() : [];
+  const replacements = Array.isArray(definition.replacements) ? definition.replacements.slice() : [];
   const totalEntries = context.slides.length + insertions.length;
   const entries = [];
   let existingCursor = 0;
@@ -1655,13 +1733,16 @@ function buildDeckPlanEntries(context, definition) {
     const nextFocus = focus || slide.intent;
     const moved = slide.index !== proposedPosition + 1;
     const retitled = normalizeSentence(nextTitle).toLowerCase() !== normalizeSentence(slide.currentTitle).toLowerCase();
-    const action = moved && retitled
-      ? "move-and-retitle"
-      : moved
-        ? "move"
-        : retitled
-          ? "retitle"
-          : "keep";
+    const replacement = replacements.find((entry) => (
+      (typeof entry.slideId === "string" && entry.slideId === slide.id)
+      || (Number.isFinite(entry.currentIndex) && entry.currentIndex === slide.index)
+      || (Number.isFinite(entry.sourceIndex) && entry.sourceIndex === order[existingCursor - 1])
+    ));
+    const replacementSlideSpec = replacement && typeof replacement.createSlideSpec === "function"
+      ? replacement.createSlideSpec(context, proposedPosition + 1, nextTitle, slide)
+      : null;
+    const replaced = Boolean(replacementSlideSpec);
+    const action = describeDeckPlanAction({ moved, replaced, retitled });
 
     entries.push({
       action,
@@ -1670,10 +1751,15 @@ function buildDeckPlanEntries(context, definition) {
       proposedIndex: proposedPosition + 1,
       proposedTitle: nextTitle,
       rationale,
+      replacement: replacementSlideSpec
+        ? {
+          slideSpec: replacementSlideSpec
+        }
+        : null,
       role,
       slideId: slide.id,
-      summary: nextFocus,
-      type: slide.type
+      summary: replacement && replacement.summary ? replacement.summary : nextFocus,
+      type: replacement && replacement.type ? replacement.type : slide.type
     });
   }
 
@@ -1686,9 +1772,9 @@ function createDeckStructurePlan(context, definition) {
   return {
     changeSummary: [
       definition.changeLead,
-      "Built explicit per-slide plan changes, including role, order, and retitle decisions.",
-      "Designed to be applied back to deck context first, before any slide-file or generator rewrite.",
-      "Applying this candidate updates the saved outline plus per-slide structure metadata."
+      "Built explicit per-slide plan changes, including role, order, retitle, and replacement decisions.",
+      "Designed to be applied through guarded slide-file promotions rather than freeform deck rewrites.",
+      "Applying this candidate updates the saved outline, per-slide structure metadata, and any promoted insert, replace, order, or retitle steps."
     ],
     id: `deck-structure-${definition.label.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "")}`,
     label: definition.label,
@@ -1796,6 +1882,40 @@ function createLocalDeckStructureCandidates(context) {
         "Decision criteria",
         "The proof and limits",
         "The next action"
+      ]
+    }),
+    createDeckStructurePlan(structureContext, {
+      changeLead: "Reframed the deck around a stronger operator handoff by replacing the closing slide with a checklist scaffold.",
+      focus: [
+        "Open with the deck claim and keep the audience anchored on the decision.",
+        "Use the structure slide to show the available paths before the proof lands.",
+        "Keep the proof slide focused on evidence and limits.",
+        "Replace the final slide with an operator checklist that turns the proof into an explicit handoff."
+      ],
+      label: "Operator-checklist structure",
+      notes: "Keeps the current deck length but repurposes the closing slot into a more operational summary surface.",
+      promptSummary: "Uses the saved objective and tone to turn the final slide into an operator-ready checklist instead of a generic summary.",
+      rationales: [
+        "Keep the opening claim visible so the rest of the deck still has a clear frame.",
+        "Use the second slide to orient the audience before the proof block.",
+        "Leave the third slide as the concentrated evidence layer.",
+        "Replace the last slide with one checklist surface so the deck ends on a concrete handoff."
+      ],
+      replacements: [
+        {
+          createSlideSpec: (context, proposedIndex, proposedTitle) => createReplacementOperatorChecklistSlide(context, proposedIndex, proposedTitle),
+          currentIndex: 4,
+          summary: "Replace the final summary slide with an operator checklist that names the decision, guardrails, and next owner.",
+          type: "summary"
+        }
+      ],
+      roles: ["Frame", "Orientation", "Proof", "Checklist"],
+      summary: `Organize the deck as a proof-backed handoff for ${structureContext.audience}, then replace the closing slide with an explicit operator checklist.`,
+      titles: [
+        fallbackTitles[0] || "Why this matters",
+        "The structure map",
+        fallbackTitles[2] || "Proof and guardrails",
+        "Operator checklist"
       ]
     })
   ];
@@ -2289,10 +2409,12 @@ async function ideateDeckStructure(options = {}) {
 async function applyDeckStructureCandidate(candidate, options = {}) {
   const plan = Array.isArray(candidate && candidate.slides) ? candidate.slides : [];
   const promoteInsertions = options.promoteInsertions !== false;
+  const promoteReplacements = options.promoteReplacements !== false;
   let insertedSlides = 0;
   const promoteIndices = options.promoteIndices !== false;
   const promoteTitles = options.promoteTitles !== false;
   let indexUpdates = 0;
+  let replacedSlides = 0;
   let titleUpdates = 0;
 
   if (promoteInsertions) {
@@ -2303,6 +2425,17 @@ async function applyDeckStructureCandidate(candidate, options = {}) {
 
       createStructuredSlide(entry.scaffold.slideSpec);
       insertedSlides += 1;
+    }
+  }
+
+  if (promoteReplacements) {
+    for (const entry of plan) {
+      if (!entry || typeof entry.slideId !== "string" || !entry.slideId || !entry.replacement || !entry.replacement.slideSpec) {
+        continue;
+      }
+
+      writeSlideSpec(entry.slideId, entry.replacement.slideSpec);
+      replacedSlides += 1;
     }
   }
 
@@ -2351,6 +2484,7 @@ async function applyDeckStructureCandidate(candidate, options = {}) {
     insertedSlides,
     indexUpdates,
     previews,
+    replacedSlides,
     titleUpdates
   };
 }

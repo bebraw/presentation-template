@@ -21,22 +21,20 @@ Use that file for:
 - current capabilities and known gaps
 - per-phase implementation status
 - the detailed checklist of what has landed already
-- notable studio UI workflow-shape changes such as splitting variant generation from variant comparison
-- notable studio UI workflow-shape changes such as folding the workflow assistant into a side rail instead of leaving it inline
-- notable studio UI workflow-shape changes such as folding the structured draft editor into its own side rail instead of leaving it inline
-- notable studio UI workflow-shape refinements such as using compact closed handles for the side rails and letting the opened rails overlay the workspace instead of pushing it aside
-- notable studio UI workflow-shape changes such as moving validation into its own page instead of leaving it inline or docked
-- notable studio UI workflow-shape changes such as moving the deck brief into a separate planning page instead of leaving it inline
+- notable workflow-shape changes such as:
+  - separating variant generation from variant comparison
+  - moving deck planning and validation into their own pages
+  - folding the assistant and structured draft into side rails
 
 Keep this roadmap focused on architecture, rollout order, and the next slice to build.
 
 ## Next Focus
 
-The next practical slice should build on the first shared generator-aware composition work now that the generator can already pick up saved deck metadata and live active-slide totals from the studio state.
+The next practical slice should build on the shared generator-aware composition work that is already in place. The generator now reads saved deck metadata, active-slide totals, design constraints, palette values, and explicit progress-bar colors from studio state, so the remaining work should keep pushing real generator defaults behind the same planning boundary instead of introducing browser-only state.
 
 If choosing one thing to build next, do this:
 
-1. keep extending generator-aware deck composition where shared metadata or chrome should reflect saved planning context instead of hardcoded defaults
+1. keep extending generator-aware deck composition where one more shared generator default moves behind saved planning context and affects both previews and final output deterministically
 
 After that:
 
@@ -246,11 +244,12 @@ Current implementation uses plain browser assets instead of React + Vite so the 
 
 ## UX Shape
 
-Current implementation uses a centered white-canvas workspace:
+Current implementation uses a centered white-canvas workspace with page-level separation:
 
-- top masthead with action controls and status
-- one dominant preview region near the top
-- stacked editing sections for deck context, slide context, source editing, variants, and validation
+- `Studio` page for preview, slide context, workflow generation, and compare/apply
+- `Deck Planning` page for deck brief and deck-plan ideation
+- `Validation` page for deck checks and reports
+- fold-out side rails for the assistant and structured draft editor
 
 Visual rules for the current studio UI:
 
@@ -329,7 +328,7 @@ Implementation:
   - per-slide intent
   - per-slide notes
   - per-slide layout hints
-- build a right-hand context editor in the browser app
+- build persistent deck-level and slide-level context surfaces in the browser app
 
 Acceptance criteria:
 
@@ -360,7 +359,7 @@ Implementation:
   - expected output shape
   - rebuild requirement
 - map wording-tightening behavior to the existing `slide-clarity-drill` workflow
-- for the MVP, operation handlers should generate file edits against `slides/` and `generator/`, then rebuild previews
+- for the MVP, operation handlers should work through structured slide specs, deck plans, repo-local context, and explicit apply flows rather than ad hoc edits
 
 Acceptance criteria:
 
@@ -410,10 +409,9 @@ Implementation:
 
 - centralize repo edits in one backend editing module
 - restrict MVP write targets to:
-  - `slides/slide-*.js`
-  - [`generator/deck.js`](./generator/deck.js)
-  - [`generator/theme.js`](./generator/theme.js)
-  - `studio/state/*`
+  - `slides/slide-*`
+  - `studio/state/*.json`
+  - `studio/output/**`
 - add a dry-run mode for higher-risk operations such as theme and structure changes
 
 Acceptance criteria:
@@ -422,7 +420,7 @@ Acceptance criteria:
 - risky edits can be previewed before being applied
 - the app does not make uncontrolled changes across the repo
 
-Status: partial
+Status: complete
 
 Live implementation detail for this phase lives in [`STUDIO_STATUS.md`](./STUDIO_STATUS.md).
 
@@ -454,7 +452,7 @@ Live implementation detail for this phase lives in [`STUDIO_STATUS.md`](./STUDIO
 
 Objective: prove the workflow on one real vertical slice before expanding scope.
 
-Target slice:
+Original target slice:
 
 1. edit slide context in the app
 2. run `Ideate Slide`
@@ -469,9 +467,9 @@ Exit condition:
 - the variant system is usable
 - the preview loop is tight enough to justify continuing
 
-If this slice feels clumsy, fix the operation model before adding more features.
+The current implementation now exceeds this original slice. Remaining work is polish and broader deck-level composition, not basic feasibility.
 
-Status: not started
+Status: in progress
 
 ## Proposed Directory Layout
 
@@ -484,32 +482,56 @@ studio/
   server/
     index.js
     services/
+      assistant.js
       build.js
+      llm/
+        client.js
+        prompts.js
+        schemas.js
       paths.js
+      sessions.js
+      slide-specs/
+        index.js
       slides.js
       state.js
       validate.js
       variants.js
+      write-boundary.js
+  output/
+    variant-previews/
   state/
     deck-context.json
+    sessions.json
     variants.json
 ```
 
 ## API Plan
 
-Initial backend routes:
+Current backend routes:
 
 - `POST /api/build`
 - `GET /api/runtime`
+- `GET /api/runtime/stream`
 - `POST /api/validate`
+- `POST /api/llm/check`
+- `POST /api/context`
+- `POST /api/context/deck-structure/apply`
 - `GET /api/preview/deck`
 - `GET /api/preview/slide/:index`
-- `POST /api/theme/ideate`
-- `POST /api/outline/ideate`
-- `POST /api/slide/ideate`
-- `POST /api/slide/drill`
-- `POST /api/slide/layout-variants`
-- `POST /api/variant/apply`
+- `GET /api/slides/:slideId`
+- `POST /api/slides/:slideId/source`
+- `POST /api/slides/:slideId/slide-spec`
+- `POST /api/slides/:slideId/context`
+- `POST /api/variants/capture`
+- `POST /api/variants/apply`
+- `POST /api/operations/ideate-slide`
+- `POST /api/operations/ideate-structure`
+- `POST /api/operations/ideate-theme`
+- `POST /api/operations/drill-wording`
+- `POST /api/operations/redo-layout`
+- `POST /api/operations/ideate-deck-structure`
+- `GET /api/assistant/session`
+- `POST /api/assistant/message`
 
 These routes should operate on repo state and app state, then return structured results suitable for UI updates.
 
@@ -548,7 +570,7 @@ The MVP is done when all of the following are true:
 - it can apply one chosen result back into the repo
 - it can run the current validation flow and present the result clearly
 
-## Recommended First Build Slice
+## Historical First Build Slice
 
 The first implementation slice should be intentionally narrow:
 

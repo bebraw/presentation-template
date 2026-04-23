@@ -4,7 +4,7 @@ This file tracks the live implementation snapshot for the browser studio.
 
 Use [`ROADMAP.md`](./ROADMAP.md) for architecture, rollout order, and the next build slice.
 
-Current implementation is now hybrid. Supported JSON slide families render through a shared DOM runtime in the studio and through a standalone `/deck-preview` document, studio-triggered PDF export plus preview PNG generation run through Playwright on that same DOM renderer, studio geometry/text validation for those slide families uses DOM inspection, and the CLI PDF build path now uses the same DOM renderer too. The optional baseline render gate still depends on the older generator-side runtime.
+Current implementation is now hybrid. Supported JSON slide families render through a shared DOM runtime in the studio and through a standalone `/deck-preview` document, studio-triggered PDF export plus preview PNG generation run through Playwright on that same DOM renderer, studio geometry/text validation for those slide families uses DOM inspection, and the CLI PDF build plus quality-gate path now uses the same DOM renderer and DOM validation stack. The optional baseline render gate still exists, but it now compares the current DOM-built PDF against approved raster snapshots instead of rebuilding a second generator-side validation PDF.
 
 ## Snapshot
 
@@ -31,8 +31,9 @@ Implemented:
 - shared DOM slide renderer for `cover`, `toc`, `content`, and `summary`, used by the studio preview surfaces and the standalone `/deck-preview` document
 - DOM-rendered current slide preview, thumbnail rail, variant cards, and compare panes for supported structured slides instead of relying on passed-around preview images
 - Playwright-backed studio PDF export and preview PNG generation from the same DOM renderer used by the browser preview surface
-- Playwright-backed studio geometry/text validation for supported slide families, with generator validation kept only as a fallback and for the baseline render gate
+- Playwright-backed studio geometry/text validation for supported slide families, with studio validation now failing explicitly instead of falling back to generator-side slide drawing
 - CLI `npm run build` now writes the deck PDF through the same Playwright-backed DOM renderer instead of the old generator-side PDF path
+- CLI geometry and text validation entrypoints now use the same DOM validation path as the studio instead of generator-side slide drawing
 - dry-run ideation mode that renders transient variants without saving them to the variant store
 - explicit before-and-after source diff panes plus operation-specific change summaries in the compare area
 - per-slide workflow locking so overlapping ideation requests do not race on the working slide source
@@ -56,16 +57,16 @@ Implemented:
 Current gaps:
 
 - repo-aware deck-level workflows beyond the current file-safe compose and rewrite actions, especially where more shared generator behavior should respond to saved planning context
-- the optional baseline render gate still depends on the older generator-side runtime
+- the optional baseline render gate still depends on raster helpers under `generator/`, even though it now compares the current DOM-built PDF instead of a generator-built validation PDF
 
 ## Planned Rework
 
 Next major direction:
 
 - keep slide-spec JSON as the source content model for supported slides
-- retire generator-side slide drawing and generator-first preview for supported slide families now that the CLI path is ready
+- extend DOM validation where the older generator checks still covered layout-specific rules that matter
 - decide what should happen to generator-only helpers that remain only for the baseline render gate and legacy fallback flows
-- deepen DOM validation only where the current bounds/padding/font-size/word-count checks are still insufficient
+- trim stale generator-first architecture notes so the DOM renderer is no longer described as a secondary path
 
 ## Phase Snapshot
 
@@ -161,6 +162,6 @@ What already works:
 
 What still needs polish:
 
-1. broader deck-level composition flows where more shared generator behavior should respond to saved planning context
+1. broader deck-level composition flows where more shared deck behavior should respond to saved planning context
 2. richer diff and summary support across more workflow types
-3. the remaining DOM-first migration work that will replace generator-first export and validation for supported slide families
+3. the remaining DOM-first cleanup work around validation depth, baseline helpers, and stale generator-first assumptions

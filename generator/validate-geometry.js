@@ -1,38 +1,26 @@
-const { createPresentation } = require("./deck");
-const {
-  getValidationConstraintOptions,
-  readDesignConstraints
-} = require("./design-constraints");
-const {
-  validateCaptionSpacing,
-  validateGeometry,
-  validateVerticalBalance
-} = require("./validation");
+const { validateDeckInDom } = require("../studio/server/services/dom-validate");
 
-function main() {
-  const { reports } = createPresentation({ trackLayout: true });
-  const constraints = readDesignConstraints();
-  const validationOptions = getValidationConstraintOptions(constraints);
-  const issues = [
-    ...validateGeometry(reports),
-    ...validateVerticalBalance(reports, validationOptions.verticalBalance),
-    ...validateCaptionSpacing(reports, validationOptions.captionSpacing)
-  ];
-  const errors = issues.filter((issue) => issue.level === "error");
-
-  if (!issues.length) {
-    process.stdout.write("Geometry validation passed.\n");
-    return;
-  }
-
+function writeIssues(issues) {
   for (const issue of issues) {
     const writer = issue.level === "error" ? process.stderr : process.stdout;
     writer.write(`slide ${issue.slide}: ${issue.rule}: ${issue.message}\n`);
   }
+}
 
-  if (errors.length) {
+async function main() {
+  const { geometry } = await validateDeckInDom();
+  writeIssues(geometry.issues);
+
+  if (!geometry.issues.length) {
+    process.stdout.write("Geometry validation passed.\n");
+  }
+
+  if (geometry.errors.length) {
     process.exitCode = 1;
   }
 }
 
-main();
+main().catch((error) => {
+  process.stderr.write(`${error.message}\n`);
+  process.exitCode = 1;
+});

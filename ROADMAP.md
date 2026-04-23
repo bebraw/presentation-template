@@ -30,18 +30,20 @@ Keep this roadmap focused on architecture, rollout order, and the next slice to 
 
 ## Next Focus
 
-The first DOM-pivot slice is now in place:
+The first DOM-pivot slices are now in place:
 
 1. supported JSON slide families render through a shared DOM slide runtime inside the studio
 2. current slide preview, thumbnails, variant cards, and compare panes now use that DOM renderer instead of passing PNGs around
 3. the server exposes the same renderer through a standalone `/deck-preview` document path
 4. studio-triggered PDF export and preview PNG generation now run through that DOM renderer via Playwright
+5. studio validation and the CLI quality gate now use that same DOM validation path for supported slide families
+6. the render-baseline gate now compares the current DOM-built PDF against the approved raster baseline instead of rebuilding a separate generator-side validation PDF
 
-The next practical slice should finish the pivot from shared PDF generation into full generator retirement for supported slide families:
+The next practical slice should tighten what is left after the main DOM cutover:
 
-1. retire the remaining generator-first preview and slide-drawing path for supported slide families once the CLI path is ready
-2. extend DOM validation beyond the current bounds, padding, font-size, and word-count checks if more layout-specific rules are still needed
-3. decide what should happen to generator-only helpers that are now only serving the baseline render gate and legacy fallback flows
+1. extend DOM validation beyond the current bounds, padding, font-size, and word-count checks if more layout-specific rules are still needed
+2. decide what should happen to generator-only helpers that are now mostly serving the baseline render gate, contact sheets, and compatibility flows
+3. trim stale generator-first architecture notes so the repo no longer describes the DOM path as a sidecar renderer
 
 ## Product Intent
 
@@ -68,8 +70,9 @@ Current implementation is now hybrid during migration:
 - studio-triggered PDF export and preview PNG generation now run through Playwright in [`studio/server/services/dom-export.js`](./studio/server/services/dom-export.js)
 - studio geometry and text validation for supported slide families now run through Playwright DOM inspection in [`studio/server/services/dom-validate.js`](./studio/server/services/dom-validate.js)
 - [`generator/compile.js`](./generator/compile.js) now builds the deck PDF through that same Playwright-backed DOM renderer
-- [`generator/render-utils.js`](./generator/render-utils.js) still produces raster preview pages for the baseline render gate, deck-plan strips, and compatibility fallback
-- the optional render-baseline comparison still reuses the generator-owned path under [`generator/`](./generator)
+- the CLI geometry and text validation entrypoints now also call that DOM validator instead of the older generator-side slide drawer
+- [`generator/render-utils.js`](./generator/render-utils.js) still produces raster page snapshots for the baseline render gate, deck-plan strips, and compatibility fallback
+- the optional render-baseline comparison now checks the current DOM-built PDF against those approved raster snapshots instead of building a second generator-side validation PDF
 
 Target architecture is DOM-first:
 
@@ -92,7 +95,7 @@ Keep these boundaries:
 
 - the browser sends user intent and workflow actions
 - the studio server gathers context, builds prompts, calls the LLM, and validates outputs
-- the current deck generator remains the executor that renders previews and final output
+- the shared DOM renderer remains the executor that renders previews and final output
 - variant apply, rebuild, and validation remain server-controlled operations
 
 ### Execution Model

@@ -1,11 +1,5 @@
-const fs = require("fs");
 const path = require("path");
-const { createPresentation } = require("../../../generator/deck");
-const { createPdfPresentation } = require("../../../generator/pdf-renderer");
-const {
-  getValidationConstraintOptions,
-  readDesignConstraints
-} = require("../../../generator/design-constraints");
+const { pdfFile } = require("../../../generator/output-config");
 const {
   baselineDir,
   comparePageImages,
@@ -13,17 +7,6 @@ const {
   renderPdfPages,
   resetDir
 } = require("../../../generator/render-utils");
-const {
-  validateCaptionSpacing,
-  validateGeometry,
-  validateImageAspectRatio,
-  validateMinimumFontSize,
-  validateSlideWordCount,
-  validateTextContrast,
-  validateTextFit,
-  validateTextPadding,
-  validateVerticalBalance
-} = require("../../../generator/validation");
 const { validateDeckInDom } = require("./dom-validate");
 const {
   outputDir,
@@ -43,38 +26,19 @@ function asAssetUrl(fileName) {
   return `/studio-output/${relativePath}`;
 }
 
-function summarizeIssues(issues) {
-  return {
-    errors: issues.filter((issue) => issue.level === "error"),
-    issues,
-    ok: !issues.some((issue) => issue.level === "error")
+function summarizeFailure(error, message) {
+  const issue = {
+    level: "error",
+    slide: 0,
+    rule: "dom-validation-failed",
+    message: `${message}: ${error.message}`
   };
-}
 
-function runGeometryValidation(reports, validationOptions) {
-  return summarizeIssues([
-    ...validateGeometry(reports),
-    ...validateVerticalBalance(reports, validationOptions.verticalBalance),
-    ...validateCaptionSpacing(reports, validationOptions.captionSpacing)
-  ]);
-}
-
-function runTextValidation(reports, validationOptions) {
-  return summarizeIssues([
-    ...validateImageAspectRatio(reports),
-    ...validateTextContrast(reports),
-    ...validateMinimumFontSize(reports, validationOptions.minimumFontSize),
-    ...validateSlideWordCount(reports, validationOptions.slideWordCount),
-    ...validateTextFit(reports),
-    ...validateTextPadding(reports, validationOptions.textPadding)
-  ]);
-}
-
-async function buildGeneratorValidationPdf(targetFile) {
-  const { pres } = createPdfPresentation();
-  fs.mkdirSync(path.dirname(targetFile), { recursive: true });
-  await pres.writeFile({ fileName: targetFile });
-  return targetFile;
+  return {
+    errors: [issue],
+    issues: [issue],
+    ok: false
+  };
 }
 
 async function runRenderValidation() {
@@ -94,9 +58,7 @@ async function runRenderValidation() {
   }
 
   ensureAllowedDir(renderCheckDiffDir);
-  const generatorRenderPdf = path.join(path.dirname(renderCheckCurrentDir), "generator-render-check.pdf");
-  await buildGeneratorValidationPdf(generatorRenderPdf);
-  const currentPages = renderPdfPages(renderCheckCurrentDir, generatorRenderPdf);
+  const currentPages = renderPdfPages(renderCheckCurrentDir, pdfFile);
   if (baselinePages.length !== currentPages.length) {
     return {
       errors: [{
@@ -146,30 +108,34 @@ async function runRenderValidation() {
 async function validateDeck(options = {}) {
   const includeRender = options.includeRender === true;
   const buildResult = await buildAndRenderDeck();
-  let geometry;
-  let text;
+  let domResult;
 
   try {
-    const domResult = await validateDeckInDom();
-    geometry = domResult.geometry;
-    text = domResult.text;
+    domResult = await validateDeckInDom();
   } catch (error) {
-    const { reports } = createPresentation({ trackLayout: true });
-    const validationOptions = getValidationConstraintOptions(readDesignConstraints());
-    geometry = runGeometryValidation(reports, validationOptions);
-    text = runTextValidation(reports, validationOptions);
-    geometry.issues = [
-      {
-        level: "warn",
-        slide: 0,
-        rule: "dom-validation-fallback",
-        message: `DOM validation fell back to generator checks: ${error.message}`
-      },
-      ...geometry.issues
-    ];
-    geometry.errors = geometry.issues.filter((issue) => issue.level === "error");
+    const failure = summarizeFailure(error, "DOM validation failed");
+    const render = includeRender
+      ? await runRenderValidation()
+      : {
+          errors: [],
+          failures: [],
+          issues: [],
+          ok: true,
+          skipped: true
+        };
+
+    return {
+      build: buildResult.build,
+      geometry: failure,
+      ok: false,
+      previews: buildResult.previews,
+      render,
+      text: failure
+    };
   }
 
+  const geometry = domResult.geometry;
+  const text = domResult.text;
   const render = includeRender
     ? await runRenderValidation()
     : {

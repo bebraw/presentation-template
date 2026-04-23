@@ -84,7 +84,7 @@ The current implementation is local-first and wraps the existing generator runti
 - geometry/text validation and optional full render validation
 - persisted deck and slide context in `studio/state/`
 - saved deck metadata such as author, company, explicit subject, and language that flow back into shared PPT/PDF document metadata
-- saved design constraints and shared visual theme values, including explicit progress-bar colors and neutral surface color, that flow back into generator validation and deck chrome
+- saved design constraints and shared visual theme values, including explicit progress-bar colors and neutral surface color, that flow back into DOM-first validation and shared deck chrome
 - the included four-slide demo deck stored as slide-spec JSON and rendered directly by the shared slide-spec runtime
 - browser-based editing of supported slides through slide-spec JSON instead of direct JavaScript
 - capture/apply slide variants through structured slide specs for supported slide families, with supported JSON slides saving named variants alongside the active slide spec and legacy structured variants migrated into the owning slide JSON
@@ -96,9 +96,9 @@ The studio now renders supported structured slides through a shared DOM renderer
 http://127.0.0.1:4173/deck-preview
 ```
 
-Studio-triggered PDF export and preview PNG generation now also use that DOM renderer through Playwright, studio geometry/text validation for supported structured slides now uses DOM inspection as well, and the CLI `npm run build` path now writes the deck PDF through the same DOM renderer. The optional baseline render gate still uses the older generator/runtime path.
+Studio-triggered PDF export and preview PNG generation now also use that DOM renderer through Playwright, studio geometry/text validation for supported structured slides now uses DOM inspection, and the CLI `npm run build` plus `npm run quality:gate` paths now use the same DOM renderer and DOM validation stack. The optional baseline render gate still exists, but it now compares the current DOM-built PDF against the approved raster baseline instead of rebuilding pages through the older generator-side slide drawer.
 
-The next planned architecture step is to retire the remaining generator-first preview and slide-drawing path for supported slide families, while deciding what stays around only for the baseline render gate. See [ROADMAP.md](ROADMAP.md) for the migration plan.
+The next planned architecture step is to extend DOM validation where layout-specific checks are still missing and then trim the remaining generator-only helpers that now survive mostly for baseline comparison and legacy compatibility. See [ROADMAP.md](ROADMAP.md) for the migration plan.
 
 Studio write targets are intentionally narrow. The server only mutates:
 

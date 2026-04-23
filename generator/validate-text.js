@@ -1,43 +1,26 @@
-const { createPresentation } = require("./deck");
-const {
-  getValidationConstraintOptions,
-  readDesignConstraints
-} = require("./design-constraints");
-const {
-  validateImageAspectRatio,
-  validateMinimumFontSize,
-  validateSlideWordCount,
-  validateTextContrast,
-  validateTextFit,
-  validateTextPadding
-} = require("./validation");
+const { validateDeckInDom } = require("../studio/server/services/dom-validate");
 
-function main() {
-  const { reports } = createPresentation({ trackLayout: true });
-  const constraints = readDesignConstraints();
-  const validationOptions = getValidationConstraintOptions(constraints);
-  const issues = [
-    ...validateImageAspectRatio(reports),
-    ...validateTextContrast(reports),
-    ...validateMinimumFontSize(reports, validationOptions.minimumFontSize),
-    ...validateSlideWordCount(reports, validationOptions.slideWordCount),
-    ...validateTextFit(reports),
-    ...validateTextPadding(reports, validationOptions.textPadding)
-  ];
-  const errors = issues.filter((issue) => issue.level === "error");
-
+function writeIssues(issues) {
   for (const issue of issues) {
     const writer = issue.level === "error" ? process.stderr : process.stdout;
     writer.write(`slide ${issue.slide}: ${issue.rule}: ${issue.message}\n`);
   }
+}
 
-  if (!issues.length) {
-    process.stdout.write("Text-fit validation passed.\n");
+async function main() {
+  const { text } = await validateDeckInDom();
+  writeIssues(text.issues);
+
+  if (!text.issues.length) {
+    process.stdout.write("Text validation passed.\n");
   }
 
-  if (errors.length) {
+  if (text.errors.length) {
     process.exitCode = 1;
   }
 }
 
-main();
+main().catch((error) => {
+  process.stderr.write(`${error.message}\n`);
+  process.exitCode = 1;
+});

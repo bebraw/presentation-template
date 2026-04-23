@@ -52,8 +52,8 @@
             </div>
 
             <div class="preview-frame">
-              <img id="active-preview" alt="Current slide preview">
-              <div class="preview-empty" id="preview-empty">Build the deck to load previews.</div>
+              <div id="active-preview"></div>
+              <div class="preview-empty" id="preview-empty">No supported structured slide is available to preview.</div>
             </div>
 
             <div class="thumb-rail" id="thumb-rail"></div>
@@ -143,7 +143,7 @@
 
               <div class="workflow-variants">
                 <p class="section-note">
-                  Generated alternatives appear here with their own preview images so you can review and select one before switching into the compare view.
+                  Generated alternatives appear here with their own rendered previews so you can review and select one before switching into the compare view.
                 </p>
                 <p class="section-note" id="variant-storage-note">
                   Structured-slide variants are stored with each slide document.
@@ -174,14 +174,14 @@
                   <section class="compare-pane">
                     <p class="eyebrow">Current</p>
                     <h3 id="compare-current-label">Current slide</h3>
-                    <img class="compare-preview" id="compare-current-preview" alt="Current slide preview">
+                    <div class="compare-preview" id="compare-current-preview"></div>
                   </section>
 
                   <section class="compare-pane">
                     <p class="eyebrow">Candidate</p>
                     <h3 id="compare-variant-label">Variant</h3>
                     <p class="compare-meta" id="compare-variant-meta"></p>
-                    <img class="compare-preview" id="compare-variant-preview" alt="Variant preview">
+                    <div class="compare-preview" id="compare-variant-preview"></div>
                   </section>
                 </div>
 
@@ -528,6 +528,7 @@
       </div>
     </aside>
 
+    <script src="/slide-dom.js"></script>
     <script src="/app.js"></script>
   </body>
 </html>

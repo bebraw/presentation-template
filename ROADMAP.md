@@ -30,16 +30,17 @@ Keep this roadmap focused on architecture, rollout order, and the next slice to 
 
 ## Next Focus
 
-The next practical slice is now an architecture pivot, not another incremental studio feature.
+The first DOM-pivot slice is now in place:
 
-If choosing one thing to build next, do this:
+1. supported JSON slide families render through a shared DOM slide runtime inside the studio
+2. current slide preview, thumbnails, variant cards, and compare panes now use that DOM renderer instead of passing PNGs around
+3. the server exposes the same renderer through a standalone `/deck-preview` document path
 
-1. introduce a DOM-first slide runtime for the supported JSON slide families and make it the authoritative preview path inside the studio
-
-After that:
+The next practical slice should finish the pivot from preview-only DOM use into export and validation:
 
 1. generate the final PDF and preview images from the same DOM renderer through a headless browser path
-2. move layout validation from generator-side geometry into DOM layout inspection and retire the old generator-first preview path
+2. move layout validation from generator-side geometry into DOM layout inspection and rendered checks
+3. retire the old generator-first preview path once the DOM export path is stable
 
 ## Product Intent
 
@@ -60,11 +61,11 @@ This is not a PowerPoint replacement and not a full WYSIWYG editor in the MVP.
 
 Keep exactly one rendering engine authoritative at a time.
 
-Current implementation is still generator-first:
+Current implementation is now hybrid during migration:
 
-- [`generator/deck.js`](./generator/deck.js) is the composition point
-- [`generator/compile.js`](./generator/compile.js) is the main PDF build path
-- [`generator/render-utils.js`](./generator/render-utils.js) produces preview pages
+- supported JSON slide families render through [`studio/client/slide-dom.js`](./studio/client/slide-dom.js) for studio preview and the standalone `/deck-preview` document
+- [`generator/deck.js`](./generator/deck.js) and [`generator/compile.js`](./generator/compile.js) still own final PDF generation
+- [`generator/render-utils.js`](./generator/render-utils.js) still produces raster preview pages for validation, deck-plan strips, and compatibility fallback
 - validation still reuses the existing geometry, text, and render checks under [`generator/`](./generator)
 
 Target architecture is DOM-first:
@@ -314,7 +315,7 @@ This is intentionally quieter than a full app shell. If a later iteration adds r
 
 ## Phase Plan
 
-The phases below describe the delivered generator-first studio foundation. The DOM-first migration above is now the next major implementation track built on top of that foundation.
+The phases below describe the delivered studio foundation plus the first DOM-preview migration slice. The remaining DOM-first export and validation work above is now the next major implementation track.
 
 ### Phase 1: Studio Shell And Runtime Bridge
 

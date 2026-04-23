@@ -4,7 +4,7 @@ This file tracks the live implementation snapshot for the browser studio.
 
 Use [`ROADMAP.md`](./ROADMAP.md) for architecture, rollout order, and the next build slice.
 
-Current implementation is still generator-first. The next major planned rework is a DOM-first renderer migration so browser preview, PNG preview generation, PDF export, and layout validation can converge on one rendering runtime.
+Current implementation is now hybrid. Supported JSON slide families already render through a shared DOM runtime in the studio and through a standalone `/deck-preview` document, but PNG preview generation, final PDF export, and validation still depend on the older generator-side runtime.
 
 ## Snapshot
 
@@ -28,6 +28,8 @@ Implemented:
 - a fold-out left-side structured-draft rail with a compact closed handle, overlay-open behavior, and a persistent open or closed state instead of an inline JSON editor block
 - a separate validation page for deck checks, validation actions, and the latest report instead of an inline or docked report block
 - side-by-side compare view with current-vs-candidate previews, source-change summaries, and apply-or-validate actions
+- shared DOM slide renderer for `cover`, `toc`, `content`, and `summary`, used by the studio preview surfaces and the standalone `/deck-preview` document
+- DOM-rendered current slide preview, thumbnail rail, variant cards, and compare panes for supported structured slides instead of relying on passed-around preview images
 - dry-run ideation mode that renders transient variants without saving them to the variant store
 - explicit before-and-after source diff panes plus operation-specific change summaries in the compare area
 - per-slide workflow locking so overlapping ideation requests do not race on the working slide source
@@ -51,17 +53,16 @@ Implemented:
 Current gaps:
 
 - repo-aware deck-level workflows beyond the current file-safe compose and rewrite actions, especially where more shared generator behavior should respond to saved planning context
-- the DOM-first renderer migration is not started yet, so preview, export, and validation still depend on the older generator-side runtime
+- DOM export is not finished yet, so final PDF generation, PNG preview artifacts, and validation still depend on the older generator-side runtime
 
 ## Planned Rework
 
 Next major direction:
 
 - keep slide-spec JSON as the source content model for supported slides
-- replace generator-first preview and export for those slide families with a shared DOM renderer
-- generate PDF and preview PNGs from that DOM renderer through a headless browser path
+- keep extending the shared DOM renderer beyond studio preview into exported PDF and preview PNG generation through a headless browser path
 - move validation from generator-side geometry to DOM layout inspection
-- retire generator-side slide drawing for supported slide families once the DOM path is stable
+- retire generator-side slide drawing and generator-first preview for supported slide families once the DOM export path is stable
 
 ## Phase Snapshot
 
@@ -159,4 +160,4 @@ What still needs polish:
 
 1. broader deck-level composition flows where more shared generator behavior should respond to saved planning context
 2. richer diff and summary support across more workflow types
-3. the DOM-first renderer migration that will eventually replace the current generator-first preview and export path
+3. the remaining DOM-first migration work that will replace generator-first export and validation for supported slide families

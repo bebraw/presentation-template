@@ -5,6 +5,10 @@ const state = {
   },
   context: null,
   deckStructureCandidates: [],
+  domPreview: {
+    slides: [],
+    theme: null
+  },
   previews: { pages: [] },
   runtime: null,
   selectedDeckStructureId: null,
@@ -124,6 +128,15 @@ const elements = {
   workflowHistory: document.getElementById("workflow-history")
 };
 
+const domSlideWidth = 960;
+const domSlideResizeObserver = typeof ResizeObserver === "function"
+  ? new ResizeObserver((entries) => {
+      entries.forEach((entry) => {
+        syncDomSlideViewport(entry.target);
+      });
+    })
+  : null;
+
 async function request(url, options = {}) {
   const response = await fetch(url, {
     headers: {
@@ -157,6 +170,127 @@ function escapeHtml(value) {
     .replace(/</g, "&lt;")
     .replace(/>/g, "&gt;")
     .replace(/"/g, "&quot;");
+}
+
+function getDomRenderer() {
+  return window.SlideDomRenderer || null;
+}
+
+function getDomTheme() {
+  const renderer = getDomRenderer();
+  const theme = state.domPreview && state.domPreview.theme
+    ? state.domPreview.theme
+    : state.context && state.context.deck && state.context.deck.visualTheme;
+  return renderer && typeof renderer.normalizeTheme === "function"
+    ? renderer.normalizeTheme(theme || {})
+    : (theme || {});
+}
+
+function setDomPreviewState(payload) {
+  const domPreview = payload && payload.domPreview && typeof payload.domPreview === "object"
+    ? payload.domPreview
+    : {};
+  state.domPreview = {
+    slides: Array.isArray(domPreview.slides) ? domPreview.slides : [],
+    theme: domPreview.theme || (state.context && state.context.deck ? state.context.deck.visualTheme : null)
+  };
+}
+
+function patchDomSlideSpec(slideId, slideSpec) {
+  if (!slideId || !slideSpec) {
+    return;
+  }
+
+  const nextSlides = Array.isArray(state.domPreview.slides) ? state.domPreview.slides.slice() : [];
+  const existingIndex = nextSlides.findIndex((entry) => entry && entry.id === slideId);
+  const currentSlide = state.slides.find((entry) => entry.id === slideId);
+  const nextEntry = {
+    id: slideId,
+    index: currentSlide ? currentSlide.index : slideSpec.index,
+    slideSpec,
+    title: slideSpec.title || (currentSlide && currentSlide.title) || ""
+  };
+
+  if (existingIndex >= 0) {
+    nextSlides[existingIndex] = {
+      ...nextSlides[existingIndex],
+      ...nextEntry
+    };
+  } else {
+    nextSlides.push(nextEntry);
+  }
+
+  state.domPreview = {
+    ...state.domPreview,
+    slides: nextSlides
+  };
+}
+
+function getDomSlideSpec(slideId) {
+  const match = Array.isArray(state.domPreview.slides)
+    ? state.domPreview.slides.find((entry) => entry && entry.id === slideId)
+    : null;
+  return match && match.slideSpec ? match.slideSpec : null;
+}
+
+function syncDomSlideViewport(viewport) {
+  if (!viewport) {
+    return;
+  }
+
+  const width = viewport.clientWidth || 0;
+  const scale = width > 0 ? width / domSlideWidth : 1;
+  viewport.style.setProperty("--dom-slide-scale", String(scale));
+}
+
+function observeDomSlideViewport(viewport) {
+  if (!viewport) {
+    return;
+  }
+
+  if (domSlideResizeObserver) {
+    domSlideResizeObserver.observe(viewport);
+  }
+
+  syncDomSlideViewport(viewport);
+}
+
+function renderImagePreview(viewport, url, alt) {
+  if (!viewport) {
+    return;
+  }
+
+  if (!url) {
+    viewport.innerHTML = "";
+    return;
+  }
+
+  viewport.innerHTML = `<img class="dom-slide-viewport__fallback-image" src="${escapeHtml(url)}" alt="${escapeHtml(alt || "Slide preview")}">`;
+}
+
+function renderDomSlide(viewport, slideSpec, options = {}) {
+  if (!viewport) {
+    return;
+  }
+
+  const renderer = getDomRenderer();
+  if (!renderer || !slideSpec) {
+    viewport.innerHTML = "";
+    return;
+  }
+
+  viewport.innerHTML = `
+    <div class="dom-slide-viewport">
+      <div class="dom-slide-viewport__stage">
+        ${renderer.renderSlideMarkup(slideSpec, {
+          index: options.index,
+          theme: getDomTheme(),
+          totalSlides: options.totalSlides
+        })}
+      </div>
+    </div>
+  `;
+  observeDomSlideViewport(viewport.querySelector(".dom-slide-viewport"));
 }
 
 function toColorInputValue(value, fallback = "#000000") {
@@ -198,7 +332,7 @@ function renderStatus() {
   elements.selectedSlideLabel.textContent = selected
     ? `${selected.index}. ${selected.title}`
     : "Slide not selected";
-  elements.previewCount.textContent = `${state.previews.pages.length} page${state.previews.pages.length === 1 ? "" : "s"}`;
+  elements.previewCount.textContent = `${state.slides.length} slide${state.slides.length === 1 ? "" : "s"}`;
   renderWorkflowHistory();
 
   if (!llm) {
@@ -1048,29 +1182,52 @@ function renderSlideFields() {
 function renderPreviews() {
   elements.thumbRail.innerHTML = "";
 
-  if (!state.previews.pages.length) {
-    elements.activePreview.removeAttribute("src");
+  if (!state.slides.length) {
+    elements.activePreview.innerHTML = "";
     elements.previewEmpty.hidden = false;
     return;
   }
 
   elements.previewEmpty.hidden = true;
-  const activePage = state.previews.pages.find((page) => page.index === state.selectedSlideIndex) || state.previews.pages[0];
-  elements.activePreview.src = `${activePage.url}?t=${encodeURIComponent(state.previews.generatedAt || "")}`;
+  const activeSlide = state.slides.find((entry) => entry.index === state.selectedSlideIndex) || state.slides[0];
+  const activeSpec = activeSlide ? (state.selectedSlideId === activeSlide.id && state.selectedSlideSpec ? state.selectedSlideSpec : getDomSlideSpec(activeSlide.id)) : null;
+  const activePage = state.previews.pages.find((page) => activeSlide && page.index === activeSlide.index) || state.previews.pages[0] || null;
 
-  state.previews.pages.forEach((page) => {
-    const slide = state.slides.find((entry) => entry.index === page.index);
+  if (activeSpec) {
+    renderDomSlide(elements.activePreview, activeSpec, {
+      index: activeSlide.index,
+      totalSlides: state.slides.length
+    });
+  } else if (activePage) {
+    renderImagePreview(elements.activePreview, `${activePage.url}?t=${encodeURIComponent(state.previews.generatedAt || "")}`, `${activeSlide ? activeSlide.title : "Slide"} preview`);
+  } else {
+    elements.activePreview.innerHTML = "";
+    elements.previewEmpty.hidden = false;
+  }
+
+  state.slides.forEach((slide) => {
+    const page = state.previews.pages.find((entry) => entry.index === slide.index) || null;
+    const thumbSpec = slide.id === state.selectedSlideId && state.selectedSlideSpec ? state.selectedSlideSpec : getDomSlideSpec(slide.id);
     const button = document.createElement("button");
-    button.className = `thumb${page.index === state.selectedSlideIndex ? " active" : ""}`;
+    button.className = `thumb${slide.index === state.selectedSlideIndex ? " active" : ""}`;
     button.type = "button";
     button.innerHTML = `
-      <img src="${page.url}?t=${encodeURIComponent(state.previews.generatedAt || "")}" alt="Slide ${page.index}">
-      <strong>${slide ? slide.title : `Slide ${page.index}`}</strong>
-      <span>${slide ? slide.fileName : `page ${page.index}`}</span>
+      <div class="thumb-preview"></div>
+      <strong>${escapeHtml(slide.title || `Slide ${slide.index}`)}</strong>
+      <span>${escapeHtml(slide.fileName || `slide ${slide.index}`)}</span>
     `;
     button.addEventListener("click", () => {
-      selectSlideByIndex(page.index);
+      selectSlideByIndex(slide.index);
     });
+    const thumbPreview = button.querySelector(".thumb-preview");
+    if (thumbSpec) {
+      renderDomSlide(thumbPreview, thumbSpec, {
+        index: slide.index,
+        totalSlides: state.slides.length
+      });
+    } else if (page) {
+      renderImagePreview(thumbPreview, `${page.url}?t=${encodeURIComponent(state.previews.generatedAt || "")}`, `${slide.title || `Slide ${slide.index}`} thumbnail`);
+    }
     elements.thumbRail.appendChild(button);
   });
 }
@@ -1102,7 +1259,7 @@ function renderVariants() {
       <p class="variant-kind">${escapeHtml(kindLabel)}</p>
       <strong>${escapeHtml(variant.label)}</strong>
       <span class="variant-meta">${escapeHtml(new Date(variant.createdAt).toLocaleString())}</span>
-      ${variant.previewImage ? `<img class="variant-preview" src="${variant.previewImage.url}" alt="${escapeHtml(variant.label)} preview">` : ""}
+      <div class="variant-preview"></div>
       <span>${escapeHtml(summary)}</span>
       <div class="variant-actions">
         <button type="button" class="secondary" data-action="compare">Compare</button>
@@ -1130,6 +1287,18 @@ function renderVariants() {
         done();
       }
     });
+
+    const variantPreview = card.querySelector(".variant-preview");
+    if (variant.slideSpec) {
+      renderDomSlide(variantPreview, variant.slideSpec, {
+        index: state.selectedSlideIndex,
+        totalSlides: state.slides.length
+      });
+    } else if (variant.previewImage) {
+      renderImagePreview(variantPreview, variant.previewImage.url, `${variant.label} preview`);
+    } else {
+      variantPreview.remove();
+    }
 
     elements.variantList.appendChild(card);
   });
@@ -1199,10 +1368,31 @@ function renderVariantComparison() {
   elements.compareGrid.hidden = false;
   elements.compareSummary.hidden = false;
   elements.compareCurrentLabel.textContent = slide ? `${slide.index}. ${slide.title}` : "Current slide";
-  elements.compareCurrentPreview.src = activePage ? `${activePage.url}?t=${encodeURIComponent(state.previews.generatedAt || "")}` : "";
   elements.compareVariantLabel.textContent = variant.label;
   elements.compareVariantMeta.textContent = variant.promptSummary || variant.notes || "No notes";
-  elements.compareVariantPreview.src = variant.previewImage ? variant.previewImage.url : "";
+
+  if (state.selectedSlideSpec) {
+    renderDomSlide(elements.compareCurrentPreview, state.selectedSlideSpec, {
+      index: state.selectedSlideIndex,
+      totalSlides: state.slides.length
+    });
+  } else if (activePage) {
+    renderImagePreview(elements.compareCurrentPreview, `${activePage.url}?t=${encodeURIComponent(state.previews.generatedAt || "")}`, `${slide ? slide.title : "Current slide"} preview`);
+  } else {
+    elements.compareCurrentPreview.innerHTML = "";
+  }
+
+  if (variant.slideSpec) {
+    renderDomSlide(elements.compareVariantPreview, variant.slideSpec, {
+      index: state.selectedSlideIndex,
+      totalSlides: state.slides.length
+    });
+  } else if (variant.previewImage) {
+    renderImagePreview(elements.compareVariantPreview, variant.previewImage.url, `${variant.label} preview`);
+  } else {
+    elements.compareVariantPreview.innerHTML = "";
+  }
+
   elements.compareStats.innerHTML = [
     `<span class="compare-stat"><strong>${variant.persisted === false ? "dry run" : "saved"}</strong> variant mode</span>`,
     `<span class="compare-stat"><strong>${escapeHtml(variant.generator || "manual")}</strong> generator</span>`,
@@ -1341,6 +1531,7 @@ async function loadSlide(slideId) {
   state.selectedSlideSpecError = payload.slideSpecError || null;
   state.selectedSlideStructured = payload.structured === true;
   state.selectedSlideSource = payload.source;
+  patchDomSlideSpec(slideId, payload.slideSpec || null);
   state.variantStorage = payload.variantStorage || state.variantStorage;
   replacePersistedVariantsForSlide(slideId, payload.variants || []);
   clearTransientVariants(slideId);
@@ -1366,6 +1557,7 @@ async function refreshState() {
   state.assistant = payload.assistant || { session: null, suggestions: [] };
   state.context = payload.context;
   state.deckStructureCandidates = [];
+  setDomPreviewState(payload);
   state.previews = payload.previews;
   state.runtime = payload.runtime;
   state.workflowHistory = Array.isArray(payload.runtime && payload.runtime.workflowHistory) ? payload.runtime.workflowHistory : [];
@@ -1433,10 +1625,16 @@ async function saveDeckContext() {
   });
 
   state.context = payload.context;
+  state.domPreview = {
+    ...state.domPreview,
+    theme: payload.context && payload.context.deck ? payload.context.deck.visualTheme : state.domPreview.theme
+  };
   state.deckStructureCandidates = [];
   state.selectedDeckStructureId = null;
   renderDeckFields();
   renderDeckStructureCandidates();
+  renderPreviews();
+  renderVariants();
 }
 
 async function saveSlideContext() {
@@ -1488,21 +1686,8 @@ async function applyDeckStructureCandidate(candidate) {
     method: "POST"
   });
 
-  state.context = payload.context;
-  state.previews = payload.previews || state.previews;
-  state.runtime = payload.runtime || state.runtime;
-  state.slides = payload.slides || state.slides;
-  state.selectedDeckStructureId = candidate.id;
-  const activeSlide = syncSelectedSlideToActiveList();
   elements.operationStatus.textContent = `Applied deck plan candidate ${candidate.label} to the saved outline, slide plan, ${payload.insertedSlides || 0} inserted slide${payload.insertedSlides === 1 ? "" : "s"}, ${payload.replacedSlides || 0} replaced slide${payload.replacedSlides === 1 ? "" : "s"}, ${payload.removedSlides || 0} archived slide${payload.removedSlides === 1 ? "" : "s"}, ${payload.indexUpdates || 0} slide order change${payload.indexUpdates === 1 ? "" : "s"}, and ${payload.titleUpdates || 0} slide title${payload.titleUpdates === 1 ? "" : "s"}.`;
-  renderDeckFields();
-  renderDeckStructureCandidates();
-  renderPreviews();
-  renderStatus();
-  renderVariants();
-  if (activeSlide) {
-    await loadSlide(activeSlide.id);
-  }
+  await refreshState();
 }
 
 async function validate(includeRender) {
@@ -1573,6 +1758,7 @@ async function saveSlideSpec() {
     state.selectedSlideSpecError = payload.slideSpecError || null;
     state.selectedSlideStructured = payload.structured === true;
     state.selectedSlideSource = payload.source;
+    patchDomSlideSpec(state.selectedSlideId, payload.slideSpec || slideSpec);
     state.previews = payload.previews;
     renderSlideFields();
     renderPreviews();

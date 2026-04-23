@@ -90,9 +90,15 @@ The current implementation is local-first and wraps the existing generator runti
 - capture/apply slide variants through structured slide specs for supported slide families, with supported JSON slides saving named variants alongside the active slide spec and legacy structured variants migrated into the owning slide JSON
 - grouped slide-compare summaries for supported JSON slide types so larger changes read as framed content-area diffs instead of only flat line changes
 
-Today the studio does not replace the current PDF generator. It uses the same deck source files and rebuild path that the repository already uses for normal presentation work.
+The studio now renders supported structured slides through a shared DOM renderer for the main preview, thumbnails, variant cards, and compare views. A standalone DOM deck view is also available at:
 
-The next planned architecture step is a DOM-first renderer so browser preview and final PDF output can converge on one rendering path. See [ROADMAP.md](ROADMAP.md) for the migration plan.
+```
+http://127.0.0.1:4173/deck-preview
+```
+
+Final PDF generation and validation still go through the current generator/runtime path.
+
+The next planned architecture step is to move final PDF output and preview-image generation onto that same DOM renderer through a headless browser path. See [ROADMAP.md](ROADMAP.md) for the migration plan.
 
 Studio write targets are intentionally narrow. The server only mutates:
 

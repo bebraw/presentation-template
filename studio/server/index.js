@@ -8,6 +8,7 @@ loadEnvFiles();
 
 const { getAssistantSession, getAssistantSuggestions, handleAssistantMessage } = require("./services/assistant");
 const { buildAndRenderDeck, getPreviewManifest } = require("./services/build");
+const { getDomPreviewState, renderDomPreviewDocument } = require("./services/dom-preview");
 const { getLlmStatus, verifyLlmConnection } = require("./services/llm/client");
 const { clientDir, outputDir } = require("./services/paths");
 const { applyDeckStructurePlan, ensureState, getDeckContext, updateDeckFields, updateSlideContext } = require("./services/state");
@@ -230,6 +231,7 @@ function getWorkspaceState() {
       suggestions: getAssistantSuggestions()
     },
     context: getDeckContext(),
+    domPreview: getDomPreviewState(),
     previews: getPreviewManifest(),
     runtime: serializeRuntimeState(),
     slides: getSlides(),
@@ -932,6 +934,16 @@ async function handleApi(req, res, url) {
 
   if (req.method === "GET" && url.pathname === "/api/preview/deck") {
     createJsonResponse(res, 200, getPreviewManifest());
+    return;
+  }
+
+  if (req.method === "GET" && url.pathname === "/api/dom-preview/deck") {
+    createJsonResponse(res, 200, getDomPreviewState());
+    return;
+  }
+
+  if (req.method === "GET" && url.pathname === "/deck-preview") {
+    createTextResponse(res, 200, renderDomPreviewDocument(), "text/html; charset=utf-8");
     return;
   }
 

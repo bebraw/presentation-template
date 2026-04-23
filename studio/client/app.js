@@ -424,6 +424,17 @@ function formatCompareValue(value) {
   return normalized || "(empty)";
 }
 
+function formatStructuredGroupLabel(group) {
+  return ({
+    bullets: "Bullets",
+    cards: "Cards",
+    framing: "Framing",
+    guardrails: "Guardrails",
+    resources: "Resources",
+    signals: "Signals"
+  })[group] || group;
+}
+
 function buildStructuredComparison(currentSpec, variantSpec) {
   if (!currentSpec || !variantSpec || currentSpec.type !== variantSpec.type) {
     return null;
@@ -504,10 +515,16 @@ function buildStructuredComparison(currentSpec, variantSpec) {
   }
 
   const orderedGroups = Array.from(groups);
-  const groupLabels = orderedGroups.join(", ");
+  const groupLabels = orderedGroups.map((group) => formatStructuredGroupLabel(group)).join(", ");
+  const groupDetails = orderedGroups.map((group) => ({
+    changes: changes.filter((change) => change.group === group),
+    group,
+    label: formatStructuredGroupLabel(group)
+  }));
 
   return {
     changes,
+    groupDetails,
     groups: orderedGroups,
     summaryLines: [
       `Changed ${changes.length} structured field${changes.length === 1 ? "" : "s"} across ${orderedGroups.length} content area${orderedGroups.length === 1 ? "" : "s"}.`,
@@ -1109,13 +1126,23 @@ function renderVariantComparison() {
     </div>
   `;
   synchronizeCompareSourceScroll();
-  elements.compareHighlights.innerHTML = structuredComparison && structuredComparison.changes.length
-    ? structuredComparison.changes.slice(0, 8).map((highlight) => `
-      <div class="compare-highlight">
-        <strong>${escapeHtml(highlight.label)}</strong>
-        <span>Before: ${escapeHtml(highlight.before)}</span>
-        <span>After: ${escapeHtml(highlight.after)}</span>
-      </div>
+  elements.compareHighlights.innerHTML = structuredComparison && Array.isArray(structuredComparison.groupDetails) && structuredComparison.groupDetails.length
+    ? structuredComparison.groupDetails.map((group) => `
+      <section class="compare-group">
+        <div class="compare-group-head">
+          <strong>${escapeHtml(group.label)}</strong>
+          <span>${group.changes.length} change${group.changes.length === 1 ? "" : "s"}</span>
+        </div>
+        <div class="compare-group-items">
+          ${group.changes.map((highlight) => `
+            <div class="compare-highlight">
+              <strong>${escapeHtml(highlight.label)}</strong>
+              <span>Before: ${escapeHtml(highlight.before)}</span>
+              <span>After: ${escapeHtml(highlight.after)}</span>
+            </div>
+          `).join("")}
+        </div>
+      </section>
     `).join("")
     : diff.highlights.length
       ? diff.highlights.map((highlight) => `

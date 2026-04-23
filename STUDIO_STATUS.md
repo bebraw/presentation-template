@@ -40,7 +40,7 @@ Implemented:
 - deck-plan apply that can promote retitles, reordering, inserted slide scaffolds, scaffolded slide replacement, guarded slide archival, and composed deck plans
 - deck-planning candidates that can batch-author the full live deck by rewriting multiple slide specs in one guarded dry-run and apply flow
 - stronger pre-apply deck-plan summaries, current/proposed sequence previews, affected-slide preview hints, transient deck-level before-and-after strip summaries, and structured deck-plan diff summaries
-- slide-level compare summaries that now include structured field-change counts and content-area summaries for supported JSON slide types
+- slide-level compare summaries that now include structured field-change counts, content-area summaries, and grouped before-and-after change stacks for supported JSON slide types
 - browser-visible workflow progress states through an SSE-backed shared runtime stream instead of request polling
 - centralized studio write-boundary enforcement for slide files under `slides/slide-*`, repo-local state files under `studio/state/*.json`, and generated artifacts under `studio/output/**`
 
@@ -121,7 +121,7 @@ Implemented so far:
 
 - geometry, text, and render validation are exposed separately
 - validation results are shown in the UI
-- source diffs, operation-specific summaries, and structured field-level compare summaries exist for slide-level workflows
+- source diffs, operation-specific summaries, and grouped structured compare summaries exist for slide-level workflows
 - deck-plan summaries, affected-slide hints, transient before-and-after strip summaries, and structured diff summaries exist for deck-level workflows
 
 Still needed:
@@ -142,5 +142,5 @@ What already works:
 
 What still needs polish:
 
-1. richer diff and summary support across more workflow types
-2. broader deck-level composition flows where more shared generator behavior should respond to saved planning context
+1. broader deck-level composition flows where more shared generator behavior should respond to saved planning context
+2. richer diff and summary support across more workflow types

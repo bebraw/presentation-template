@@ -1,8 +1,8 @@
 # Browser Studio Roadmap
 
-This document turns the browser-app MVP discussion into a concrete implementation roadmap for this repository.
+This document records the browser-studio architecture and the remaining maintenance direction for this repository.
 
-The goal is to build a local browser-based presentation studio that reduces typing, codifies common flows, improves context handling, and shortens the iteration loop while converging on one DOM-first rendering path for both browser preview and PDF output.
+The goal is to maintain a local browser-based presentation studio that reduces typing, codifies common flows, improves context handling, shortens the iteration loop, and keeps one DOM-first rendering path authoritative for both browser preview and PDF output.
 
 ## Working Agreement
 
@@ -10,7 +10,7 @@ Keep this roadmap live while implementing the studio.
 
 - update [`STUDIO_STATUS.md`](./STUDIO_STATUS.md) in the same change as meaningful studio work
 - correct architecture notes when implementation choices change
-- keep the "Next Focus" section aimed at the next practical slice, not long-range ideas only
+- keep the "Next Focus" section aimed at the next practical maintenance slice, not long-range ideas only
 - capture durable studio product or workflow decisions in `docs/adr/` when they are likely to outlive one implementation slice
 
 ## Current Status
@@ -20,15 +20,10 @@ The live implementation snapshot now lives in [`STUDIO_STATUS.md`](./STUDIO_STAT
 Use that file for:
 
 - current capabilities and known gaps
-- per-phase implementation status
-- the detailed checklist of what has landed already
-- notable workflow-shape changes such as:
-  - separating variant generation from variant comparison
-  - moving deck planning and validation into their own pages
-  - folding the assistant and structured draft into side rails
-  - removing the old manual rebuild control because deck-context saves and workflow actions already refresh the live deck
+- completed phase status
+- notable workflow-shape decisions
 
-Keep this roadmap focused on architecture, rollout order, and the next slice to build.
+Keep this roadmap focused on architecture and the next maintenance slice.
 
 ## Next Focus
 
@@ -63,7 +58,7 @@ The browser studio should make these flows faster and more repeatable:
 - compare alternatives visually
 - validate changes before keeping them
 
-This is not a PowerPoint replacement and not a full WYSIWYG editor in the MVP.
+This is not a PowerPoint replacement and not a full WYSIWYG editor.
 
 ## Core Principle
 
@@ -79,7 +74,7 @@ Current implementation is now DOM-first:
 - studio preview strips and contact sheets now use [`studio/server/services/page-artifacts.js`](./studio/server/services/page-artifacts.js)
 - repo-level [`scripts/`](./scripts/) entrypoints now drive build, diagram rendering, geometry/text validation, and baseline refresh around the DOM runtime
 - the optional render-baseline comparison now checks the current DOM-built PDF against approved raster snapshots under [`studio/baseline/`](./studio/baseline/)
-- obsolete slide drawing, PDF rendering, text-measurement, config, and CLI layers have been removed from the active codebase
+- retired slide drawing, PDF rendering, text-measurement, config, and CLI layers have been removed from the active codebase
 
 The active architecture is DOM-first:
 
@@ -183,18 +178,18 @@ Each type should have a clear schema for fields such as:
 
 The server should own the materialization step from slide spec to source. That keeps layout rules and shared runtime constraints in one place instead of leaking them into the UI or prompts.
 
-For structured slides, the roadmap now stores named variants alongside the main slide JSON payload. The current working slide spec remains explicit at the top level, while alternate slide-spec options stay preserved in the same slide-level document so users can swap between them later without losing work. `studio/state/variants.json` remains as a compatibility path for non-structured slides only.
+For structured slides, named variants live alongside the main slide JSON payload. The current working slide spec remains explicit at the top level, while alternate slide-spec options stay preserved in the same slide-level document so users can swap between them later without losing work. `studio/state/variants.json` remains as a compatibility path for non-structured slides only.
 
 A custom DSL should be considered only later if JSON becomes too awkward for composition, references, or layout relationships.
 
 ### Assistant Session Layer
 
-To replicate a chat-like experience, add a thin session layer on top of workflow actions:
+The assistant layer sits on top of workflow actions:
 
-- persist message history in a repo-local session store
-- expose an assistant endpoint that accepts user messages plus current studio selection
-- let the assistant either answer in text, trigger a workflow, or return both text and variants
-- expose intermediate states such as `gathering context`, `generating variants`, `rendering preview`, and `validation passed` through the shared runtime state; the studio now does this through SSE-backed runtime events and workflow history
+- message history persists in a repo-local session store
+- the assistant endpoint accepts user messages plus current studio selection
+- the assistant can answer in text, trigger a workflow, or return both text and variants
+- intermediate states such as `gathering context`, `generating variants`, `rendering preview`, and `validation passed` flow through SSE-backed runtime events and workflow history
 
 This should feel like an assistant inside the studio, not a separate general-purpose chatbot.
 
@@ -209,20 +204,9 @@ The server must remain the gatekeeper:
 - require explicit apply for promotion into the working slide
 - reject overlapping operations that touch the same slide or file set
 
-### Initial File Plan
+### Ideate Slide Pipeline
 
-Historical note: this file list is kept as a record of the first implementation wave. Most of these modules now exist.
-
-Add these modules first:
-
-- `studio/server/services/llm/client.js`
-- `studio/server/services/llm/prompts.js`
-- `studio/server/services/llm/schemas.js`
-- `studio/server/services/assistant.js`
-- `studio/server/services/sessions.js`
-- `studio/server/services/slide-specs/`
-
-Refactor `Ideate Slide` into smaller stages:
+`Ideate Slide` stays split into smaller stages:
 
 - collect operation inputs
 - generate candidates through either local rules or the LLM path
@@ -231,21 +215,9 @@ Refactor `Ideate Slide` into smaller stages:
 - render and validate
 - store and return compare-ready variants
 
-### Rollout Order
+## Baseline Outcome
 
-Historical note: this was the original rollout order for the first studio buildout. Use `Next Focus` for current work.
-
-Implement in this order:
-
-1. add a slide-spec schema layer for `cover`, `toc`, `content`, and `summary`
-2. add LLM client, prompt builder, and schema validation without changing the UI flow
-3. put `Ideate Slide` behind a feature flag that can use the LLM path or the current deterministic fallback
-4. add assistant-style endpoints and session persistence for conversational actions
-5. extend the same pattern to `Drill Wording`, `Redo Layout`, and `Ideate Theme`
-
-## Target Outcome
-
-By the end of the MVP, the repository should include a local browser app that:
+The repository now includes a local browser app that:
 
 - shows real slide previews generated from the current deck
 - stores reusable deck and slide context
@@ -302,7 +274,7 @@ Delivered in this order:
 3. studio preview for supported slides moved from PNG-first to DOM-first
 4. headless-browser export took over PDF and preview image generation
 5. validation uses DOM layout inspection plus rendered checks
-6. obsolete slide drawing and config modules were removed for the active deck
+6. retired slide drawing and config modules were removed for the active deck
 7. repo-level scripts and studio services own command and baseline paths
 
 ### Current State
@@ -329,252 +301,62 @@ Visual rules for the current studio UI:
 
 This is intentionally quieter than a full app shell. If a later iteration adds richer workflow controls, keep the visual hierarchy anchored around the preview rather than turning the page into a dashboard.
 
-## Phase Plan
-
-The phases below are historical delivery slices. Use `Next Focus` for the current work rather than reading these as pending implementation.
-
-### Phase 1: Studio Shell And Runtime Bridge
-
-Objective: establish the browser app shell and connect it to the deck runtime.
-
-Implementation:
-
-- create `studio/server/` with server entrypoint, route registration, and task runner modules
-- create `studio/client/` with the initial three-pane shell
-- add root scripts in [`package.json`](./package.json) for:
-  - `studio:dev`
-  - `studio:build`
-  - `studio:start`
-- implement backend wrappers for:
-  - `buildDeck()`
-  - `renderDeckPages()`
-  - `validateDeck()`
-
-Acceptance criteria:
-
-- opening the browser app shows the current deck state
-- the app can trigger a real deck build
-- the app can report whether the last build succeeded or failed
-
-Status: complete
-
-### Phase 2: Preview And Status Pipeline
-
-Objective: make the app preview-first so every meaningful change can be judged visually.
-
-Implementation:
-
-- add backend endpoints:
-  - `POST /api/build`
-  - `GET /api/preview/deck`
-  - `GET /api/preview/slide/:index`
-  - `POST /api/validate`
-- store preview PNGs in a studio-local cache directory rather than in committed baseline directories
-- show deck thumbnails in a rail and a focused slide preview in the main pane
-- surface build and validation errors as structured UI messages rather than raw terminal output
-
-Acceptance criteria:
-
-- one action rebuilds the deck and refreshes previews
-- users can inspect the whole deck or one slide
-- users can see build and validation failures in the UI
-
-Status: complete
-
-### Phase 3: Persistent Context Model
-
-Objective: stop retyping the same presentation intent over and over.
-
-Implementation:
-
-- add a repo-local state directory such as `studio/state/`
-- add a persisted deck context file such as `studio/state/deck-context.json`
-- store:
-  - deck brief
-  - audience
-  - objective
-  - tone
-  - constraints
-  - theme brief
-  - outline
-  - per-slide intent
-  - per-slide notes
-  - per-slide layout hints
-- build persistent deck-level and slide-level context surfaces in the browser app
-
-Acceptance criteria:
-
-- deck and slide context survive reloads
-- operations can use stored context as inputs
-- context editing does not require touching slide source files directly
-
-Status: complete
-
-### Phase 4: Structured Workflow Operations
-
-Objective: replace repeated freeform prompting with explicit high-value actions.
-
-Initial operations:
-
-- `Ideate Theme`
-- `Ideate Structure`
-- `Ideate Slide`
-- `Drill Wording`
-- `Redo Layout`
-- `Generate Variants`
-
-Implementation:
-
-- define each operation in backend code with:
-  - required inputs
-  - allowed file targets
-  - expected output shape
-  - rebuild requirement
-- map wording-tightening behavior to the existing `slide-clarity-drill` workflow
-- for the MVP, operation handlers should work through structured slide specs, deck plans, repo-local context, and explicit apply flows rather than ad hoc edits
-
-Acceptance criteria:
-
-- each operation can be run from the UI
-- each operation produces a previewable result
-- operation inputs come primarily from stored context rather than ad hoc typing
-
-Status: complete
-
-Live implementation detail for this phase lives in [`STUDIO_STATUS.md`](./STUDIO_STATUS.md).
-
-### Phase 5: Slide Variant System
-
-Objective: make experimentation safe and visual instead of destructive.
-
-Implementation:
-
-- keep `studio/state/variants.json` as a legacy fallback for non-structured slides while supported structured slides persist named variants in slide JSON
-- record, per variant:
-  - slide id
-  - variant label
-  - prompt or attempt summary
-  - generated patch or content payload
-  - preview image path
-  - creation timestamp
-- do not overwrite the main slide file when generating variants
-- add a compare view that shows the current slide alongside 2-3 generated alternatives
-- add `Apply Variant` to promote one chosen variant into the working slide file and rebuild
-- add a structured slide-level variant format so supported slide JSON files can keep a current choice plus named alternatives for later reuse
-
-Acceptance criteria:
-
-- users can generate alternatives without losing the current slide
-- users can compare variants visually
-- users can apply one chosen variant safely
-- users can reopen a slide later and still find previously saved structured options without relying only on studio-local runtime state
-
-Status: complete
-
-Live implementation detail for this phase lives in [`STUDIO_STATUS.md`](./STUDIO_STATUS.md).
-
-### Phase 6: File Editing Boundary
-
-Objective: keep write behavior predictable and auditable.
-
-Implementation:
-
-- centralize repo edits in one backend editing module
-- restrict MVP write targets to:
-  - `slides/slide-*`
-  - `studio/state/*.json`
-  - `studio/output/**`
-- add a dry-run mode for higher-risk operations such as theme and structure changes
-
-Acceptance criteria:
-
-- every operation has a clear write surface
-- risky edits can be previewed before being applied
-- the app does not make uncontrolled changes across the repo
-
-Status: complete
-
-Live implementation detail for this phase lives in [`STUDIO_STATUS.md`](./STUDIO_STATUS.md).
-
-### Phase 7: Validation And Diff UX
-
-Objective: preserve the repository's guardrails inside the studio workflow.
-
-Implementation:
-
-- show geometry, text, and render validation status separately
-- add a lightweight change summary view showing:
-  - changed slide previews
-  - changed files
-  - validation result before and after
-- keep render validation as an explicit action if it is too slow for every operation
-- keep geometry and text checks easy to run after each meaningful change
-
-Acceptance criteria:
-
-- users can tell whether a change is acceptable visually
-- users can tell whether a change broke the current gate
-- validation feedback is understandable without reading raw logs
-
-Status: complete
-
-Live implementation detail for this phase lives in [`STUDIO_STATUS.md`](./STUDIO_STATUS.md).
-
-### Phase 8: First End-To-End Milestone
-
-Objective: prove the workflow on one real vertical slice before expanding scope.
-
-Original target slice:
-
-1. edit slide context in the app
-2. run `Ideate Slide`
-3. generate 2-3 layout variants
-4. preview the results
-5. apply one result
-6. run validation
-
-Exit condition:
-
-- this flow feels materially faster than the current prompt-and-file-edit path
-- the variant system is usable
-- the preview loop is tight enough to justify continuing
-
-The current implementation now exceeds this original slice. Remaining work is polish and broader deck-level composition, not basic feasibility.
-
-Status: complete
-
-## Proposed Directory Layout
+## Completed Rollout
+
+The original eight-phase browser-studio rollout is complete:
+
+| Phase | Outcome |
+| --- | --- |
+| Studio Shell And Runtime Bridge | Local browser studio shell and server bridge exist. |
+| Preview And Status Pipeline | Preview, build, and validation feedback run through the studio. |
+| Persistent Context Model | Deck and slide context persist in repo-local state. |
+| Structured Workflow Operations | Slide, wording, theme, structure, and deck workflows run through guarded actions. |
+| Slide Variant System | Variants are persistent, previewable, comparable, and safely applicable. |
+| File Editing Boundary | Studio writes are centralized and constrained to approved paths. |
+| Validation And Diff UX | Validation and compare surfaces show structured summaries and decision cues. |
+| First End-To-End Milestone | The original edit, ideate, preview, apply, and validate slice is complete. |
+
+## Current Directory Shape
 
 ```text
 studio/
+  baseline/
   client/
     app.js
     index.html
+    slide-dom.js
     styles.css
   server/
     index.js
+    noop-build.js
     services/
       assistant.js
+      baseline-utils.js
       build.js
+      deck-theme.js
+      design-constraints.js
+      dom-export.js
+      dom-preview.js
+      dom-validate.js
+      env.js
       llm/
         client.js
         prompts.js
         schemas.js
+      operations.js
+      output-config.js
+      page-artifacts.js
       paths.js
       sessions.js
-      slide-specs/
-        index.js
       slides.js
       state.js
       validate.js
+      validation-settings.js
       variants.js
       write-boundary.js
   output/
-    variant-previews/
   state/
     deck-context.json
-    sessions.json
-    variants.json
 ```
 
 ## API Plan
@@ -605,51 +387,11 @@ Current backend routes:
 - `GET /api/assistant/session`
 - `POST /api/assistant/message`
 
-These routes should operate on repo state and app state, then return structured results suitable for UI updates.
+These routes operate on repo state and app state, then return structured results suitable for UI updates.
 
-## Delivery Order
+## Watch Areas
 
-Implement in this order:
-
-1. scaffold `studio/server` and `studio/client`
-2. bridge backend build and preview to the existing generator
-3. build the preview-first UI shell
-4. add persistent deck and slide context
-5. implement `Ideate Slide` and `Drill Wording`
-6. implement variant generation and compare/apply
-7. implement theme and outline operations
-8. tighten validation, diffs, and error handling
-
-## Main Risks
-
-- full-deck rebuild latency may make the app feel slower than intended
-- unrestricted file writing will make variants and rollback messy
-- a generic chat UI without structured actions will recreate the current typing overhead instead of solving it
-- building a full visual editor too early will fight the current code-first generator model
-
-## MVP Definition Of Done
-
-The MVP is done when all of the following are true:
-
-- the app runs locally in the browser
-- it shows deck and slide previews generated from the real deck engine
-- it stores reusable deck and slide context
-- it supports at least:
-  - `Ideate Slide`
-  - `Drill Wording`
-  - `Redo Layout`
-  - `Generate Variants`
-- it can apply one chosen result back into the repo
-- it can run the current validation flow and present the result clearly
-
-## Historical First Build Slice
-
-The first implementation slice should be intentionally narrow:
-
-- one backend route to build and preview the current deck
-- one browser view showing slide thumbnails and focused preview
-- one persistent slide-context editor
-- one `Ideate Slide` operation for a single slide
-- one compare/apply variant flow
-
-If that slice works well, expand into theme and structure operations next.
+- Full-deck rebuild latency can still make larger workflows feel slower than intended.
+- New workflow modes must preserve the explicit write boundary and preview-before-apply model.
+- The assistant should continue routing through structured actions instead of becoming a generic chat surface.
+- A freeform visual editor would still fight the structured slide-spec model unless the DOM runtime grows a clearer editing abstraction first.

@@ -2,130 +2,39 @@
 
 This file tracks the live implementation snapshot for the browser studio.
 
-Use [`ROADMAP.md`](./ROADMAP.md) for architecture, rollout order, and the next build slice.
+Use [`ROADMAP.md`](./ROADMAP.md) for architecture and the next practical maintenance focus.
 
 Durable studio decisions can also be captured under `docs/adr/` when they are more stable than the current implementation snapshot. The current workflow-control decisions are recorded in [`docs/adr/0001-studio-deck-plan-and-validation-controls.md`](./docs/adr/0001-studio-deck-plan-and-validation-controls.md).
 
 Current implementation is now DOM-first. Supported JSON slide families render through a shared DOM runtime in the studio and through a standalone `/deck-preview` document, studio-triggered PDF export plus preview PNG generation run through Playwright on that same DOM renderer, studio geometry/text validation for those slide families uses DOM inspection, and the CLI PDF build plus quality-gate path now uses the same DOM renderer and DOM validation stack. The optional baseline render gate still exists, but it now compares the current DOM-built PDF against approved raster snapshots under `studio/baseline/`.
 
-## Snapshot
+## Current State
 
-Implemented:
+The browser studio baseline is complete.
 
-- local Node studio server under `studio/server/`
-- static browser client under `studio/client/`
-- deck rebuild and preview rendering against the live DOM runtime
-- geometry, text, and optional render validation through the studio API
-- persisted deck and slide context in `studio/state/deck-context.json`
-- shared deck metadata and progress chrome that now read live deck context and active slide totals instead of relying only on hardcoded defaults
-- saved deck author, company, explicit subject, and language metadata in deck context that now drive shared DOM document metadata and language settings instead of hardcoded defaults
-- saved design constraints in deck context for minimum font size, spacing floors, and maximum words per slide, wired into studio validation and the CLI quality gate
-- saved validation settings in deck context for per-rule warning vs error severity plus fast vs complete media-validation mode
-- saved visual theme values in deck context that now drive the shared deck palette for slide chrome, panel surfaces, neutral card surfaces, and explicit progress-bar colors
-- shared deck settings now live under `studio/server/services/`
-- capture/apply variant snapshots, with structured slide variants stored alongside slide JSON
-- a quiet studio UI pass with sans-serif typography, white canvas treatment, and divider-based layout instead of card containers
-- explicit slide workflows: `Ideate Slide`, `Drill Wording`, `Redo Layout`, `Ideate Theme`, and `Ideate Structure`
-- a separated workflow surface where variant generation and variant comparison live in distinct views
-- a fold-out right-side workflow assistant rail with a compact closed handle, overlay-open behavior, and a persistent open or closed state instead of an in-flow chat block
-- a separate deck-planning page for deck brief editing and deck-structure ideation instead of an inline deck context block
-- a fold-out left-side structured-draft rail with a compact closed handle, overlay-open behavior, and a persistent open or closed state instead of an inline JSON editor block
-- a separate validation page for deck checks, validation actions, and the latest report instead of an inline or docked report block
-- the old manual rebuild button and build-status chip removed from the masthead because deck-context saves and workflow actions already rebuild the live deck
-- side-by-side compare view with current-vs-candidate previews, source-change summaries, and apply-or-validate actions
-- shared DOM slide renderer for `cover`, `toc`, `content`, and `summary`, used by the studio preview surfaces and the standalone `/deck-preview` document
-- DOM-rendered current slide preview, thumbnail rail, variant cards, and compare panes for supported structured slides instead of relying on passed-around preview images
-- Playwright-backed studio PDF export and preview PNG generation from the same DOM renderer used by the browser preview surface
-- Playwright-backed studio geometry/text validation for supported slide families, with studio validation now failing explicitly when the DOM path cannot validate a supported slide
-- DOM validation now also covers content-gap floors, contrast, vertical-balance checks, and complete-mode media checks for supported slide families, in addition to bounds, panel padding, minimum font size, and words-per-slide
-- CLI `npm run build` now writes the deck PDF through the same Playwright-backed DOM renderer via repo-level scripts
-- CLI geometry and text validation entrypoints now also live under repo-level scripts and use the same DOM validation path as the studio
-- studio-side preview strips, contact sheets, and page manifests now use `studio/server/services/page-artifacts.js` instead of importing those generic helpers from the baseline utility layer
-- approved raster baseline snapshots now live under `studio/baseline/`, with raster diff helpers and CLI wrappers alongside the DOM runtime
-- obsolete slide drawing, PDF rendering, text-measurement, config, and validation runtime files have been removed, along with the unused `pdfkit` and `pptxgenjs` dependency chain
-- dry-run ideation mode that renders transient variants without saving them to the variant store
-- explicit before-and-after source diff panes plus operation-specific change summaries in the compare area
-- per-slide workflow locking so overlapping ideation requests do not race on the working slide source
-- schema-backed slide-spec materialization for `cover`, `toc`, `content`, and `summary`
-- source-to-slide-spec extraction and browser JSON editing for the same four slide families
-- server-side LLM client, prompt builder, and structured-output schema modules
-- generation mode selection with `auto`, `local`, and `llm` plus clean local fallback
-- provider-aware LLM setup for both OpenAI and LM Studio, including live verification and working LM Studio structured-output parsing
-- assistant session persistence plus browser chat that can answer, trigger workflows, and run validation
-- the included four-slide demo deck ported to JSON slide specs and rendered directly from that structured content
-- deck-level presentation-structure ideation through both the browser UI and the assistant
-- deck-plan apply that can promote retitles, reordering, inserted slide scaffolds, scaffolded slide replacement, guarded slide archival, and composed deck plans
-- deck-planning candidates that can batch-author the full live deck by rewriting multiple slide specs in one guarded dry-run and apply flow
-- deck-plan preview and apply plumbing that can now carry a candidate-level shared deck-context patch alongside slide-file mutations, so shared deck settings can participate in the same guarded flow
-- stronger pre-apply deck-plan summaries, current/proposed sequence previews, affected-slide preview hints, transient deck-level before-and-after strip summaries, and structured deck-plan diff summaries
-- deck-plan compare cards that now show shared deck-setting diffs alongside slide-file diffs, so candidate-wide tone, brief, constraint, and theme changes are inspectable before apply
-- deck-plan cards now also expose a per-candidate toggle for whether shared deck settings should apply, while keeping auto-apply as the default path
-- the first deck-authoring plans now use that path for real shared deck updates, including tone, subject, theme brief, and visible palette shifts in preview
-- key sequence, boundary, decision, operator, compressed, composed, and deck-authoring structure plans now use the same shared deck patch path too, so deck-level flows steer shared context consistently instead of only slide-file shape
-- a deck-plan fixture now runs in `npm run validate`, so local deck-level workflow candidates must keep carrying shared deck patches, shared-setting diffs, and preview cues
-- grouped deck-plan impact sections so larger candidates read by action type instead of only as one flat plan list
-- slide-level compare summaries that now include structured field-change counts, content-area summaries, and grouped before-and-after change stacks for supported JSON slide types
-- browser-visible workflow progress states through an SSE-backed shared runtime stream instead of request polling
-- SSE runtime updates that now include explicit workflow events and a short client-visible progress trail instead of only full-state snapshots
-- centralized studio write-boundary enforcement for slide files under `slides/slide-*`, repo-local state files under `studio/state/*.json`, and generated artifacts under `studio/output/**`
-- validation-page controls for per-rule severity plus fast vs complete media-validation mode, persisted with deck context and honored by the live DOM validation path for current rules
-- complete media-validation mode now inspects rendered images, SVGs, canvases, videos, figure-like media nodes, and caption/source text for small visuals, unloaded or dimensionless raster media, upscaled or distorted raster media, media overlapping slide text, missing readable media labels, orphan caption/source lines, tight caption/source spacing, and detached caption/source placement
-- a media-validation fixture now runs in `npm run validate`, so complete-mode media rule behavior is covered even before the active demo deck includes media-heavy slides
+- The local studio runs through `studio/server/` and `studio/client/`.
+- Slide-spec JSON is the source content model for supported `cover`, `toc`, `content`, and `summary` slides.
+- The shared DOM renderer powers browser preview, thumbnails, compare views, preview PNGs, PDF export, and CLI builds.
+- Deck and slide context, design constraints, validation settings, visual theme values, assistant sessions, and structured variants persist in repo-local studio state or slide JSON.
+- Slide-level workflows, deck-planning workflows, assistant-triggered actions, dry-run candidates, safe apply flows, and compare views are available from the browser.
+- Studio writes are server-controlled and limited to approved slide files, repo-local state, and generated studio artifacts.
+- Geometry, text, render, deck-plan, and media-validation fixtures run through the same quality gate used by the CLI.
 
-Current gaps:
+## Maintenance Focus
 
-- DOM validation now has first-pass media-specific checks and fixture coverage in complete mode, but media-heavy slide families may still need sharper screenshot, chart, or diagram-specific legibility heuristics once those slides exist in the DOM runtime
-- deeper historical guidance should continue to be corrected opportunistically if it presents removed runtime paths as active implementation guidance
-
-## Planned Rework
-
-Next major direction:
-
-- keep slide-spec JSON as the source content model for supported slides
-- keep repo-aware deck-level workflows aligned so new plan modes patch shared deck context when they change more than slide files and order
-- deepen DOM validation only where new slide families or media-heavy slides still require checks beyond the now-configurable bounds, content gaps, padding, font size, word count, contrast, vertical rhythm, and first-pass media rules
-- keep documentation aligned with the DOM-first runtime as older surfaces are touched
+- Keep new deck-planning modes tied to shared deck-context patches when they change narrative direction, theme, constraints, or other deck-level decisions.
+- Deepen DOM media validation only when new media-heavy slide families expose concrete screenshot, chart, diagram, or legibility gaps.
+- Correct stale documentation opportunistically if it refers to removed rendering, validation, or authoring paths as active implementation.
 
 ## Phase Snapshot
 
-### Phase 1: Studio Shell And Runtime Bridge
-
-Status: complete
-
-### Phase 2: Preview And Status Pipeline
-
-Status: complete
-
-### Phase 3: Persistent Context Model
-
-Status: complete
-
-### Phase 4: Structured Workflow Operations
-
-Status: complete
-
-Structured slide and deck workflow operations are implemented across the browser UI, assistant, and server API. The studio supports slide ideation, structure/theme ideation, wording drill, deck-level planning, safe apply flows, structured slide specs, previews, compare/apply, and fixture coverage for deck-plan behavior.
-
-### Phase 5: Slide Variant System
-
-Status: complete
-
-Slide variants are safe, visual, and persistent. The studio can capture snapshots, generate alternatives, compare candidates with previews and decision support, apply a chosen variant, and store supported structured variants directly in slide JSON.
-
-### Phase 6: File Editing Boundary
-
-Status: complete
-
-Studio writes are centralized through the server and constrained to approved deck files, shared state, and repo-local studio artifacts. Slide variants, deck composition actions, and apply flows preserve source safety through explicit write boundaries.
-
-### Phase 7: Validation And Diff UX
-
-Status: complete
-
-Validation and change review are understandable from the studio UI. Geometry, text, and render checks are exposed separately, validation results have structured summaries, and slide/deck compare views show previews, diff summaries, decision cues, and larger-change impact maps before apply.
-
-### Phase 8: First End-To-End Milestone
-
-Status: complete
-
-The original vertical slice is complete: users can edit deck and slide context, run slide-level or deck-structure workflows, preview and compare alternatives, apply a result, and run validation from the studio. Remaining work is future hardening around new media-heavy slide families and opportunistic stale-guidance cleanup, not basic feasibility.
+| Phase | Status | Outcome |
+| --- | --- | --- |
+| 1. Studio Shell And Runtime Bridge | complete | Local browser studio shell and server bridge exist. |
+| 2. Preview And Status Pipeline | complete | Preview, build, and validation feedback run through the studio. |
+| 3. Persistent Context Model | complete | Deck and slide context persist in repo-local state. |
+| 4. Structured Workflow Operations | complete | Slide, wording, theme, structure, and deck workflows run through guarded actions. |
+| 5. Slide Variant System | complete | Variants are persistent, previewable, comparable, and safely applicable. |
+| 6. File Editing Boundary | complete | Studio writes are centralized and constrained to approved paths. |
+| 7. Validation And Diff UX | complete | Validation and compare surfaces show structured summaries and decision cues. |
+| 8. First End-To-End Milestone | complete | The original edit, ideate, preview, apply, and validate slice is complete. |

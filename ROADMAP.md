@@ -23,7 +23,7 @@ Implemented:
 - persisted deck and slide context in `studio/state/deck-context.json`
 - browser-based editing of slide source files
 - capture/apply variant snapshots in `studio/state/variants.json`
-- an editorial, minimal visual style pass for the studio UI
+- a quiet studio UI pass with sans-serif typography, a white canvas, and divider-based layout instead of card containers
 
 Not implemented yet:
 
@@ -96,11 +96,17 @@ Current implementation uses plain browser assets instead of React + Vite so the 
 
 ## UX Shape
 
-Current implementation uses a centered editorial workspace:
+Current implementation uses a centered white-canvas workspace:
 
 - top masthead with action controls and status
 - one dominant preview region near the top
 - stacked editing sections for deck context, slide context, source editing, variants, and validation
+
+Visual rules for the current studio UI:
+
+- default to sans-serif typography throughout the app shell
+- keep the background clean white rather than tinted or textured
+- avoid visual containers such as cards or panels; use spacing, alignment, and light dividers to separate regions instead
 
 This is intentionally quieter than a full app shell. If a later iteration adds richer workflow controls, keep the visual hierarchy anchored around the preview rather than turning the page into a dashboard.
 

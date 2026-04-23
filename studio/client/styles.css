@@ -1,14 +1,14 @@
 :root {
-  --app-canvas: #f7f4ee;
-  --app-surface: rgba(255, 252, 247, 0.78);
-  --app-surface-strong: #fffdf8;
-  --app-text: #1e1a17;
-  --app-soft-text: #6c635a;
-  --app-accent: #a4492f;
-  --app-accent-soft: rgba(164, 73, 47, 0.12);
-  --app-line: rgba(30, 26, 23, 0.12);
-  --app-line-strong: rgba(30, 26, 23, 0.24);
-  --app-ring: rgba(164, 73, 47, 0.28);
+  --app-canvas: #ffffff;
+  --app-surface: transparent;
+  --app-surface-strong: #ffffff;
+  --app-text: #12161c;
+  --app-soft-text: #5f6978;
+  --app-accent: #1d5fd1;
+  --app-accent-soft: rgba(29, 95, 209, 0.1);
+  --app-line: rgba(18, 22, 28, 0.1);
+  --app-line-strong: rgba(18, 22, 28, 0.18);
+  --app-ring: rgba(29, 95, 209, 0.16);
 }
 
 * {
@@ -17,7 +17,7 @@
 
 body {
   margin: 0;
-  font-family: "Avenir Next", "Segoe UI", sans-serif;
+  font-family: "Avenir Next", "Helvetica Neue", "Segoe UI", sans-serif;
   color: var(--app-text);
   background: var(--app-canvas);
 }
@@ -33,7 +33,7 @@ button {
   border-radius: 999px;
   padding: 0.85rem 1.15rem;
   background: var(--app-text);
-  color: #fffaf4;
+  color: #ffffff;
   cursor: pointer;
   transition: transform 140ms ease, background 140ms ease, border-color 140ms ease;
 }
@@ -52,8 +52,8 @@ textarea,
 input {
   width: 100%;
   border: 1px solid var(--app-line);
-  border-radius: 1rem;
-  background: rgba(255, 255, 255, 0.72);
+  border-radius: 0.45rem;
+  background: #ffffff;
   padding: 0.8rem 0.9rem;
   color: var(--app-text);
   transition: border-color 140ms ease, box-shadow 140ms ease, background 140ms ease;
@@ -64,7 +64,7 @@ input:focus {
   outline: none;
   border-color: var(--app-line-strong);
   box-shadow: 0 0 0 4px var(--app-ring);
-  background: #fffefb;
+  background: #ffffff;
 }
 
 textarea {
@@ -74,9 +74,9 @@ textarea {
 
 .page-shell {
   min-height: 100vh;
-  max-width: 76rem;
+  max-width: 82rem;
   margin: 0 auto;
-  padding: 2rem 1.25rem 4rem;
+  padding: 2rem 1.5rem 4rem;
 }
 
 .masthead {
@@ -91,15 +91,15 @@ textarea {
 .masthead h1,
 .section-heading h2 {
   margin: 0;
-  font-family: "Iowan Old Style", "Palatino Linotype", "Book Antiqua", Georgia, serif;
-  font-weight: 700;
+  font-family: "Avenir Next", "Helvetica Neue", "Segoe UI", sans-serif;
+  font-weight: 600;
   letter-spacing: -0.04em;
 }
 
 .masthead h1 {
-  font-size: clamp(2.6rem, 6vw, 4.4rem);
-  line-height: 0.94;
-  max-width: 10ch;
+  font-size: clamp(2.5rem, 5vw, 4rem);
+  line-height: 0.92;
+  max-width: 11ch;
 }
 
 .eyebrow {
@@ -112,7 +112,7 @@ textarea {
 
 .masthead-summary,
 .section-note {
-  max-width: 38rem;
+  max-width: 42rem;
   margin: 0.8rem 0 0;
   color: var(--app-soft-text);
   line-height: 1.55;
@@ -135,22 +135,19 @@ textarea {
 }
 
 .status-chip {
-  border: 1px solid var(--app-line);
-  border-radius: 999px;
-  padding: 0.76rem 1rem;
-  background: rgba(255, 255, 255, 0.58);
+  border-bottom: 1px solid var(--app-line);
+  padding: 0 0 0.6rem;
   color: var(--app-soft-text);
 }
 
 .status-chip[data-state="ok"] {
   color: var(--app-text);
-  border-color: rgba(30, 26, 23, 0.18);
+  border-color: var(--app-line-strong);
 }
 
 .status-chip[data-state="warn"] {
   color: var(--app-accent);
-  border-color: rgba(164, 73, 47, 0.24);
-  background: var(--app-accent-soft);
+  border-color: rgba(29, 95, 209, 0.36);
 }
 
 .status-chip.muted {
@@ -168,28 +165,29 @@ textarea {
 
 .editorial-flow {
   display: grid;
-  gap: 2rem;
+  gap: 2.25rem;
 }
 
+/* Studio rule: separate regions with spacing and dividers, not card containers. */
 .preview-section,
 .editorial-block {
   background: var(--app-surface);
-  border: 1px solid var(--app-line);
-  border-radius: 1.5rem;
 }
 
 .preview-section {
-  padding: 1.2rem;
+  padding: 0 0 2rem;
+  border-bottom: 1px solid var(--app-line);
 }
 
 .workspace-section {
   display: grid;
   grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
-  gap: 1rem;
+  gap: 2rem 1.5rem;
 }
 
 .editorial-block {
-  padding: 1.15rem 1.1rem 1.2rem;
+  padding-top: 1rem;
+  border-top: 1px solid var(--app-line);
 }
 
 .editorial-block-wide {
@@ -205,7 +203,7 @@ textarea {
 }
 
 .section-heading h2 {
-  font-size: 1.65rem;
+  font-size: 1.5rem;
 }
 
 .preview-meta {
@@ -239,13 +237,12 @@ textarea {
   font-family: "SFMono-Regular", Consolas, monospace;
   font-size: 0.82rem;
   line-height: 1.45;
-  background: rgba(255, 254, 251, 0.9);
+  background: #fbfcfe;
 }
 
 .preview-frame {
   position: relative;
   min-height: 22rem;
-  border-radius: 1.5rem;
   border: 1px solid var(--app-line);
   background: var(--app-surface-strong);
   overflow: hidden;
@@ -275,33 +272,34 @@ textarea {
 }
 
 .thumb {
-  border: 1px solid var(--app-line);
-  border-radius: 1.1rem;
-  padding: 0.6rem;
-  background: rgba(255, 255, 255, 0.55);
+  border: 0;
+  border-top: 1px solid var(--app-line);
+  border-radius: 0;
+  padding: 0.75rem 0 0.4rem;
+  background: transparent;
   cursor: pointer;
   text-align: left;
 }
 
 .thumb.active {
-  border-color: rgba(164, 73, 47, 0.34);
-  box-shadow: 0 0 0 4px var(--app-accent-soft);
+  border-top-color: var(--app-accent);
+  box-shadow: none;
 }
 
 .thumb img {
   width: 100%;
   display: block;
-  border-radius: 0.7rem;
   margin-bottom: 0.5rem;
+  border: 1px solid var(--app-line);
 }
 
 .thumb strong,
 .variant-card strong {
   display: block;
   margin-bottom: 0.25rem;
-  font-family: "Iowan Old Style", "Palatino Linotype", "Book Antiqua", Georgia, serif;
+  font-family: "Avenir Next", "Helvetica Neue", "Segoe UI", sans-serif;
   font-size: 1.02rem;
-  font-weight: 700;
+  font-weight: 600;
 }
 
 .thumb span,
@@ -311,10 +309,9 @@ textarea {
 }
 
 .variant-card {
-  border: 1px solid var(--app-line);
-  border-radius: 1.1rem;
-  padding: 0.9rem;
-  background: rgba(255, 255, 255, 0.48);
+  border-top: 1px solid var(--app-line);
+  padding: 0.9rem 0 0;
+  background: transparent;
 }
 
 .variant-card button {
@@ -325,11 +322,11 @@ textarea {
   min-height: 15rem;
   max-height: 20rem;
   overflow: auto;
-  border-radius: 1.2rem;
-  border: 1px solid var(--app-line);
-  background: rgba(255, 255, 255, 0.64);
+  border: 0;
+  border-top: 1px solid var(--app-line);
+  background: transparent;
   color: var(--app-text);
-  padding: 1rem;
+  padding: 1rem 0 0;
   line-height: 1.45;
 }
 

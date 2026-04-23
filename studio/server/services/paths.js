@@ -6,6 +6,7 @@ const clientDir = path.join(studioDir, "client");
 const stateDir = path.join(studioDir, "state");
 const outputDir = path.join(studioDir, "output");
 const previewDir = path.join(outputDir, "rendered-pages");
+const variantPreviewDir = path.join(outputDir, "variant-previews");
 const contactSheetFile = path.join(outputDir, "contact-sheet.png");
 const renderCheckDir = path.join(outputDir, "render-check");
 const renderCheckCurrentDir = path.join(renderCheckDir, "current");
@@ -22,5 +23,6 @@ module.exports = {
   repoRoot,
   slidesDir,
   stateDir,
-  studioDir
+  studioDir,
+  variantPreviewDir
 };

@@ -6,6 +6,7 @@ const { buildAndRenderDeck, getPreviewManifest } = require("./services/build");
 const { clientDir, outputDir } = require("./services/paths");
 const { ensureState, getDeckContext, getVariants, updateDeckFields, updateSlideContext } = require("./services/state");
 const { getSlide, getSlides, readSlideSource, writeSlideSource } = require("./services/slides");
+const { ideateSlide } = require("./services/operations");
 const { validateDeck } = require("./services/validate");
 const { applyVariant, captureVariant, listVariantsForSlide } = require("./services/variants");
 
@@ -18,7 +19,8 @@ const runtimeState = {
     updatedAt: null
   },
   lastError: null,
-  validation: null
+  validation: null,
+  workflow: null
 };
 
 function createJsonResponse(res, statusCode, payload) {
@@ -204,6 +206,34 @@ async function handleVariantApply(req, res) {
   });
 }
 
+async function handleIdeateSlide(req, res) {
+  const body = await readJsonBody(req);
+  if (typeof body.slideId !== "string" || !body.slideId) {
+    throw new Error("Expected slideId when ideating a slide");
+  }
+
+  const result = await ideateSlide(body.slideId);
+  runtimeState.build = {
+    ok: true,
+    updatedAt: new Date().toISOString()
+  };
+  runtimeState.workflow = {
+    ok: true,
+    operation: "ideate-slide",
+    slideId: body.slideId,
+    updatedAt: new Date().toISOString()
+  };
+  runtimeState.lastError = null;
+
+  createJsonResponse(res, 200, {
+    previews: result.previews,
+    runtime: runtimeState,
+    slideId: result.slideId,
+    summary: result.summary,
+    variants: getVariants().variants
+  });
+}
+
 async function handleApi(req, res, url) {
   if (req.method === "GET" && url.pathname === "/api/state") {
     createJsonResponse(res, 200, getWorkspaceState());
@@ -273,6 +303,11 @@ async function handleApi(req, res, url) {
 
   if (req.method === "POST" && url.pathname === "/api/variants/apply") {
     await handleVariantApply(req, res);
+    return;
+  }
+
+  if (req.method === "POST" && url.pathname === "/api/operations/ideate-slide") {
+    await handleIdeateSlide(req, res);
     return;
   }
 

@@ -5,6 +5,10 @@ function listVariantsForSlide(slideId) {
   return getVariants().variants.filter((variant) => variant.slideId === slideId);
 }
 
+function createVariantId() {
+  return `variant-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
+}
+
 function captureVariant(options) {
   const slideId = options.slideId;
   const source = typeof options.source === "string" ? options.source : readSlideSource(slideId);
@@ -12,9 +16,13 @@ function captureVariant(options) {
   const timestamp = new Date().toISOString();
   const nextVariant = {
     createdAt: timestamp,
-    id: `variant-${Date.now()}`,
+    id: createVariantId(),
+    kind: options.kind || "snapshot",
     label: options.label || `Snapshot ${store.variants.length + 1}`,
     notes: options.notes || "",
+    operation: options.operation || null,
+    previewImage: options.previewImage || null,
+    promptSummary: options.promptSummary || "",
     slideId,
     source,
     updatedAt: timestamp
@@ -26,6 +34,32 @@ function captureVariant(options) {
 
   saveVariants(nextStore);
   return nextVariant;
+}
+
+function updateVariant(variantId, fields) {
+  const store = getVariants();
+  let updated = null;
+
+  const variants = store.variants.map((variant) => {
+    if (variant.id !== variantId) {
+      return variant;
+    }
+
+    updated = {
+      ...variant,
+      ...fields,
+      updatedAt: new Date().toISOString()
+    };
+
+    return updated;
+  });
+
+  if (!updated) {
+    throw new Error(`Unknown variant: ${variantId}`);
+  }
+
+  saveVariants({ variants });
+  return updated;
 }
 
 function applyVariant(variantId) {
@@ -43,5 +77,6 @@ function applyVariant(variantId) {
 module.exports = {
   applyVariant,
   captureVariant,
-  listVariantsForSlide
+  listVariantsForSlide,
+  updateVariant
 };

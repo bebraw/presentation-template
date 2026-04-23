@@ -146,13 +146,49 @@
           <article class="editorial-block editorial-block-wide">
             <div class="section-heading">
               <div>
+                <p class="eyebrow">Workflow</p>
+                <h2>Ideate Slide</h2>
+              </div>
+            </div>
+
+            <p class="section-note">
+              Generate candidate slide sources from the saved deck and slide context. The working slide stays unchanged until you apply one.
+            </p>
+
+            <div class="button-row compact">
+              <button id="ideate-slide-button">Ideate slide variants</button>
+            </div>
+
+            <p class="operation-note" id="operation-status">
+              Uses deck brief, slide intent, notes, and constraints as inputs.
+            </p>
+
+            <div class="workflow-variants">
+              <div class="section-heading section-heading-tight">
+                <div>
+                  <p class="eyebrow">Variants</p>
+                  <h2>Generated Options</h2>
+                </div>
+              </div>
+
+              <p class="section-note">
+                Generated alternatives appear here with their own preview images so you can compare and apply one without leaving the workflow area.
+              </p>
+
+              <div class="variant-list workflow-variant-list" id="variant-list"></div>
+            </div>
+          </article>
+
+          <article class="editorial-block editorial-block-wide">
+            <div class="section-heading">
+              <div>
                 <p class="eyebrow">Slide source</p>
                 <h2>Working draft</h2>
               </div>
             </div>
 
             <p class="section-note">
-              Edit the active slide file directly from the browser, then rebuild against the real generator.
+              Edit the active slide file directly from the browser, then rebuild against the real generator. Manual snapshots still appear in the workflow section above.
             </p>
 
             <label class="field">
@@ -169,17 +205,6 @@
               <span>Slide source</span>
               <textarea id="source-editor" spellcheck="false"></textarea>
             </label>
-          </article>
-
-          <article class="editorial-block">
-            <div class="section-heading">
-              <div>
-                <p class="eyebrow">Variants</p>
-                <h2>Snapshots</h2>
-              </div>
-            </div>
-
-            <div class="variant-list" id="variant-list"></div>
           </article>
 
           <article class="editorial-block">

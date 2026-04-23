@@ -232,6 +232,22 @@ textarea {
   color: var(--app-soft-text);
 }
 
+.operation-note {
+  margin: 0.85rem 0 0;
+  color: var(--app-soft-text);
+  line-height: 1.5;
+}
+
+.workflow-variants {
+  margin-top: 1.5rem;
+  padding-top: 1.2rem;
+  border-top: 1px solid var(--app-line);
+}
+
+.section-heading-tight {
+  margin-bottom: 0.75rem;
+}
+
 .field-grow textarea {
   min-height: 30rem;
   font-family: "SFMono-Regular", Consolas, monospace;
@@ -308,10 +324,41 @@ textarea {
   font-size: 0.82rem;
 }
 
+.variant-list {
+  grid-template-columns: repeat(auto-fit, minmax(16rem, 1fr));
+  gap: 1rem 1.25rem;
+}
+
+.workflow-variant-list {
+  margin-top: 1rem;
+}
+
 .variant-card {
+  display: grid;
+  align-content: start;
+  gap: 0.55rem;
   border-top: 1px solid var(--app-line);
   padding: 0.9rem 0 0;
   background: transparent;
+}
+
+.variant-kind {
+  margin: 0;
+  text-transform: uppercase;
+  letter-spacing: 0.18em;
+  font-size: 0.68rem;
+  color: var(--app-soft-text);
+}
+
+.variant-meta {
+  display: block;
+}
+
+.variant-preview {
+  display: block;
+  width: 100%;
+  border: 1px solid var(--app-line);
+  background: #ffffff;
 }
 
 .variant-card button {

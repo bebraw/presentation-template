@@ -15,6 +15,7 @@ const elements = {
   buildButton: document.getElementById("build-button"),
   buildStatus: document.getElementById("build-status"),
   captureVariantButton: document.getElementById("capture-variant-button"),
+  ideateSlideButton: document.getElementById("ideate-slide-button"),
   deckAudience: document.getElementById("deck-audience"),
   deckConstraints: document.getElementById("deck-constraints"),
   deckObjective: document.getElementById("deck-objective"),
@@ -22,6 +23,7 @@ const elements = {
   deckThemeBrief: document.getElementById("deck-theme-brief"),
   deckTitle: document.getElementById("deck-title"),
   deckTone: document.getElementById("deck-tone"),
+  operationStatus: document.getElementById("operation-status"),
   previewEmpty: document.getElementById("preview-empty"),
   previewCount: document.getElementById("preview-count"),
   reportBox: document.getElementById("report-box"),
@@ -94,6 +96,7 @@ function renderStatus() {
     ? `Selected ${selected.title}`
     : "No slide selected";
   elements.selectionStatus.dataset.state = selected ? "ok" : "idle";
+  elements.ideateSlideButton.disabled = !selected;
   elements.selectedSlideLabel.textContent = selected
     ? `${selected.index}. ${selected.title}`
     : "Slide not selected";
@@ -156,27 +159,36 @@ function renderVariants() {
   elements.variantList.innerHTML = "";
 
   if (!variants.length) {
-    elements.variantList.innerHTML = "<div class=\"variant-card\"><strong>No variants yet</strong><span>Capture the current slide source before trying a risky rewrite.</span></div>";
+    elements.variantList.innerHTML = "<div class=\"variant-card\"><strong>No variants yet</strong><span>Run Ideate Slide to generate comparable options, or capture the current source as a manual snapshot.</span></div>";
     return;
   }
 
   variants.forEach((variant) => {
     const card = document.createElement("div");
     card.className = "variant-card";
+    const kindLabel = variant.kind === "generated"
+      ? "Ideate Slide"
+      : "Snapshot";
+    const summary = variant.promptSummary || variant.notes || "No notes";
     card.innerHTML = `
+      <p class="variant-kind">${kindLabel}</p>
       <strong>${variant.label}</strong>
-      <span>${variant.notes || "No notes"}<br>${new Date(variant.createdAt).toLocaleString()}</span>
+      <span class="variant-meta">${new Date(variant.createdAt).toLocaleString()}</span>
+      ${variant.previewImage ? `<img class="variant-preview" src="${variant.previewImage.url}" alt="${variant.label} preview">` : ""}
+      <span>${summary}</span>
       <button type="button">Apply variant</button>
     `;
 
-    card.querySelector("button").addEventListener("click", async () => {
-      const done = setBusy(card.querySelector("button"), "Applying...");
+    const button = card.querySelector("button");
+    button.addEventListener("click", async () => {
+      const done = setBusy(button, "Applying...");
       try {
         const payload = await request("/api/variants/apply", {
           body: JSON.stringify({ variantId: variant.id }),
           method: "POST"
         });
         state.previews = payload.previews;
+        elements.operationStatus.textContent = `Applied ${variant.label} to ${payload.slideId}.`;
         await loadSlide(payload.slideId);
       } catch (error) {
         window.alert(error.message);
@@ -384,9 +396,35 @@ async function captureVariant() {
   }
 }
 
+async function ideateSlide() {
+  if (!state.selectedSlideId) {
+    return;
+  }
+
+  const done = setBusy(elements.ideateSlideButton, "Generating...");
+  try {
+    const payload = await request("/api/operations/ideate-slide", {
+      body: JSON.stringify({
+        slideId: state.selectedSlideId
+      }),
+      method: "POST"
+    });
+    state.previews = payload.previews;
+    state.runtime = payload.runtime;
+    state.variants = payload.variants;
+    elements.operationStatus.textContent = payload.summary;
+    renderStatus();
+    renderPreviews();
+    renderVariants();
+  } finally {
+    done();
+  }
+}
+
 elements.buildButton.addEventListener("click", () => buildDeck().catch((error) => window.alert(error.message)));
 elements.validateButton.addEventListener("click", () => validate(false).catch((error) => window.alert(error.message)));
 elements.validateRenderButton.addEventListener("click", () => validate(true).catch((error) => window.alert(error.message)));
+elements.ideateSlideButton.addEventListener("click", () => ideateSlide().catch((error) => window.alert(error.message)));
 elements.saveSourceButton.addEventListener("click", () => saveSource().catch((error) => window.alert(error.message)));
 elements.captureVariantButton.addEventListener("click", () => captureVariant().catch((error) => window.alert(error.message)));
 elements.saveDeckContextButton.addEventListener("click", () => saveDeckContext().catch((error) => window.alert(error.message)));

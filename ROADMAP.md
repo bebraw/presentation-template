@@ -24,23 +24,23 @@ Implemented:
 - browser-based editing of slide source files
 - capture/apply variant snapshots in `studio/state/variants.json`
 - a quiet studio UI pass with sans-serif typography, a white canvas, and divider-based layout instead of card containers
+- first explicit workflow operation: `Ideate Slide` generates saved source variants from stored context, renders preview images, and applies one variant back into the working slide on demand
 
 Not implemented yet:
 
-- explicit workflow operations such as `Ideate Theme`, `Ideate Structure`, `Ideate Slide`, `Drill Wording`, and layout-variant generation
-- visual compare view for multiple candidate slide variants
+- explicit workflow operations such as `Ideate Theme`, `Ideate Structure`, `Drill Wording`, and layout-variant generation
+- stronger visual compare view for multiple candidate slide variants
 - dry-run mode for higher-risk edits
 - change-summary and before/after diff UX
 
 ## Next Focus
 
-The next practical slice should implement the first explicit workflow operation end to end:
+The next practical slice should strengthen the decision loop around generated variants:
 
-1. `Ideate Slide` for one selected slide
-2. use stored deck and slide context as inputs
-3. generate one or more candidate source variants without overwriting the working slide
-4. preview the results in the existing studio UI
-5. apply a chosen result and validate it
+1. add a stronger side-by-side compare view for the current slide and generated variants
+2. expose before/after source diff or summary so each generated option is easier to judge
+3. keep the apply path explicit and auditable
+4. validate the chosen result without leaving the comparison flow
 
 ## Product Intent
 
@@ -218,7 +218,19 @@ Acceptance criteria:
 - each operation produces a previewable result
 - operation inputs come primarily from stored context rather than ad hoc typing
 
-Status: not started
+Status: partial
+
+Implemented so far:
+
+- `Ideate Slide` workflow action for the selected slide
+- generated multi-option source variants from stored deck and slide context
+- preview images for generated variants without overwriting the working slide
+- apply flow that promotes one chosen variant into the working slide file
+
+Still needed:
+
+- additional named workflow operations such as `Ideate Theme`, `Ideate Structure`, `Drill Wording`, and `Redo Layout`
+- stronger operation-specific change summaries and diff support
 
 ### Phase 5: Slide Variant System
 
@@ -250,11 +262,11 @@ Implemented so far:
 
 - capture current slide source as a named snapshot
 - apply a stored variant back into the working slide
+- generate `Ideate Slide` variants with preview images stored under studio output
 
 Still needed:
 
-- generated multi-option variants from explicit operations
-- side-by-side compare view with stronger visual decision support
+- stronger side-by-side compare view with clearer visual decision support
 
 ### Phase 6: File Editing Boundary
 

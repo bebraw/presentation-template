@@ -1,7 +1,7 @@
 {
   "type": "cover",
   "index": 1,
-  "title": "Presentation Studio",
+  "title": "slideotter",
   "eyebrow": "Project overview",
   "summary": "A local browser studio for structured decks with fast previews, guarded edits, and one DOM render path.",
   "note": "Editing loop: capture context, generate options, compare, apply deliberately, validate.",
@@ -60,7 +60,7 @@
         "eyebrow": "Guardrails",
         "note": "Built from constraints and workflow guardrails.",
         "summary": "Keep the shared runtime as the source of truth and let validation catch drift early.",
-        "title": "Presentation Template Demo",
+        "title": "slideotter Demo",
         "type": "cover"
       },
       "updatedAt": "2026-04-23T07:00:49.121Z"
@@ -102,7 +102,7 @@
         "eyebrow": "Flow",
         "note": "Built from outline and theme guidance.",
         "summary": "Generate options from saved context, preview them, then keep one source file.",
-        "title": "Presentation Template Demo",
+        "title": "slideotter Demo",
         "type": "cover"
       },
       "updatedAt": "2026-04-23T07:00:47.742Z"
@@ -144,7 +144,7 @@
         "eyebrow": "Intent",
         "note": "Built from slide intent and deck objective.",
         "summary": "Use this slide to make the slide's job clear before changing layout.",
-        "title": "Presentation Template Demo",
+        "title": "slideotter Demo",
         "type": "cover"
       },
       "updatedAt": "2026-04-23T07:00:46.363Z"
@@ -186,7 +186,7 @@
         "eyebrow": "Guardrails",
         "note": "Built from constraints and workflow guardrails.",
         "summary": "Keep the shared runtime as the source of truth and let validation catch drift early.",
-        "title": "Presentation Template Demo",
+        "title": "slideotter Demo",
         "type": "cover"
       },
       "updatedAt": "2026-04-23T06:48:25.030Z"
@@ -228,7 +228,7 @@
         "eyebrow": "Flow",
         "note": "Built from outline and theme guidance.",
         "summary": "Generate options from saved context, preview them, then keep one source file.",
-        "title": "Presentation Template Demo",
+        "title": "slideotter Demo",
         "type": "cover"
       },
       "updatedAt": "2026-04-23T06:48:23.675Z"
@@ -270,7 +270,7 @@
         "eyebrow": "Intent",
         "note": "Built from slide intent and deck objective.",
         "summary": "Use this slide to make the slide's job clear before changing layout.",
-        "title": "Presentation Template Demo",
+        "title": "slideotter Demo",
         "type": "cover"
       },
       "updatedAt": "2026-04-23T06:48:22.279Z"
@@ -299,7 +299,7 @@
       "slideSpec": {
         "type": "cover",
         "index": 1,
-        "title": "Presentation Template Demo",
+        "title": "slideotter Demo",
         "eyebrow": "Handoff",
         "summary": "Use the slide as a handoff surface: what matters now, what happens next, and what should stay in view.",
         "note": "compare the candidate before applying it. shorten the edit loop without hiding the source.",
@@ -347,7 +347,7 @@
       "slideSpec": {
         "type": "cover",
         "index": 1,
-        "title": "Presentation Template Demo",
+        "title": "slideotter Demo",
         "eyebrow": "Boundaries",
         "summary": "Separate authorship, runtime, and gatekeeping so the slide shows where each concern lives.",
         "note": "the previous slide sets context; Demo outline should read like the next move.",
@@ -395,7 +395,7 @@
       "slideSpec": {
         "type": "cover",
         "index": 1,
-        "title": "Presentation Template Demo",
+        "title": "slideotter Demo",
         "eyebrow": "Sequence",
         "summary": "Frame the slide as a path from make the slide's role explicit toward Demo outline.",
         "note": "shorten the edit loop without hiding the source. compare the candidate before applying it.",
@@ -461,7 +461,7 @@
         "eyebrow": "Workshop",
         "note": "keep the main point visible. compare the candidate before applying it.",
         "summary": "Frame the slide for review and handoff so the next decision is easier to make.",
-        "title": "Presentation Template Demo",
+        "title": "slideotter Demo",
         "type": "cover"
       },
       "updatedAt": "2026-04-23T10:46:02.120Z"
@@ -508,7 +508,7 @@
         "eyebrow": "Systems",
         "note": "shorten the edit loop without hiding the source. compare the candidate before applying it.",
         "summary": "Treat the slide as part of one repeatable system rather than a one-off visual.",
-        "title": "Presentation Template Demo",
+        "title": "slideotter Demo",
         "type": "cover"
       },
       "updatedAt": "2026-04-23T10:46:00.661Z"
@@ -555,7 +555,7 @@
         "eyebrow": "Editorial",
         "note": "keep the shared runtime as the source of truth. compare the candidate before applying it.",
         "summary": "Frame the slide with a sharper point of view for authors iterating on a local deck.",
-        "title": "Presentation Template Demo",
+        "title": "slideotter Demo",
         "type": "cover"
       },
       "updatedAt": "2026-04-23T10:45:59.202Z"
@@ -693,7 +693,7 @@
         "eyebrow": "studio workflow",
         "note": "One source of truth for slides; consistent layout; validated PDF output.",
         "summary": "A compact deck demonstrating single-source authoring, shared layout, and built-in validation for reliable PDF delivery.",
-        "title": "Presentation Studio Demo",
+        "title": "slideotter Demo",
         "type": "cover"
       },
       "updatedAt": "2026-04-23T09:48:45.373Z"

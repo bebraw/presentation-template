@@ -28,7 +28,7 @@ const defaultDeckContext = {
     author: deckMeta.author,
     company: deckMeta.company,
     subject: deckMeta.subject,
-    title: "Presentation Studio",
+    title: "slideotter",
     lang: defaultDeckLanguage,
     audience: "",
     objective: "",

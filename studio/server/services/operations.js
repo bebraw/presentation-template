@@ -1598,7 +1598,7 @@ function collectDeckStructureContext(context) {
       };
     }),
     themeBrief: sentence(deck.themeBrief, "keep the surface quiet, readable, and deliberate"),
-    title: sentence(deck.title, "Presentation Studio", 10),
+    title: sentence(deck.title, "slideotter", 10),
     tone: sentence(deck.tone, "calm and exact")
   };
 }

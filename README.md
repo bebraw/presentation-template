@@ -1,6 +1,6 @@
-# presentation-template
+# slideotter
 
-This repository contains a small DOM-first demonstration presentation, a local browser studio, and presentation workflow guidance.
+slideotter is a small DOM-first demonstration presentation, local browser studio, and presentation workflow workspace.
 
 ## Included skills
 

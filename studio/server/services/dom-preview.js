@@ -35,7 +35,7 @@ function getDomPreviewState() {
     },
     slides,
     theme: resolveTheme(deck.visualTheme),
-    title: deck.title ? deck.title : "Presentation Studio"
+    title: deck.title ? deck.title : "slideotter"
   };
 }
 

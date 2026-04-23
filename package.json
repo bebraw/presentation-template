@@ -1,8 +1,8 @@
 {
-  "name": "presentation-template",
+  "name": "slideotter",
   "version": "0.1.0",
   "private": true,
-  "description": "DOM-first browser presentation studio and demo deck.",
+  "description": "slideotter DOM-first browser presentation studio and demo deck.",
   "scripts": {
     "build:diagrams": "node scripts/render-diagrams.js",
     "build": "npm run build:diagrams && node scripts/build-deck.js",

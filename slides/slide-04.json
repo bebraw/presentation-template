@@ -25,7 +25,7 @@
   "resources": [
     {
       "id": "summary-studio",
-      "title": "Studio app",
+      "title": "slideotter app",
       "body": "studio/client and studio/server",
       "bodyFontSize": 11.2
     },

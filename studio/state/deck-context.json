@@ -1,12 +1,12 @@
 {
   "deck": {
     "author": "OpenAI Codex",
-    "company": "presentation-template",
+    "company": "slideotter",
     "subject": "Browser studio for structured presentation authoring",
-    "title": "Presentation Studio",
+    "title": "slideotter",
     "lang": "en-US",
     "audience": "Deck authors and maintainers",
-    "objective": "Explain how the project turns deck editing into a local browser workflow with direct text edits, previews, safe apply flows, and DOM-first validation.",
+    "objective": "Explain how slideotter turns deck editing into a local browser workflow with direct text edits, previews, safe apply flows, and DOM-first validation.",
     "tone": "Direct, practical, engineering-focused",
     "constraints": "Keep slide copy concise and describe the active project rather than implementation history.",
     "designConstraints": {
@@ -49,7 +49,7 @@
       "progressFill": "275d8c"
     },
     "themeBrief": "Clean local-workbench presentation with clear project framing and restrained technical detail.",
-    "outline": "1. What the Presentation Studio is\n2. What workflow it supports, including direct text edits\n3. Why the architecture is repeatable\n4. What the project enables",
+    "outline": "1. What slideotter is\n2. What workflow it supports, including direct text edits\n3. Why the architecture is repeatable\n4. What the project enables",
     "structureLabel": "",
     "structureSummary": "",
     "structurePlan": []

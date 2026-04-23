@@ -18,10 +18,10 @@ const theme = {
 };
 
 const deckMeta = {
-  title: "Presentation Template Demo",
+  title: "slideotter Demo",
   subtitle: "A small runnable deck built around the DOM-first studio",
   author: "OpenAI Codex",
-  company: "presentation-template",
+  company: "slideotter",
   subject: "Demonstration presentation"
 };
 const defaultDeckLanguage = "en-US";

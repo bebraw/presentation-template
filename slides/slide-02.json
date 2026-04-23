@@ -1,9 +1,9 @@
 {
   "type": "toc",
   "index": 2,
-  "title": "What the studio does",
+  "title": "What slideotter does",
   "eyebrow": "Workflow",
-  "summary": "The studio keeps intent, content, workflow actions, preview, and validation in one local loop.",
+  "summary": "slideotter keeps intent, content, workflow actions, preview, and validation in one local loop.",
   "note": "Authors work in the browser; the server owns writes, rendering, and validation.",
   "cards": [
     {

@@ -21,6 +21,7 @@ Use that file for:
 - current capabilities and known gaps
 - per-phase implementation status
 - the detailed checklist of what has landed already
+- notable studio UI workflow-shape changes such as splitting variant generation from variant comparison
 
 Keep this roadmap focused on architecture, rollout order, and the next slice to build.
 

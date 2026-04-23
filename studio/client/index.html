@@ -165,7 +165,7 @@
             <div class="section-heading">
               <div>
                 <p class="eyebrow">Workflow</p>
-                <h2>Slide Workflows</h2>
+                <h2>Variant Generation</h2>
               </div>
             </div>
 
@@ -201,14 +201,28 @@
               Uses deck brief, slide intent, layout hint, notes, outline, and constraints as workflow inputs.
             </p>
 
-            <div class="workflow-compare" id="workflow-compare">
-              <div class="section-heading section-heading-tight">
-                <div>
-                  <p class="eyebrow">Compare</p>
-                  <h2>Current vs Candidate</h2>
-                </div>
-              </div>
+            <div class="workflow-variants">
+              <p class="section-note">
+                Generated alternatives appear here with their own preview images so you can review and select one before switching into the compare view.
+              </p>
 
+              <div class="variant-list workflow-variant-list" id="variant-list"></div>
+            </div>
+          </article>
+
+          <article class="editorial-block editorial-block-wide">
+            <div class="section-heading">
+              <div>
+                <p class="eyebrow">Workflow</p>
+                <h2>Variant Comparison</h2>
+              </div>
+            </div>
+
+            <p class="section-note">
+              Select a generated or captured option to inspect the current slide against one candidate, then apply it with or without validation.
+            </p>
+
+            <div class="workflow-compare" id="workflow-compare">
               <p class="section-note" id="compare-empty">
                 Generate or select a variant to compare it against the current slide.
               </p>
@@ -238,21 +252,6 @@
                   <button id="compare-apply-validate-button" class="secondary">Apply + validate</button>
                 </div>
               </div>
-            </div>
-
-            <div class="workflow-variants">
-              <div class="section-heading section-heading-tight">
-                <div>
-                  <p class="eyebrow">Variants</p>
-                  <h2>Generated Options</h2>
-                </div>
-              </div>
-
-              <p class="section-note">
-                Generated alternatives appear here with their own preview images so you can compare and apply one without leaving the workflow area.
-              </p>
-
-              <div class="variant-list workflow-variant-list" id="variant-list"></div>
             </div>
           </article>
 

@@ -1765,6 +1765,13 @@ function collectDeckPlanStats(slides) {
   return stats;
 }
 
+function getDeckPlanLiveSlides(slides) {
+  return (Array.isArray(slides) ? slides : [])
+    .filter((slide) => Number.isFinite(slide.proposedIndex) && slide.proposedTitle)
+    .slice()
+    .sort((left, right) => left.proposedIndex - right.proposedIndex);
+}
+
 function buildDeckPlanStatsSummary(stats) {
   const parts = [];
 
@@ -1789,6 +1796,67 @@ function buildDeckPlanStatsSummary(stats) {
   }
 
   return parts.length ? parts.join(", ") : "keep-only plan";
+}
+
+function buildDeckPlanActionCue(slide) {
+  const action = String(slide && slide.action ? slide.action : "");
+  const currentTitle = slide && slide.currentTitle ? slide.currentTitle : "Untitled";
+  const proposedTitle = slide && slide.proposedTitle ? slide.proposedTitle : currentTitle;
+
+  if (action === "insert") {
+    return `Insert ${proposedTitle} at ${slide.proposedIndex} as a new ${slide.type || "slide"} beat.`;
+  }
+
+  if (action === "remove") {
+    return `Archive ${currentTitle} from the live deck while keeping the source recoverable.`;
+  }
+
+  if (action.includes("replace")) {
+    return `Replace ${currentTitle} with ${proposedTitle} and keep the slide file under guarded apply.`;
+  }
+
+  if (action.includes("move")) {
+    return `Move ${currentTitle} to ${slide.proposedIndex}${action.includes("retitle") ? ` and retitle it to ${proposedTitle}` : ""}.`;
+  }
+
+  if (action.includes("retitle")) {
+    return `Retitle ${currentTitle} to ${proposedTitle}.`;
+  }
+
+  return `Keep ${currentTitle} in the live deck.`;
+}
+
+function buildDeckPlanPreview(context, slides, planStats) {
+  const currentSequence = context.slides.map((slide) => ({
+    index: slide.index,
+    title: slide.currentTitle
+  }));
+  const proposedSequence = getDeckPlanLiveSlides(slides).map((slide) => ({
+    action: slide.action,
+    index: slide.proposedIndex,
+    title: slide.proposedTitle
+  }));
+  const changedSlides = (Array.isArray(slides) ? slides : []).filter((slide) => String(slide && slide.action ? slide.action : "") !== "keep");
+  const cues = changedSlides.slice(0, 4).map((slide) => buildDeckPlanActionCue(slide));
+  const overview = proposedSequence.length === currentSequence.length
+    ? `Live deck stays at ${proposedSequence.length} slides with ${buildDeckPlanStatsSummary(planStats)}.`
+    : `Live deck changes from ${currentSequence.length} to ${proposedSequence.length} slides with ${buildDeckPlanStatsSummary(planStats)}.`;
+
+  return {
+    currentSequence,
+    overview,
+    proposedSequence,
+    cues
+  };
+}
+
+function buildDeckPlanChangeSummary(definition, preview) {
+  return [
+    definition.changeLead,
+    preview.overview,
+    ...preview.cues.slice(0, 2),
+    "Applying this candidate stays inside the guarded slide-file promotion path."
+  ];
 }
 
 function buildDeckPlanEntries(context, definition) {
@@ -1886,15 +1954,10 @@ function buildDeckPlanEntries(context, definition) {
 function createDeckStructurePlan(context, definition) {
   const slides = buildDeckPlanEntries(context, definition);
   const planStats = collectDeckPlanStats(slides);
+  const preview = buildDeckPlanPreview(context, slides, planStats);
 
   return {
-    changeSummary: [
-      definition.changeLead,
-      "Built explicit per-slide plan changes, including role, order, retitle, replacement, and remove decisions.",
-      `Current plan shape: ${buildDeckPlanStatsSummary(planStats)}.`,
-      "Designed to be applied through guarded slide-file promotions rather than freeform deck rewrites.",
-      "Applying this candidate updates the saved outline, per-slide structure metadata, and any promoted insert, replace, remove, order, or retitle steps."
-    ],
+    changeSummary: buildDeckPlanChangeSummary(definition, preview),
     id: `deck-structure-${definition.label.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "")}`,
     label: definition.label,
     notes: definition.notes,
@@ -1903,6 +1966,7 @@ function createDeckStructurePlan(context, definition) {
       .map((slide) => slide.proposedTitle)
       .join("\n"),
     planStats,
+    preview,
     promptSummary: definition.promptSummary,
     slides,
     summary: definition.summary

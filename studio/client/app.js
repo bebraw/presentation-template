@@ -393,7 +393,11 @@ function renderDeckStructureCandidates() {
     card.className = `variant-card${candidate.id === state.selectedDeckStructureId ? " active" : ""}`;
     const outlineLines = String(candidate.outline || "").split("\n").filter(Boolean);
     const planStats = candidate.planStats || {};
+    const preview = candidate.preview || {};
     const plan = Array.isArray(candidate.slides) ? candidate.slides : [];
+    const previewCues = Array.isArray(preview.cues) ? preview.cues : [];
+    const currentSequence = Array.isArray(preview.currentSequence) ? preview.currentSequence : [];
+    const proposedSequence = Array.isArray(preview.proposedSequence) ? preview.proposedSequence : [];
     card.innerHTML = `
       <p class="variant-kind">Deck structure</p>
       <strong>${escapeHtml(candidate.label || `Candidate ${index + 1}`)}</strong>
@@ -405,6 +409,15 @@ function renderDeckStructureCandidates() {
         <span class="compare-stat"><strong>${planStats.archived || 0}</strong> archive</span>
         <span class="compare-stat"><strong>${planStats.moved || 0}</strong> move</span>
         <span class="compare-stat"><strong>${planStats.retitled || 0}</strong> retitle</span>
+      </div>
+      <div class="compare-change-summary">
+        ${(preview.overview ? [`<p class="compare-summary-item">${escapeHtml(preview.overview)}</p>`] : [])
+          .concat(previewCues.map((cue) => `<p class="compare-summary-item">${escapeHtml(cue)}</p>`))
+          .join("")}
+      </div>
+      <div class="deck-structure-outline">
+        <div class="deck-structure-outline-line"><strong>Current live deck</strong><span>${escapeHtml(currentSequence.map((slide) => `${slide.index}. ${slide.title}`).join(" / ") || "No current sequence")}</span></div>
+        <div class="deck-structure-outline-line"><strong>Proposed live deck</strong><span>${escapeHtml(proposedSequence.map((slide) => `${slide.index}. ${slide.title}`).join(" / ") || "No proposed sequence")}</span></div>
       </div>
       <div class="deck-structure-outline">
         ${outlineLines.map((line, lineIndex) => `<div class="deck-structure-outline-line"><strong>${lineIndex + 1}.</strong><span>${escapeHtml(line)}</span></div>`).join("")}

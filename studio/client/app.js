@@ -23,11 +23,13 @@ const elements = {
   deckTitle: document.getElementById("deck-title"),
   deckTone: document.getElementById("deck-tone"),
   previewEmpty: document.getElementById("preview-empty"),
+  previewCount: document.getElementById("preview-count"),
   reportBox: document.getElementById("report-box"),
   saveDeckContextButton: document.getElementById("save-deck-context-button"),
   saveSlideContextButton: document.getElementById("save-slide-context-button"),
   saveSourceButton: document.getElementById("save-source-button"),
   selectionStatus: document.getElementById("selection-status"),
+  selectedSlideLabel: document.getElementById("selected-slide-label"),
   slideIntent: document.getElementById("slide-intent"),
   slideLayoutHint: document.getElementById("slide-layout-hint"),
   slideMustInclude: document.getElementById("slide-must-include"),
@@ -77,14 +79,25 @@ function renderStatus() {
   elements.buildStatus.textContent = build && build.updatedAt
     ? `Build ${build.ok ? "ready" : "failed"}`
     : "Build idle";
+  elements.buildStatus.dataset.state = build && build.updatedAt
+    ? (build.ok ? "ok" : "warn")
+    : "idle";
 
   elements.validationStatus.textContent = validation && validation.updatedAt
     ? `Validation ${validation.ok ? "passed" : "failed"}`
     : "Validation idle";
+  elements.validationStatus.dataset.state = validation && validation.updatedAt
+    ? (validation.ok ? "ok" : "warn")
+    : "idle";
 
   elements.selectionStatus.textContent = selected
     ? `Selected ${selected.title}`
     : "No slide selected";
+  elements.selectionStatus.dataset.state = selected ? "ok" : "idle";
+  elements.selectedSlideLabel.textContent = selected
+    ? `${selected.index}. ${selected.title}`
+    : "Slide not selected";
+  elements.previewCount.textContent = `${state.previews.pages.length} page${state.previews.pages.length === 1 ? "" : "s"}`;
 }
 
 function renderDeckFields() {

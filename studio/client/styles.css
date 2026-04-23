@@ -1615,16 +1615,28 @@ input[type="color"]::-moz-color-swatch {
 .dom-slide__cover-copy {
   display: grid;
   align-content: start;
-  gap: 16px;
-  padding-top: 18px;
+  gap: 14px;
+  padding-top: 0;
+}
+
+.dom-slide__cover-logo {
+  width: 82px;
+  height: 82px;
+  margin: 0;
+}
+
+.dom-slide__cover-logo svg {
+  display: block;
+  width: 100%;
+  height: 100%;
 }
 
 .dom-slide__cover-rule {
-  width: 184px;
+  width: 164px;
   height: 7px;
   border-radius: 999px;
   background: var(--dom-accent, #f28f3b);
-  margin-bottom: 4px;
+  margin-bottom: 2px;
 }
 
 .dom-slide__cover-title {

@@ -2,6 +2,7 @@
   "type": "cover",
   "index": 1,
   "title": "slideotter",
+  "logo": "slideotter",
   "eyebrow": "Project overview",
   "summary": "A local browser studio for structured decks with fast previews, guarded edits, and one DOM render path.",
   "note": "Editing loop: capture context, generate options, compare, apply deliberately, validate.",

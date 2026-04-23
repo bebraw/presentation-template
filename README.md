@@ -1,5 +1,7 @@
 # slideotter
 
+<img src="docs/assets/slideotter-logo.svg" alt="slideotter logo" width="420">
+
 slideotter is a local, DOM-first presentation workbench for structured decks. It keeps slide content, previews, workflow actions, variant review, and validation in one browser loop so deck changes can move from intent to checked output without losing the source.
 
 It is not a PowerPoint replacement and not a broad WYSIWYG editor. The project focuses on pragmatic authoring support for decks that are already structured enough to render, compare, and validate reliably.
@@ -60,4 +62,3 @@ The same DOM renderer is also exposed as a standalone deck preview at `/deck-pre
 - [TECHNICAL.md](TECHNICAL.md): lower-level technical notes and project layout
 - [ROADMAP.md](ROADMAP.md): current architecture direction and next maintenance focus
 - [STUDIO_STATUS.md](STUDIO_STATUS.md): live implementation snapshot
-

@@ -7,6 +7,8 @@ const { getSlide, readSlideSource, writeSlideSource } = require("./slides");
 const { captureVariant, updateVariant } = require("./variants");
 const { ensureDir, listPages } = require("../../../generator/render-utils");
 
+const ideateSlideLocks = new Set();
+
 function asAssetUrl(fileName) {
   const relativePath = path.relative(outputDir, fileName).split(path.sep).join("/");
   return `/studio-output/${relativePath}`;
@@ -418,6 +420,65 @@ function buildVariantSource(source, theme) {
   }
 }
 
+function buildChangeSummary(slideType, theme, options = {}) {
+  const modeLabel = options.dryRun ? "Generated as a dry run without saving to the variant store." : "Saved as a reusable variant in studio state.";
+
+  switch (slideType) {
+    case "cover":
+      return [
+        `Shifted the cover toward the ${theme.label.toLowerCase()} framing.`,
+        "Rewrote the three capability cards as the primary content block.",
+        "Updated the cover eyebrow, summary, and footnote copy.",
+        modeLabel
+      ];
+    case "toc":
+      return [
+        `Shifted the outline slide toward the ${theme.label.toLowerCase()} framing.`,
+        "Rewrote the section body and the three outline cards.",
+        "Updated the bottom note to match the new emphasis.",
+        modeLabel
+      ];
+    case "content":
+      return [
+        `Shifted the signal slide toward the ${theme.label.toLowerCase()} framing.`,
+        "Replaced the signal bars and guardrail metrics.",
+        "Retitled the left and right comparison panels to match the new emphasis.",
+        modeLabel
+      ];
+    case "summary":
+      return [
+        `Shifted the summary slide toward the ${theme.label.toLowerCase()} framing.`,
+        "Replaced the checklist items and the resource cards.",
+        "Kept the slide structure but rewrote the summary body around the new angle.",
+        modeLabel
+      ];
+    default:
+      return [
+        `Shifted the slide toward the ${theme.label.toLowerCase()} framing.`,
+        modeLabel
+      ];
+  }
+}
+
+function createTransientVariant(options) {
+  const timestamp = new Date().toISOString();
+  return {
+    changeSummary: Array.isArray(options.changeSummary) ? options.changeSummary : [],
+    createdAt: timestamp,
+    id: `dry-run-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
+    kind: options.kind || "generated",
+    label: options.label,
+    notes: options.notes || "",
+    operation: options.operation || null,
+    persisted: false,
+    previewImage: options.previewImage || null,
+    promptSummary: options.promptSummary || "",
+    slideId: options.slideId,
+    source: options.source,
+    updatedAt: timestamp
+  };
+}
+
 async function renderVariantPreview(slideId, source, variantId) {
   const slide = getSlide(slideId);
   const originalSource = readSlideSource(slideId);
@@ -445,19 +506,48 @@ async function renderVariantPreview(slideId, source, variantId) {
   }
 }
 
-async function ideateSlide(slideId) {
+async function ideateSlide(slideId, options = {}) {
+  if (ideateSlideLocks.has(slideId)) {
+    throw new Error(`Ideate Slide is already running for ${slideId}`);
+  }
+
+  ideateSlideLocks.add(slideId);
   const slide = getSlide(slideId);
   const originalSource = readSlideSource(slideId);
   const context = getDeckContext();
   const themes = createIdeaThemes(slide, context);
   const createdVariants = [];
   let previews = null;
+  const dryRun = options.dryRun === true;
 
   try {
     for (const theme of themes) {
+      const slideType = extractSlideType(originalSource);
       const source = buildVariantSource(originalSource, theme);
       ensureJavaScriptSyntax(source);
+      const changeSummary = buildChangeSummary(slideType, theme, { dryRun });
+
+      if (dryRun) {
+        const variant = createTransientVariant({
+          changeSummary,
+          kind: "generated",
+          label: `${theme.label} dry run`,
+          notes: theme.notes,
+          operation: "ideate-slide",
+          promptSummary: theme.promptSummary,
+          slideId,
+          source
+        });
+        const previewImage = await renderVariantPreview(slideId, source, variant.id);
+        createdVariants.push({
+          ...variant,
+          previewImage
+        });
+        continue;
+      }
+
       const variant = captureVariant({
+        changeSummary,
         kind: "generated",
         label: `${theme.label} variant`,
         notes: theme.notes,
@@ -470,14 +560,21 @@ async function ideateSlide(slideId) {
       createdVariants.push(updateVariant(variant.id, { previewImage }));
     }
   } finally {
-    writeSlideSource(slideId, originalSource);
-    previews = (await buildAndRenderDeck()).previews;
+    try {
+      writeSlideSource(slideId, originalSource);
+      previews = (await buildAndRenderDeck()).previews;
+    } finally {
+      ideateSlideLocks.delete(slideId);
+    }
   }
 
   return {
+    dryRun,
     previews,
     slideId,
-    summary: `Generated ${createdVariants.length} slide variants from saved context for ${slide.title}.`,
+    summary: dryRun
+      ? `Generated ${createdVariants.length} dry-run slide variants from saved context for ${slide.title}.`
+      : `Generated ${createdVariants.length} slide variants from saved context for ${slide.title}.`,
     variants: createdVariants
   };
 }

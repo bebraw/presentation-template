@@ -26,21 +26,22 @@ Implemented:
 - a quiet studio UI pass with sans-serif typography, a white canvas, and divider-based layout instead of card containers
 - first explicit workflow operation: `Ideate Slide` generates saved source variants from stored context, renders preview images, and applies one variant back into the working slide on demand
 - side-by-side compare view with current-vs-candidate previews, source-change summaries, and apply-or-validate actions inside the workflow area
+- dry-run ideation mode that renders transient variants without saving them to the variant store
+- explicit before-and-after source diff panes plus operation-specific change summaries in the compare area
+- per-slide workflow locking so overlapping ideation requests do not race on the working slide source
 
 Not implemented yet:
 
 - explicit workflow operations such as `Ideate Theme`, `Ideate Structure`, `Drill Wording`, and layout-variant generation
-- dry-run mode for higher-risk edits
-- change-summary and before/after diff UX
 
 ## Next Focus
 
-The next practical slice should make generated changes easier to inspect before they touch the working slide:
+The next practical slice should widen the workflow surface beyond `Ideate Slide` while keeping the same safe compare/apply loop:
 
-1. add a more explicit before/after source diff view rather than summary-only line highlights
-2. support dry-run mode for higher-risk workflows so generated edits can be inspected without promotion pressure
-3. add operation-specific change summaries that explain what changed in slide terms, not only source terms
-4. keep the apply and validation path explicit and auditable
+1. add a second explicit workflow such as `Ideate Theme` or `Redo Layout` instead of keeping all structured generation in one slide-only action
+2. carry the same dry-run, compare, and apply-or-validate path into every new workflow operation
+3. tighten the diff UX so larger slide sources stay readable during comparison
+4. keep operation outputs legible in slide terms, not only source terms
 
 ## Product Intent
 

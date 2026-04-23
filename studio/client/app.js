@@ -7,6 +7,7 @@ const state = {
   selectedSlideSource: "",
   selectedVariantId: null,
   slides: [],
+  transientVariants: [],
   validation: null,
   variants: []
 };
@@ -18,16 +19,19 @@ const elements = {
   captureVariantButton: document.getElementById("capture-variant-button"),
   compareApplyButton: document.getElementById("compare-apply-button"),
   compareApplyValidateButton: document.getElementById("compare-apply-validate-button"),
+  compareChangeSummary: document.getElementById("compare-change-summary"),
   compareCurrentLabel: document.getElementById("compare-current-label"),
   compareCurrentPreview: document.getElementById("compare-current-preview"),
   compareEmpty: document.getElementById("compare-empty"),
   compareGrid: document.getElementById("compare-grid"),
   compareHighlights: document.getElementById("compare-highlights"),
+  compareSourceGrid: document.getElementById("compare-source-grid"),
   compareStats: document.getElementById("compare-stats"),
   compareSummary: document.getElementById("compare-summary"),
   compareVariantLabel: document.getElementById("compare-variant-label"),
   compareVariantMeta: document.getElementById("compare-variant-meta"),
   compareVariantPreview: document.getElementById("compare-variant-preview"),
+  ideateDryRun: document.getElementById("ideate-dry-run"),
   ideateSlideButton: document.getElementById("ideate-slide-button"),
   deckAudience: document.getElementById("deck-audience"),
   deckConstraints: document.getElementById("deck-constraints"),
@@ -125,7 +129,10 @@ function renderStatus() {
 }
 
 function getSlideVariants() {
-  return state.variants.filter((variant) => variant.slideId === state.selectedSlideId);
+  return [
+    ...state.transientVariants.filter((variant) => variant.slideId === state.selectedSlideId),
+    ...state.variants.filter((variant) => variant.slideId === state.selectedSlideId)
+  ];
 }
 
 function getPreferredVariant(variants) {
@@ -187,6 +194,32 @@ function summarizeDiff(currentSource, variantSource) {
     highlights,
     removed
   };
+}
+
+function clearTransientVariants(slideId) {
+  state.transientVariants = state.transientVariants.filter((variant) => variant.slideId !== slideId);
+}
+
+function buildSourceDiffRows(currentSource, variantSource) {
+  const beforeLines = currentSource.split("\n");
+  const afterLines = variantSource.split("\n");
+  const maxLines = Math.max(beforeLines.length, afterLines.length);
+  const rows = [];
+
+  for (let index = 0; index < maxLines; index += 1) {
+    const before = beforeLines[index];
+    const after = afterLines[index];
+    const changed = before !== after;
+
+    rows.push({
+      after: after === undefined ? "" : after,
+      before: before === undefined ? "" : before,
+      changed,
+      line: index + 1
+    });
+  }
+
+  return rows;
 }
 
 function renderDeckFields() {
@@ -253,9 +286,9 @@ function renderVariants() {
   variants.forEach((variant) => {
     const card = document.createElement("div");
     card.className = `variant-card${variant.id === state.selectedVariantId ? " active" : ""}`;
-    const kindLabel = variant.kind === "generated"
-      ? "Ideate Slide"
-      : "Snapshot";
+    const kindLabel = variant.persisted === false
+      ? "Dry run"
+      : (variant.kind === "generated" ? "Ideate Slide" : "Snapshot");
     const summary = variant.promptSummary || variant.notes || "No notes";
     card.innerHTML = `
       <p class="variant-kind">${escapeHtml(kindLabel)}</p>
@@ -310,6 +343,7 @@ function renderVariantComparison() {
   const activePage = state.previews.pages.find((page) => page.index === state.selectedSlideIndex) || state.previews.pages[0];
   const slide = state.slides.find((entry) => entry.id === state.selectedSlideId);
   const diff = summarizeDiff(state.selectedSlideSource || "", variant.source || "");
+  const sourceRows = buildSourceDiffRows(state.selectedSlideSource || "", variant.source || "");
 
   elements.compareEmpty.hidden = true;
   elements.compareGrid.hidden = false;
@@ -320,10 +354,38 @@ function renderVariantComparison() {
   elements.compareVariantMeta.textContent = variant.promptSummary || variant.notes || "No notes";
   elements.compareVariantPreview.src = variant.previewImage ? variant.previewImage.url : "";
   elements.compareStats.innerHTML = [
+    `<span class="compare-stat"><strong>${variant.persisted === false ? "dry run" : "saved"}</strong> variant mode</span>`,
     `<span class="compare-stat"><strong>${diff.changed}</strong> changed lines</span>`,
     `<span class="compare-stat"><strong>${diff.added}</strong> added lines</span>`,
     `<span class="compare-stat"><strong>${diff.removed}</strong> removed lines</span>`
   ].join("");
+  elements.compareChangeSummary.innerHTML = Array.isArray(variant.changeSummary) && variant.changeSummary.length
+    ? variant.changeSummary.map((item) => `<p class="compare-summary-item">${escapeHtml(item)}</p>`).join("")
+    : `<p class="compare-summary-item">${escapeHtml(variant.promptSummary || variant.notes || "No change summary available.")}</p>`;
+  elements.compareSourceGrid.innerHTML = `
+    <div class="source-pane">
+      <p class="eyebrow">Before</p>
+      <div class="source-lines">
+        ${sourceRows.map((row) => `
+          <div class="source-line${row.changed ? " changed" : ""}">
+            <span class="source-line-no">${row.line}</span>
+            <code>${escapeHtml(row.before)}</code>
+          </div>
+        `).join("")}
+      </div>
+    </div>
+    <div class="source-pane">
+      <p class="eyebrow">After</p>
+      <div class="source-lines">
+        ${sourceRows.map((row) => `
+          <div class="source-line${row.changed ? " changed" : ""}">
+            <span class="source-line-no">${row.line}</span>
+            <code>${escapeHtml(row.after)}</code>
+          </div>
+        `).join("")}
+      </div>
+    </div>
+  `;
   elements.compareHighlights.innerHTML = diff.highlights.length
     ? diff.highlights.map((highlight) => `
       <div class="compare-highlight">
@@ -374,6 +436,7 @@ async function loadSlide(slideId) {
   state.selectedSlideId = slideId;
   state.selectedSlideIndex = payload.slide.index;
   state.selectedSlideSource = payload.source;
+  clearTransientVariants(slideId);
   const preferred = getPreferredVariant(payload.variants || []);
   state.selectedVariantId = preferred ? preferred.id : null;
   renderStatus();
@@ -397,6 +460,7 @@ async function refreshState() {
   state.previews = payload.previews;
   state.runtime = payload.runtime;
   state.slides = payload.slides;
+  state.transientVariants = [];
   state.variants = payload.variants;
 
   if (!state.selectedSlideId && state.slides.length) {
@@ -530,6 +594,7 @@ async function captureVariant() {
       method: "POST"
     });
     state.variants = [payload.variant, ...state.variants];
+    clearTransientVariants(state.selectedSlideId);
     state.selectedVariantId = payload.variant.id;
     elements.variantLabel.value = "";
     elements.operationStatus.textContent = `Captured ${payload.variant.label} for comparison.`;
@@ -540,12 +605,30 @@ async function captureVariant() {
 }
 
 async function applyVariantById(variantId, options = {}) {
-  const payload = await request("/api/variants/apply", {
-    body: JSON.stringify({ variantId }),
-    method: "POST"
-  });
+  const variant = getSlideVariants().find((entry) => entry.id === variantId);
+  if (!variant) {
+    throw new Error(`Unknown variant: ${variantId}`);
+  }
+
+  let payload;
+  if (variant.persisted === false) {
+    payload = await request(`/api/slides/${variant.slideId}/source`, {
+      body: JSON.stringify({
+        rebuild: true,
+        source: variant.source
+      }),
+      method: "POST"
+    });
+    payload.slideId = variant.slideId;
+  } else {
+    payload = await request("/api/variants/apply", {
+      body: JSON.stringify({ variantId }),
+      method: "POST"
+    });
+  }
   state.previews = payload.previews;
   elements.operationStatus.textContent = `Applied ${options.label || "variant"} to ${payload.slideId}.`;
+  clearTransientVariants(payload.slideId);
   await loadSlide(payload.slideId);
 
   if (options.validateAfter) {
@@ -563,14 +646,21 @@ async function ideateSlide() {
   try {
     const payload = await request("/api/operations/ideate-slide", {
       body: JSON.stringify({
+        dryRun: elements.ideateDryRun.checked,
         slideId: state.selectedSlideId
       }),
       method: "POST"
     });
     state.previews = payload.previews;
     state.runtime = payload.runtime;
+    clearTransientVariants(state.selectedSlideId);
+    state.transientVariants = [
+      ...(payload.transientVariants || []),
+      ...state.transientVariants
+    ];
     state.variants = payload.variants;
-    state.selectedVariantId = payload.variants.find((variant) => variant.slideId === state.selectedSlideId && variant.kind === "generated")?.id || null;
+    const preferred = getPreferredVariant(getSlideVariants());
+    state.selectedVariantId = preferred ? preferred.id : null;
     elements.operationStatus.textContent = payload.summary;
     renderStatus();
     renderPreviews();

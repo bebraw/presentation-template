@@ -212,12 +212,15 @@ async function handleIdeateSlide(req, res) {
     throw new Error("Expected slideId when ideating a slide");
   }
 
-  const result = await ideateSlide(body.slideId);
+  const result = await ideateSlide(body.slideId, {
+    dryRun: body.dryRun === true
+  });
   runtimeState.build = {
     ok: true,
     updatedAt: new Date().toISOString()
   };
   runtimeState.workflow = {
+    dryRun: body.dryRun === true,
     ok: true,
     operation: "ideate-slide",
     slideId: body.slideId,
@@ -230,6 +233,7 @@ async function handleIdeateSlide(req, res) {
     runtime: runtimeState,
     slideId: result.slideId,
     summary: result.summary,
+    transientVariants: result.dryRun ? result.variants : [],
     variants: getVariants().variants
   });
 }

@@ -44,7 +44,7 @@ The DOM pivot is complete enough that renderer migration is no longer the main t
 
 The next practical tasks are:
 
-1. keep hardening complete media-validation mode beyond its first image legibility and caption/source spacing checks, especially once media-heavy slide families land
+1. keep hardening complete media-validation mode beyond its first image legibility and caption/source spacing checks, now covered by a fixture in the quality gate, especially once media-heavy slide families land
 2. keep extending shared deck-context patches if new deck-plan modes are added; the current sequence, boundary, decision, operator, compressed, composed, and deck-authoring candidates all carry shared-context steering
 3. keep pruning stale “migration” or `generator/` language from deeper docs, and mark old rollout sections as historical whenever they are touched
 

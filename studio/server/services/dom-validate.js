@@ -809,5 +809,8 @@ async function validateDeckInDom() {
 }
 
 module.exports = {
+  _test: {
+    collectMediaIssues
+  },
   validateDeckInDom
 };

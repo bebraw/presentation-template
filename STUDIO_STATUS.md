@@ -69,11 +69,12 @@ Implemented:
 - centralized studio write-boundary enforcement for slide files under `slides/slide-*`, repo-local state files under `studio/state/*.json`, and generated artifacts under `studio/output/**`
 - validation-page controls for per-rule severity plus fast vs complete media-validation mode, persisted with deck context and honored by the live DOM validation path for current rules
 - complete media-validation mode now inspects rendered images, SVGs, canvases, videos, figure-like media nodes, and caption/source text for small visuals, unloaded or dimensionless raster media, upscaled raster media, and tight caption/source spacing
+- a media-validation fixture now runs in `npm run validate`, so complete-mode media rule behavior is covered even before the active demo deck includes media-heavy slides
 
 Current gaps:
 
 - shared deck-context steering is now in place for the current local deck-plan modes; future deck-plan modes should keep carrying candidate-level deck patches when their narrative direction changes shared settings
-- DOM validation now has first-pass media-specific checks in complete mode, but media-heavy slide families may still need sharper screenshot, chart, or diagram-specific legibility heuristics once those slides exist in the DOM runtime
+- DOM validation now has first-pass media-specific checks and fixture coverage in complete mode, but media-heavy slide families may still need sharper screenshot, chart, or diagram-specific legibility heuristics once those slides exist in the DOM runtime
 - deeper historical guidance should continue to be corrected opportunistically if it presents removed generator-era paths as active implementation guidance
 
 ## Planned Rework

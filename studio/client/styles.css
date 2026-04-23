@@ -792,16 +792,6 @@ textarea {
   margin-bottom: 1rem;
 }
 
-.preview-empty {
-  position: absolute;
-  inset: 0;
-  display: grid;
-  place-items: center;
-  color: var(--app-soft-text);
-  padding: 1.5rem;
-  text-align: center;
-}
-
 .thumb-rail {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(10rem, 1fr));

@@ -82,7 +82,6 @@ const elements = {
   deckTone: document.getElementById("deck-tone"),
   llmStatusNote: document.getElementById("llm-status-note"),
   operationStatus: document.getElementById("operation-status"),
-  previewEmpty: document.getElementById("preview-empty"),
   previewCount: document.getElementById("preview-count"),
   reportBox: document.getElementById("report-box"),
   redoLayoutButton: document.getElementById("redo-layout-button"),
@@ -1174,12 +1173,9 @@ function renderPreviews() {
 
   if (!state.slides.length) {
     elements.activePreview.innerHTML = "";
-    elements.previewEmpty.textContent = "No slide preview available.";
-    elements.previewEmpty.hidden = false;
     return;
   }
 
-  elements.previewEmpty.hidden = true;
   const activeSlide = state.slides.find((entry) => entry.index === state.selectedSlideIndex) || state.slides[0];
   const activeSpec = activeSlide ? (state.selectedSlideId === activeSlide.id && state.selectedSlideSpec ? state.selectedSlideSpec : getDomSlideSpec(activeSlide.id)) : null;
   const activePage = state.previews.pages.find((page) => activeSlide && page.index === activeSlide.index) || state.previews.pages[0] || null;
@@ -1193,8 +1189,6 @@ function renderPreviews() {
     renderImagePreview(elements.activePreview, `${activePage.url}?t=${encodeURIComponent(state.previews.generatedAt || "")}`, `${activeSlide ? activeSlide.title : "Slide"} preview`);
   } else {
     elements.activePreview.innerHTML = "";
-    elements.previewEmpty.textContent = "Preview unavailable for this slide.";
-    elements.previewEmpty.hidden = false;
   }
 
   state.slides.forEach((slide) => {

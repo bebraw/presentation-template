@@ -124,6 +124,8 @@ const elements = {
   validateButton: document.getElementById("validate-button"),
   validateRenderButton: document.getElementById("validate-render-button"),
   validationStatus: document.getElementById("validation-status"),
+  variantCountPill: document.getElementById("variant-count-pill"),
+  variantFlow: document.getElementById("variant-flow"),
   variantLabel: document.getElementById("variant-label"),
   variantList: document.getElementById("variant-list"),
   variantStorageNote: document.getElementById("variant-storage-note"),
@@ -467,6 +469,8 @@ function renderStatus() {
   const llm = state.runtime && state.runtime.llm;
   const llmCheck = llm && llm.lastCheck;
   const validation = state.runtime && state.runtime.validation;
+  const workflow = state.runtime && state.runtime.workflow;
+  const workflowRunning = workflow && workflow.status === "running";
   const selected = state.slides.find((slide) => slide.id === state.selectedSlideId);
 
   elements.validationStatus.textContent = validation && validation.updatedAt
@@ -480,16 +484,17 @@ function renderStatus() {
     ? `Selected ${selected.title}`
     : "No slide selected";
   elements.selectionStatus.dataset.state = selected ? "ok" : "idle";
-  elements.ideateSlideButton.disabled = !selected;
-  elements.ideateStructureButton.disabled = !selected;
-  elements.ideateThemeButton.disabled = !selected;
-  elements.redoLayoutButton.disabled = !selected;
+  elements.ideateSlideButton.disabled = !selected || workflowRunning;
+  elements.ideateStructureButton.disabled = !selected || workflowRunning;
+  elements.ideateThemeButton.disabled = !selected || workflowRunning;
+  elements.redoLayoutButton.disabled = !selected || workflowRunning;
   elements.captureVariantButton.disabled = !selected;
   elements.saveSlideSpecButton.disabled = !selected;
   elements.selectedSlideLabel.textContent = selected
     ? `${selected.index}. ${selected.title}`
     : "Slide not selected";
   elements.previewCount.textContent = `${state.slides.length} slide${state.slides.length === 1 ? "" : "s"}`;
+  renderVariantFlow();
   renderWorkflowHistory();
 
   if (!llm) {
@@ -1194,6 +1199,36 @@ function renderWorkflowHistory() {
   }).join("");
 }
 
+function renderVariantFlow() {
+  if (!elements.variantFlow) {
+    return;
+  }
+
+  const variants = getSlideVariants();
+  const selectedVariant = variants.find((variant) => variant.id === state.selectedVariantId) || null;
+  const workflow = state.runtime && state.runtime.workflow;
+  const workflowRunning = workflow && workflow.status === "running";
+  const currentStep = workflowRunning
+    ? "generate"
+    : !variants.length
+      ? "generate"
+      : selectedVariant
+        ? "compare"
+        : "select";
+  const order = ["generate", "select", "compare", "apply"];
+  const currentIndex = order.indexOf(currentStep);
+
+  Array.from(elements.variantFlow.querySelectorAll("[data-step]")).forEach((step) => {
+    const index = order.indexOf(step.dataset.step);
+    const stepState = index < currentIndex
+      ? "done"
+      : index === currentIndex
+        ? "current"
+        : "pending";
+    step.dataset.state = stepState;
+  });
+}
+
 let runtimeEventSource = null;
 
 function applyRuntimeUpdate(runtime) {
@@ -1713,7 +1748,12 @@ function renderPreviews() {
 function renderVariants() {
   const variants = getSlideVariants();
   const storage = state.variantStorage || {};
+  const savedCount = variants.filter((variant) => variant.persisted !== false).length;
+  const dryRunCount = variants.length - savedCount;
   elements.variantList.innerHTML = "";
+  elements.variantCountPill.textContent = variants.length
+    ? `${variants.length} candidate${variants.length === 1 ? "" : "s"}${dryRunCount ? `, ${dryRunCount} dry run` : ""}`
+    : "0 candidates";
   elements.variantStorageNote.textContent = storage.legacyStructured > 0
     ? `${storage.legacyStructured} structured legacy variant${storage.legacyStructured === 1 ? "" : "s"} still live in studio state; ${storage.blockedStructured > 0 ? `${storage.blockedStructured} need manual cleanup.` : "the rest are ready for slide-local storage."}`
     : storage.legacyUnstructured > 0
@@ -1724,6 +1764,7 @@ function renderVariants() {
 
   if (!variants.length) {
     elements.variantList.innerHTML = "<div class=\"variant-card\"><strong>No variants yet</strong><span>Run Ideate Slide, Ideate Structure, Ideate Theme, or Redo Layout to generate comparable options, or capture the current structured draft as a manual snapshot.</span></div>";
+    renderVariantFlow();
     renderVariantComparison();
     return;
   }
@@ -1740,7 +1781,7 @@ function renderVariants() {
       <div class="variant-preview"></div>
       <span>${escapeHtml(summary)}</span>
       <div class="variant-actions">
-        <button type="button" class="secondary" data-action="compare">Compare</button>
+        <button type="button" class="secondary" data-action="compare">${variant.id === state.selectedVariantId ? "Reviewing" : "Review"}</button>
         <button type="button" data-action="apply">Apply variant</button>
       </div>
     `;
@@ -1781,6 +1822,7 @@ function renderVariants() {
     elements.variantList.appendChild(card);
   });
 
+  renderVariantFlow();
   renderVariantComparison();
 }
 
@@ -1948,6 +1990,7 @@ function renderVariantComparison() {
     : "<p class=\"compare-empty-copy\">No source changes detected.</p>";
   elements.compareApplyButton.disabled = false;
   elements.compareApplyValidateButton.disabled = false;
+  renderVariantFlow();
 }
 
 function renderValidation() {

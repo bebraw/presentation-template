@@ -9,20 +9,13 @@
   <body>
     <div class="page-shell">
       <header class="masthead">
-        <div class="masthead-copy">
-          <p class="eyebrow">Local Workbench</p>
-          <h1>Presentation Studio</h1>
-          <p class="masthead-summary">
-            Work against the real deck source, keep context close to the slides,
-            and iterate through a calmer local editing loop.
-          </p>
-        </div>
+        <a class="product-mark" href="#studio" aria-label="Presentation Studio home">Presentation Studio</a>
 
-        <div class="page-nav" aria-label="Studio pages">
+        <nav class="page-nav" aria-label="Studio pages">
           <button class="secondary page-nav-button" id="show-studio-page" type="button">Slide Studio</button>
           <button class="secondary page-nav-button" id="show-planning-page" type="button">Deck Planning</button>
           <button class="secondary page-nav-button" id="show-validation-page" type="button">Validation</button>
-        </div>
+        </nav>
 
         <div class="masthead-meta">
           <div class="status-strip">
@@ -101,28 +94,54 @@
                 </div>
               </div>
 
-              <p class="section-note">
-                Generate candidate slide sources from saved context, explore structural or theme directions, or rebalance the current slide into layout variants. The working slide stays unchanged until you apply one.
-              </p>
+              <div class="variant-workbench" aria-label="Slide variant generation workbench">
+                <div class="variant-workbench-top">
+                  <div class="variant-flow" id="variant-flow" aria-label="Variant workflow progress">
+                    <span data-step="generate"><strong>1</strong> Generate</span>
+                    <span data-step="select"><strong>2</strong> Select</span>
+                    <span data-step="compare"><strong>3</strong> Compare</span>
+                    <span data-step="apply"><strong>4</strong> Apply</span>
+                  </div>
 
-              <div class="button-row compact">
-                <button id="ideate-slide-button">Ideate slide variants</button>
-                <button id="ideate-structure-button" class="secondary">Ideate structure variants</button>
-                <button id="ideate-theme-button" class="secondary">Ideate theme variants</button>
-                <button id="redo-layout-button" class="secondary">Redo layout variants</button>
-                <button id="check-llm-button" class="secondary">Check LLM provider</button>
-                <label class="toggle-option toggle-option-select">
-                  <span>Generation mode</span>
-                  <select id="ideate-generation-mode">
-                    <option value="auto">Auto</option>
-                    <option value="local">Local</option>
-                    <option value="llm">LLM</option>
-                  </select>
-                </label>
-                <label class="toggle-option">
-                  <input id="ideate-dry-run" type="checkbox">
-                  <span>Dry run only</span>
-                </label>
+                  <div class="variant-settings">
+                    <label class="toggle-option toggle-option-select">
+                      <span>Mode</span>
+                      <select id="ideate-generation-mode">
+                        <option value="auto">Auto</option>
+                        <option value="local">Local</option>
+                        <option value="llm">LLM</option>
+                      </select>
+                    </label>
+                    <label class="toggle-option">
+                      <input id="ideate-dry-run" type="checkbox">
+                      <span>Dry run</span>
+                    </label>
+                    <button id="check-llm-button" class="secondary utility-button">Check LLM</button>
+                  </div>
+                </div>
+
+                <div class="variant-mode-grid">
+                  <button id="ideate-slide-button" class="variant-mode-card">
+                    <span>General</span>
+                    <strong>Ideate slide</strong>
+                    <small>Reframe the current slide from saved intent and constraints.</small>
+                  </button>
+                  <button id="ideate-structure-button" class="variant-mode-card secondary">
+                    <span>Structure</span>
+                    <strong>Reshape content</strong>
+                    <small>Change grouping, emphasis, and narrative order.</small>
+                  </button>
+                  <button id="ideate-theme-button" class="variant-mode-card secondary">
+                    <span>Theme</span>
+                    <strong>Shift tone</strong>
+                    <small>Try a visual or editorial direction before applying.</small>
+                  </button>
+                  <button id="redo-layout-button" class="variant-mode-card secondary">
+                    <span>Layout</span>
+                    <strong>Rebalance slide</strong>
+                    <small>Adjust density and placement while preserving the message.</small>
+                  </button>
+                </div>
               </div>
 
               <p class="llm-status-note" id="llm-status-note">
@@ -136,9 +155,13 @@
               <div class="workflow-history" id="workflow-history"></div>
 
               <div class="workflow-variants">
-                <p class="section-note">
-                  Generated alternatives appear here with their own rendered previews so you can review and select one before switching into the compare view.
-                </p>
+                <div class="workflow-variants-head">
+                  <div>
+                    <p class="eyebrow">Generated alternatives</p>
+                    <h3>Review candidates</h3>
+                  </div>
+                  <span class="variant-count-pill" id="variant-count-pill">0 variants</span>
+                </div>
                 <p class="section-note" id="variant-storage-note">
                   Structured-slide variants are stored with each slide document.
                 </p>

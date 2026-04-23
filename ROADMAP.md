@@ -294,12 +294,14 @@ Current implementation uses a centered white-canvas workspace with page-level se
 - `Deck Planning` page for deck brief and deck-plan ideation
 - `Validation` page for deck checks and reports
 - fold-out side rails for the assistant and structured draft editor
+- a compact slide-variant workbench that keeps generation modes, dry-run/provider controls, workflow progress, candidate counts, and review state close together
 
 Visual rules for the current studio UI:
 
 - default to sans-serif typography throughout the app shell
 - keep the background clean white rather than tinted or textured
 - avoid visual containers such as cards or panels; use spacing, alignment, and light dividers to separate regions instead
+- keep variant-generation controls task-shaped and compact so the preview and compare surfaces remain the main work area
 
 This is intentionally quieter than a full app shell. If a later iteration adds richer workflow controls, keep the visual hierarchy anchored around the preview rather than turning the page into a dashboard.
 

@@ -18,6 +18,8 @@ The browser studio baseline is complete.
 - Deck and slide context, design constraints, validation settings, visual theme values, assistant sessions, and structured variants persist in repo-local studio state or slide JSON.
 - Slide-level workflows, deck-planning workflows, assistant-triggered actions, dry-run candidates, safe apply flows, and compare views are available from the browser.
 - Supported structured slides allow direct text edits from the active DOM preview while still saving through the server-controlled slide-spec path.
+- The browser UI uses a compact sticky top navigation with the project name first and page controls kept available without a large pitch header.
+- Slide variant generation now uses a compact workbench with explicit generation modes, dry-run/provider controls, progress steps, candidate counts, and selected-candidate review state.
 - Studio writes are server-controlled and limited to approved slide files, repo-local state, and generated studio artifacts.
 - Geometry, text, render, deck-plan, and media-validation fixtures run through the same quality gate used by the CLI.
 

@@ -6,11 +6,11 @@ const { getAssistantSession, getAssistantSuggestions, handleAssistantMessage } =
 const { buildAndRenderDeck, getPreviewManifest } = require("./services/build");
 const { getLlmStatus, verifyLlmConnection } = require("./services/llm/client");
 const { clientDir, outputDir } = require("./services/paths");
-const { ensureState, getDeckContext, getVariants, updateDeckFields, updateSlideContext } = require("./services/state");
+const { ensureState, getDeckContext, updateDeckFields, updateSlideContext } = require("./services/state");
 const { getSlide, getSlides, readSlideSource, readSlideSpec, writeSlideSource, writeSlideSpec } = require("./services/slides");
 const { drillWordingSlide, ideateSlide, redoLayoutSlide } = require("./services/operations");
 const { validateDeck } = require("./services/validate");
-const { applyVariant, captureVariant, listVariantsForSlide } = require("./services/variants");
+const { applyVariant, captureVariant, listAllVariants, listVariantsForSlide } = require("./services/variants");
 
 const defaultPort = Number(process.env.PORT || 4173);
 const defaultHost = process.env.HOST || "127.0.0.1";
@@ -119,7 +119,7 @@ function getWorkspaceState() {
     previews: getPreviewManifest(),
     runtime: serializeRuntimeState(),
     slides: getSlides(),
-    variants: getVariants().variants
+    variants: listAllVariants()
   };
 }
 
@@ -340,7 +340,7 @@ async function handleIdeateSlide(req, res) {
     slideId: result.slideId,
     summary: result.summary,
     transientVariants: result.dryRun ? result.variants : [],
-    variants: getVariants().variants
+    variants: listAllVariants()
   });
 }
 
@@ -379,7 +379,7 @@ async function handleDrillWording(req, res) {
     slideId: result.slideId,
     summary: result.summary,
     transientVariants: result.dryRun ? result.variants : [],
-    variants: getVariants().variants
+    variants: listAllVariants()
   });
 }
 
@@ -418,7 +418,7 @@ async function handleRedoLayout(req, res) {
     slideId: result.slideId,
     summary: result.summary,
     transientVariants: result.dryRun ? result.variants : [],
-    variants: getVariants().variants
+    variants: listAllVariants()
   });
 }
 
@@ -478,7 +478,7 @@ async function handleAssistantSend(req, res) {
     suggestions: getAssistantSuggestions(),
     transientVariants: Array.isArray(result.transientVariants) ? result.transientVariants : [],
     validation: result.validation || null,
-    variants: getVariants().variants
+    variants: listAllVariants()
   });
 }
 

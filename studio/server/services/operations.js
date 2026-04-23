@@ -262,7 +262,7 @@ function createIdeaThemes(slide, context) {
       ],
       resources: [
         {
-          body: "studio/state/variants.json",
+          body: slide.structured ? `${slide.fileName} :: variants[]` : "studio/state/variants.json",
           bodyFontSize: 11.2,
           id: `${slide.id}-structure-resource-1`,
           title: "Variant store"
@@ -402,8 +402,18 @@ function buildIdeaSlideSpec(slideType, theme) {
   }
 }
 
+function describeVariantPersistence(options = {}) {
+  if (options.dryRun) {
+    return "Generated as a dry run without saving to the variant store.";
+  }
+
+  return options.persistToSlide
+    ? "Saved as a reusable variant in the slide JSON."
+    : "Saved as a reusable variant in studio state.";
+}
+
 function buildChangeSummary(slideType, theme, options = {}) {
-  const modeLabel = options.dryRun ? "Generated as a dry run without saving to the variant store." : "Saved as a reusable variant in studio state.";
+  const modeLabel = describeVariantPersistence(options);
 
   switch (slideType) {
     case "cover":
@@ -602,7 +612,7 @@ function createWordingVariant(slideSpec, options = {}) {
 }
 
 function createLocalWordingCandidates(currentSpec, options = {}) {
-  const modeLabel = options.dryRun ? "Generated as a dry run without saving to the variant store." : "Saved as a reusable variant in studio state.";
+  const modeLabel = describeVariantPersistence(options);
   const variants = [
     {
       label: "Direct wording",
@@ -687,7 +697,7 @@ function collectLayoutContext(slide, context) {
 }
 
 function createCardLayoutCandidates(currentSpec, layoutContext, options = {}) {
-  const modeLabel = options.dryRun ? "Generated as a dry run without saving to the variant store." : "Saved as a reusable variant in studio state.";
+  const modeLabel = describeVariantPersistence(options);
   const cardOrders = [
     [0, 2, 1],
     [1, 0, 2],
@@ -752,7 +762,7 @@ function createCardLayoutCandidates(currentSpec, layoutContext, options = {}) {
 }
 
 function createContentLayoutCandidates(currentSpec, layoutContext, options = {}) {
-  const modeLabel = options.dryRun ? "Generated as a dry run without saving to the variant store." : "Saved as a reusable variant in studio state.";
+  const modeLabel = describeVariantPersistence(options);
 
   return [
     {
@@ -818,7 +828,7 @@ function createContentLayoutCandidates(currentSpec, layoutContext, options = {})
 }
 
 function createSummaryLayoutCandidates(currentSpec, layoutContext, options = {}) {
-  const modeLabel = options.dryRun ? "Generated as a dry run without saving to the variant store." : "Saved as a reusable variant in studio state.";
+  const modeLabel = describeVariantPersistence(options);
 
   return [
     {
@@ -1019,7 +1029,10 @@ async function ideateSlide(slideId, options = {}) {
   try {
     const candidates = generation.mode === "llm"
       ? await createLlmIdeateCandidates(slide, slideType, serializeSlideSpec(originalSlideSpec), context)
-      : createLocalIdeateCandidates(slide, slideType, context, { dryRun });
+      : createLocalIdeateCandidates(slide, slideType, context, {
+        dryRun,
+        persistToSlide: slide.structured
+      });
     const variants = await materializeCandidatesToVariants(slideId, candidates, {
       dryRun,
       labelFormatter: (label) => generation.mode === "llm"
@@ -1070,7 +1083,10 @@ async function drillWordingSlide(slideId, options = {}) {
   };
 
   try {
-    const candidates = createLocalWordingCandidates(originalSlideSpec, { dryRun });
+    const candidates = createLocalWordingCandidates(originalSlideSpec, {
+      dryRun,
+      persistToSlide: slide.structured
+    });
     const variants = await materializeCandidatesToVariants(slideId, candidates, {
       dryRun,
       labelFormatter: (label) => `${label} ${dryRun ? "dry run" : "variant"}`,
@@ -1120,7 +1136,10 @@ async function redoLayoutSlide(slideId, options = {}) {
   };
 
   try {
-    const candidates = createLocalLayoutCandidates(slide, originalSlideSpec, context, { dryRun });
+    const candidates = createLocalLayoutCandidates(slide, originalSlideSpec, context, {
+      dryRun,
+      persistToSlide: slide.structured
+    });
     const variants = await materializeCandidatesToVariants(slideId, candidates, {
       dryRun,
       labelFormatter: (label) => `${label} ${dryRun ? "dry run" : "variant"}`,

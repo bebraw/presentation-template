@@ -243,6 +243,13 @@ function clearTransientVariants(slideId) {
   state.transientVariants = state.transientVariants.filter((variant) => variant.slideId !== slideId);
 }
 
+function replacePersistedVariantsForSlide(slideId, variants) {
+  state.variants = [
+    ...state.variants.filter((variant) => variant.slideId !== slideId),
+    ...(Array.isArray(variants) ? variants : [])
+  ];
+}
+
 function buildSourceDiffRows(currentSource, variantSource) {
   const beforeLines = currentSource.split("\n");
   const afterLines = variantSource.split("\n");
@@ -577,6 +584,7 @@ async function loadSlide(slideId) {
   state.selectedSlideSpecError = payload.slideSpecError || null;
   state.selectedSlideStructured = payload.structured === true;
   state.selectedSlideSource = payload.source;
+  replacePersistedVariantsForSlide(slideId, payload.variants || []);
   clearTransientVariants(slideId);
   const preferred = getPreferredVariant(payload.variants || []);
   state.selectedVariantId = preferred ? preferred.id : null;
@@ -779,7 +787,7 @@ async function captureVariant() {
       body: JSON.stringify(payloadBody),
       method: "POST"
     });
-    state.variants = [payload.variant, ...state.variants];
+    replacePersistedVariantsForSlide(state.selectedSlideId, payload.variants || [payload.variant]);
     clearTransientVariants(state.selectedSlideId);
     state.selectedVariantId = payload.variant.id;
     elements.variantLabel.value = "";

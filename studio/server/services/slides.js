@@ -3,6 +3,8 @@ const path = require("path");
 const { slidesDir } = require("./paths");
 const { extractSlideSpec, materializeSlideSpec, validateSlideSpec } = require("./slide-specs");
 
+const structuredVariantField = "variants";
+
 function compareNames(left, right) {
   return left.localeCompare(right, undefined, { numeric: true });
 }
@@ -17,6 +19,40 @@ function readJson(fileName, fallback = null) {
 
 function writeJson(fileName, value) {
   fs.writeFileSync(fileName, `${JSON.stringify(value, null, 2)}\n`, "utf8");
+}
+
+function readStructuredSlideDocumentFile(fileName) {
+  const parsed = readJson(fileName, {});
+
+  if (!parsed || typeof parsed !== "object" || Array.isArray(parsed)) {
+    throw new Error("Structured slide JSON must contain an object");
+  }
+
+  return parsed;
+}
+
+function splitStructuredSlideDocument(document) {
+  const {
+    [structuredVariantField]: variants,
+    ...slideSpec
+  } = document || {};
+
+  return {
+    slideSpec,
+    variants: Array.isArray(variants) ? variants : []
+  };
+}
+
+function buildStructuredSlideDocument(slideSpec, variants) {
+  const document = {
+    ...validateSlideSpec(slideSpec)
+  };
+
+  if (Array.isArray(variants) && variants.length) {
+    document[structuredVariantField] = variants;
+  }
+
+  return document;
 }
 
 function extractTitle(source, fileName) {
@@ -87,7 +123,8 @@ function readSlideSpec(slideId) {
   const slide = getSlide(slideId);
 
   if (slide.structured) {
-    return validateSlideSpec(readJson(slide.path, {}));
+    const { slideSpec } = splitStructuredSlideDocument(readStructuredSlideDocumentFile(slide.path));
+    return validateSlideSpec(slideSpec);
   }
 
   return extractSlideSpec(readSlideSource(slideId));
@@ -98,7 +135,9 @@ function writeSlideSpec(slideId, slideSpec) {
   const validated = validateSlideSpec(slideSpec);
 
   if (slide.structured) {
-    writeJson(slide.path, validated);
+    const currentDocument = readStructuredSlideDocumentFile(slide.path);
+    const { variants } = splitStructuredSlideDocument(currentDocument);
+    writeJson(slide.path, buildStructuredSlideDocument(validated, variants));
     return slide;
   }
 
@@ -107,11 +146,35 @@ function writeSlideSpec(slideId, slideSpec) {
   return slide;
 }
 
+function readStructuredSlideVariants(slideId) {
+  const slide = getSlide(slideId);
+  if (!slide.structured) {
+    return [];
+  }
+
+  const { variants } = splitStructuredSlideDocument(readStructuredSlideDocumentFile(slide.path));
+  return variants;
+}
+
+function writeStructuredSlideVariants(slideId, variants) {
+  const slide = getSlide(slideId);
+  if (!slide.structured) {
+    throw new Error("Structured slide variants are only available for JSON slides.");
+  }
+
+  const currentDocument = readStructuredSlideDocumentFile(slide.path);
+  const { slideSpec } = splitStructuredSlideDocument(currentDocument);
+  writeJson(slide.path, buildStructuredSlideDocument(slideSpec, variants));
+  return slide;
+}
+
 module.exports = {
   getSlide,
   getSlides,
   readSlideSpec,
   readSlideSource,
+  readStructuredSlideVariants,
   writeSlideSpec,
+  writeStructuredSlideVariants,
   writeSlideSource
 };

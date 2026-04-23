@@ -1,5 +1,19 @@
 const { getVariants, saveVariants } = require("./state");
-const { getSlide, readSlideSource, readSlideSpec, writeSlideSource, writeSlideSpec } = require("./slides");
+const { validateSlideSpec } = require("./slide-specs");
+const {
+  getSlide,
+  getSlides,
+  readSlideSource,
+  readSlideSpec,
+  readStructuredSlideVariants,
+  writeSlideSource,
+  writeSlideSpec,
+  writeStructuredSlideVariants
+} = require("./slides");
+
+function serializeSlideSpec(slideSpec) {
+  return `${JSON.stringify(slideSpec, null, 2)}\n`;
+}
 
 function assertValidSource(source) {
   try {
@@ -9,8 +23,154 @@ function assertValidSource(source) {
   }
 }
 
+function parseStructuredSource(source) {
+  try {
+    return JSON.parse(source);
+  } catch (error) {
+    throw new Error(`Structured variant source is invalid JSON: ${error.message}`);
+  }
+}
+
+function sortVariants(variants) {
+  return [...variants].sort((left, right) => {
+    const leftTime = Date.parse(left.updatedAt || left.createdAt || 0);
+    const rightTime = Date.parse(right.updatedAt || right.createdAt || 0);
+    return rightTime - leftTime;
+  });
+}
+
+function createVariantRecord(options) {
+  const timestamp = new Date().toISOString();
+  const slideSpec = options.slideSpec || null;
+  const source = typeof options.source === "string"
+    ? options.source
+    : slideSpec
+      ? serializeSlideSpec(slideSpec)
+      : null;
+
+  return {
+    changeSummary: Array.isArray(options.changeSummary) ? options.changeSummary : [],
+    createdAt: options.createdAt || timestamp,
+    generator: options.generator || null,
+    id: options.id || createVariantId(),
+    kind: options.kind || "snapshot",
+    label: options.label || "",
+    model: options.model || null,
+    notes: options.notes || "",
+    operation: options.operation || null,
+    persisted: options.persisted !== false,
+    previewImage: options.previewImage || null,
+    promptSummary: options.promptSummary || "",
+    provider: options.provider || null,
+    slideId: options.slideId,
+    slideSpec,
+    source,
+    updatedAt: options.updatedAt || timestamp
+  };
+}
+
+function toStoredStructuredVariant(variant) {
+  return {
+    changeSummary: variant.changeSummary,
+    createdAt: variant.createdAt,
+    generator: variant.generator,
+    id: variant.id,
+    kind: variant.kind,
+    label: variant.label,
+    model: variant.model,
+    notes: variant.notes,
+    operation: variant.operation,
+    previewImage: variant.previewImage,
+    promptSummary: variant.promptSummary,
+    provider: variant.provider,
+    slideSpec: variant.slideSpec,
+    updatedAt: variant.updatedAt
+  };
+}
+
+function normalizeStructuredVariant(storedVariant, slideId) {
+  if (!storedVariant || typeof storedVariant !== "object" || Array.isArray(storedVariant)) {
+    return null;
+  }
+
+  try {
+    let slideSpec = null;
+    if (storedVariant.slideSpec && typeof storedVariant.slideSpec === "object" && !Array.isArray(storedVariant.slideSpec)) {
+      slideSpec = readStructuredVariantSlideSpec(storedVariant.slideSpec);
+    } else if (typeof storedVariant.source === "string" && storedVariant.source.trim()) {
+      slideSpec = readStructuredVariantSlideSpec(parseStructuredSource(storedVariant.source));
+    }
+
+    if (!slideSpec) {
+      return null;
+    }
+
+    return createVariantRecord({
+      ...storedVariant,
+      persisted: true,
+      slideId,
+      slideSpec,
+      source: serializeSlideSpec(slideSpec)
+    });
+  } catch (error) {
+    return null;
+  }
+}
+
+function readStructuredVariantSlideSpec(slideSpec) {
+  return validateSlideSpec(slideSpec);
+}
+
+function listLegacyVariants() {
+  return getVariants().variants.map((variant) => ({
+    ...variant,
+    persisted: variant.persisted !== false
+  }));
+}
+
+function listStructuredVariantsForSlide(slideId) {
+  return sortVariants(
+    readStructuredSlideVariants(slideId)
+      .map((variant) => normalizeStructuredVariant(variant, slideId))
+      .filter(Boolean)
+  );
+}
+
 function listVariantsForSlide(slideId) {
-  return getVariants().variants.filter((variant) => variant.slideId === slideId);
+  return sortVariants([
+    ...listStructuredVariantsForSlide(slideId),
+    ...listLegacyVariants().filter((variant) => variant.slideId === slideId)
+  ]);
+}
+
+function listAllVariants() {
+  const slideVariants = getSlides()
+    .filter((slide) => slide.structured)
+    .flatMap((slide) => listStructuredVariantsForSlide(slide.id));
+
+  return sortVariants([
+    ...slideVariants,
+    ...listLegacyVariants()
+  ]);
+}
+
+function findStructuredVariantLocation(variantId) {
+  const structuredSlides = getSlides().filter((slide) => slide.structured);
+
+  for (const slide of structuredSlides) {
+    const variants = readStructuredSlideVariants(slide.id);
+    const index = variants.findIndex((variant) => variant && variant.id === variantId);
+
+    if (index >= 0) {
+      return {
+        index,
+        slide,
+        variants
+      };
+    }
+  }
+
+  return null;
 }
 
 function createVariantId() {
@@ -19,40 +179,44 @@ function createVariantId() {
 
 function captureVariant(options) {
   const slideId = options.slideId;
-  const slideSpec = options.slideSpec || null;
   const slide = getSlide(slideId);
-  const source = typeof options.source === "string"
-    ? options.source
-    : slideSpec
-      ? `${JSON.stringify(slideSpec, null, 2)}\n`
-      : slide.structured
-        ? `${JSON.stringify(readSlideSpec(slideId), null, 2)}\n`
-        : readSlideSource(slideId);
+  let slideSpec = options.slideSpec || null;
 
-  if (!slideSpec) {
-    assertValidSource(source);
+  if (slide.structured) {
+    if (!slideSpec && typeof options.source === "string" && options.source.trim()) {
+      slideSpec = parseStructuredSource(options.source);
+    }
+
+    slideSpec = slideSpec || readSlideSpec(slideId);
+    slideSpec = readStructuredVariantSlideSpec(slideSpec);
+
+    const variant = createVariantRecord({
+      ...options,
+      label: options.label || `Snapshot ${listVariantsForSlide(slideId).length + 1}`,
+      persisted: true,
+      slideId,
+      slideSpec,
+      source: serializeSlideSpec(slideSpec)
+    });
+    const variants = readStructuredSlideVariants(slideId);
+
+    writeStructuredSlideVariants(slideId, [
+      toStoredStructuredVariant(variant),
+      ...variants.filter((entry) => entry && entry.id !== variant.id)
+    ]);
+
+    return variant;
   }
+
+  const source = typeof options.source === "string" ? options.source : readSlideSource(slideId);
+  assertValidSource(source);
   const store = getVariants();
-  const timestamp = new Date().toISOString();
-  const nextVariant = {
-    createdAt: timestamp,
-    id: createVariantId(),
-    kind: options.kind || "snapshot",
+  const nextVariant = createVariantRecord({
+    ...options,
     label: options.label || `Snapshot ${store.variants.length + 1}`,
-    changeSummary: Array.isArray(options.changeSummary) ? options.changeSummary : [],
-    notes: options.notes || "",
-    operation: options.operation || null,
-    generator: options.generator || null,
-    provider: options.provider || null,
-    model: options.model || null,
-    persisted: options.persisted !== false,
-    previewImage: options.previewImage || null,
-    promptSummary: options.promptSummary || "",
     slideId,
-    slideSpec,
-    source,
-    updatedAt: timestamp
-  };
+    source
+  });
 
   const nextStore = {
     variants: [nextVariant, ...store.variants]
@@ -63,6 +227,39 @@ function captureVariant(options) {
 }
 
 function updateVariant(variantId, fields) {
+  const structuredLocation = findStructuredVariantLocation(variantId);
+
+  if (structuredLocation) {
+    let updated = null;
+    const variants = structuredLocation.variants.map((variant) => {
+      if (variant.id !== variantId) {
+        return variant;
+      }
+
+      const current = normalizeStructuredVariant(variant, structuredLocation.slide.id);
+      if (!current) {
+        throw new Error(`Structured variant ${variantId} is invalid`);
+      }
+      const nextSlideSpec = fields.slideSpec
+        ? readStructuredVariantSlideSpec(fields.slideSpec)
+        : current.slideSpec;
+      updated = createVariantRecord({
+        ...current,
+        ...fields,
+        persisted: true,
+        slideId: structuredLocation.slide.id,
+        slideSpec: nextSlideSpec,
+        source: serializeSlideSpec(nextSlideSpec),
+        updatedAt: new Date().toISOString()
+      });
+
+      return toStoredStructuredVariant(updated);
+    });
+
+    writeStructuredSlideVariants(structuredLocation.slide.id, variants);
+    return updated;
+  }
+
   const store = getVariants();
   let updated = null;
 
@@ -89,6 +286,21 @@ function updateVariant(variantId, fields) {
 }
 
 function applyVariant(variantId) {
+  const structuredLocation = findStructuredVariantLocation(variantId);
+
+  if (structuredLocation) {
+    const variant = normalizeStructuredVariant(structuredLocation.variants[structuredLocation.index], structuredLocation.slide.id);
+    if (!variant) {
+      throw new Error(`Unknown variant: ${variantId}`);
+    }
+
+    writeSlideSpec(variant.slideId, variant.slideSpec);
+    return {
+      ...variant,
+      slideSpec: readSlideSpec(variant.slideId)
+    };
+  }
+
   const store = getVariants();
   const variant = store.variants.find((entry) => entry.id === variantId);
 
@@ -128,6 +340,7 @@ function applyVariant(variantId) {
 module.exports = {
   applyVariant,
   captureVariant,
+  listAllVariants,
   listVariantsForSlide,
   updateVariant
 };

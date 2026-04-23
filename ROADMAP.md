@@ -21,7 +21,7 @@ Implemented:
 - deck rebuild and preview rendering against the real generator
 - geometry/text validation and optional render validation through the studio API
 - persisted deck and slide context in `studio/state/deck-context.json`
-- capture/apply variant snapshots in `studio/state/variants.json`
+- capture/apply variant snapshots, with structured slide variants now stored alongside slide JSON and legacy fallbacks still available in `studio/state/variants.json`
 - a quiet studio UI pass with sans-serif typography, a white canvas, and divider-based layout instead of card containers
 - first explicit workflow operation: `Ideate Slide` generates saved source variants from stored context, renders preview images, and applies one variant back into the working slide on demand
 - side-by-side compare view with current-vs-candidate previews, source-change summaries, and apply-or-validate actions inside the workflow area
@@ -47,17 +47,15 @@ Not implemented yet:
 
 - explicit workflow operations such as `Ideate Theme` and `Ideate Structure`
 - verified live LLM-backed workflow generation in the studio when a provider is configured and reachable
-- persistent structured variant storage inside slide JSON so one slide can keep multiple named options without overwriting the current working choice
 
 ## Next Focus
 
 The next practical slice should deepen the structured workflow surface and verify the live LLM path:
 
-1. add persistent structured variant storage inside slide JSON so users can keep and revisit named slide options without destroying the current working choice
-2. run the live `llm` ideation path end to end against a configured provider now that connectivity checks exist
-3. let the assistant route to an additional structured workflow such as `Ideate Theme`
-4. add richer assistant action states so long-running operations can report progress before previews are ready
-5. keep the server responsible for validating slide specs, preview rendering, variant storage, and apply gating
+1. run the live `llm` ideation path end to end against a configured provider now that connectivity checks exist
+2. let the assistant route to an additional structured workflow such as `Ideate Theme`
+3. add richer assistant action states so long-running operations can report progress before previews are ready
+4. keep the server responsible for validating slide specs, preview rendering, variant storage, and apply gating
 
 ## Product Intent
 
@@ -176,7 +174,7 @@ Each type should have a clear schema for fields such as:
 
 The server should own the materialization step from slide spec to source. That keeps layout rules and generator constraints in one place instead of leaking them into the UI or prompts.
 
-For structured slides, the roadmap should also grow toward storing named variants alongside the main slide JSON payload. The current working variant should remain explicit, while alternate slide-spec options stay preserved in the same slide-level document so users can swap between them later without losing work.
+For structured slides, the roadmap now stores named variants alongside the main slide JSON payload. The current working slide spec remains explicit at the top level, while alternate slide-spec options stay preserved in the same slide-level document so users can swap between them later without losing work.
 
 A custom DSL should be considered only later if JSON becomes too awkward for composition, references, or layout relationships.
 
@@ -396,9 +394,9 @@ Implemented so far:
 
 Still needed:
 
-- additional named workflow operations such as `Ideate Theme`, `Ideate Structure`, `Drill Wording`, and `Redo Layout`
+- additional named workflow operations such as `Ideate Theme` and `Ideate Structure`
 - stronger operation-specific change summaries and fuller diff support
-- structured variant persistence in slide JSON so workflow-generated options survive outside `studio/state/variants.json`
+- legacy-variant cleanup so older entries in `studio/state/variants.json` can be folded fully into slide-local storage
 
 ### Phase 5: Slide Variant System
 
@@ -406,7 +404,7 @@ Objective: make experimentation safe and visual instead of destructive.
 
 Implementation:
 
-- add `studio/state/variants.json`
+- keep `studio/state/variants.json` as a legacy fallback for non-structured slides while supported structured slides persist named variants in slide JSON
 - record, per variant:
   - slide id
   - variant label
@@ -434,11 +432,11 @@ Implemented so far:
 - apply a stored variant back into the working slide
 - generate `Ideate Slide` variants with preview images stored under studio output
 - compare the current slide and one selected variant inside the workflow area before apply
+- store supported slide variants directly in slide JSON so alternate options remain part of the deck content model
 
 Still needed:
 
 - fuller before/after diff support and clearer visual decision support for larger changes
-- storing supported slide variants directly in slide JSON so alternate options remain part of the deck content model
 
 ### Phase 6: File Editing Boundary
 
@@ -465,13 +463,12 @@ Status: partial
 Implemented so far:
 
 - write behavior is centralized in the studio server
-- current edits are limited to slide source files and studio state
+- current edits are limited to slide source files and repo-local studio state
+- structured slide JSON now distinguishes active content from preserved named variants in the same document
 
 Still needed:
 
-- explicit dry-run mode
 - stronger enforcement and documentation of allowed write targets
-- a documented write boundary for structured slide JSON that distinguishes current content from preserved named variants
 
 ### Phase 7: Validation And Diff UX
 

@@ -12,7 +12,7 @@ There are now three layers:
 2. `studio/client/slide-dom.js` renders those slide specs into a shared HTML/CSS slide runtime.
 3. Playwright-backed server services turn that same runtime into PDFs, preview PNGs, and validation inputs.
 
-The older generator-side slide drawing path has been removed. The remaining repo-level command wrappers now live under `scripts/`, shared deck settings plus raster helpers live under `studio/server/services/`, and approved baseline snapshots live under `studio/baseline/`.
+Repo-level command wrappers live under `scripts/`, shared deck settings plus raster helpers live under `studio/server/services/`, and approved baseline snapshots live under `studio/baseline/`.
 
 ## System Graph
 
@@ -126,7 +126,7 @@ The studio reads and writes these specs directly. That is the primary authoring 
 - standalone `/deck-preview` rendering on the server
 - Playwright-driven export and validation
 
-This keeps preview and PDF output on the same layout path instead of maintaining a separate legacy renderer for active workflows.
+This keeps preview and PDF output on the same layout path for active workflows.
 
 ### Playwright Runtime
 

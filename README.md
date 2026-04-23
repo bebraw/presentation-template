@@ -1,14 +1,14 @@
 # presentation-template
 
-This repository contains a small DOM-first demonstration presentation, a local browser studio, and presentation workflow skills including `pdf-slide-generator` and `slide-clarity-drill`.
+This repository contains a small DOM-first demonstration presentation, a local browser studio, and presentation workflow guidance.
 
 ## Included skills
 
-This repository ships with two presentation-focused skills under `skills/`.
+This repository ships with presentation-focused workflow guidance under `skills/`.
 
-### `pdf-slide-generator`
+### Deck Workflow
 
-This legacy-named workflow skill is still the deck-building guide for the current DOM-first repository:
+Use the deck workflow for implementation work:
 
 - adding or editing slides in `slides/`
 - changing shared DOM runtime helpers, deck settings, baseline tooling, or studio workflows
@@ -17,7 +17,7 @@ This legacy-named workflow skill is still the deck-building guide for the curren
 
 Typical requests:
 
-- `Use pdf-slide-generator to add a new slide about X.`
+- `Add a new slide about X.`
 - `Update the theme and rebuild the PDF.`
 - `Refresh the render baseline after this visual change.`
 
@@ -40,14 +40,14 @@ Typical requests:
 
 Mention the skill name directly in your request when you want Codex to follow that workflow.
 
-- Use `pdf-slide-generator` for implementation, rendering, validation, and deck structure changes in the DOM-first studio.
+- Use the deck workflow for implementation, rendering, validation, and deck structure changes in the DOM-first studio.
 - Use `slide-clarity-drill` for interactive copy refinement and line-by-line wording decisions.
 - Use both when a change needs wording work first and slide/code updates after that.
 
 Example combined request:
 
 ```text
-Use slide-clarity-drill to tighten slide 2, then use pdf-slide-generator to patch the slide and run the deck validation flow.
+Use slide-clarity-drill to tighten slide 2, then patch the slide and run the deck validation flow.
 ```
 
 ## Demo deck
@@ -87,7 +87,7 @@ The current implementation is local-first and DOM-first. It currently supports:
 - saved design constraints and shared visual theme values, including explicit progress-bar colors and neutral surface color, that flow back into DOM-first validation and shared deck chrome
 - the included four-slide demo deck stored as slide-spec JSON and rendered directly by the shared slide-spec runtime
 - browser-based editing of supported slides through slide-spec JSON instead of direct JavaScript
-- capture/apply slide variants through structured slide specs for supported slide families, with supported JSON slides saving named variants alongside the active slide spec and legacy structured variants migrated into the owning slide JSON
+- capture/apply slide variants through structured slide specs for supported slide families, with supported JSON slides saving named variants alongside the active slide spec
 - grouped slide-compare summaries for supported JSON slide types so larger changes read as framed content-area diffs instead of only flat line changes
 
 The studio now renders supported structured slides through a shared DOM renderer for the main preview, thumbnails, variant cards, and compare views. A standalone DOM deck view is also available at:
@@ -152,19 +152,3 @@ Build, validation, repository structure, and CLI or baseline details are documen
 The higher-level system design and runtime flow are documented in [ARCHITECTURE.md](ARCHITECTURE.md).
 For presentation changes, run `npm run quality:gate` before considering the work done. It now runs geometry/text validation before the render-baseline check.
 If you add deck graphics, author them as Graphviz `.dot` sources under `slides/assets/diagrams/`; the build regenerates the matching PNGs automatically.
-
-### Slide JSON migration
-
-If you have legacy slide modules that still use the older CommonJS source format, you can extract them into slide-spec JSON with:
-
-```bash
-npm run slides:migrate:json -- slides/slide-02.js
-```
-
-Useful options:
-
-- `--out-dir <dir>` writes the generated JSON files into another directory
-- `--force` overwrites existing JSON output
-- `--delete-js` removes the source JS file after extraction
-
-The migration utility currently supports the slide families that already have structured schemas in this repository: `cover`, `toc`, `content`, and `summary`.

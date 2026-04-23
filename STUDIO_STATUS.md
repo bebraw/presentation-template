@@ -22,8 +22,8 @@ Implemented:
 - saved design constraints in deck context for minimum font size, spacing floors, and maximum words per slide, wired into studio validation and the CLI quality gate
 - saved validation settings in deck context for per-rule warning vs error severity plus fast vs complete media-validation mode
 - saved visual theme values in deck context that now drive the shared deck palette for slide chrome, panel surfaces, neutral card surfaces, and explicit progress-bar colors
-- shared deck settings now live under `studio/server/services/` instead of a separate generator-owned config layer
-- capture/apply variant snapshots, with structured slide variants stored alongside slide JSON and legacy structured variants migrated out of `studio/state/variants.json`
+- shared deck settings now live under `studio/server/services/`
+- capture/apply variant snapshots, with structured slide variants stored alongside slide JSON
 - a quiet studio UI pass with sans-serif typography, white canvas treatment, and divider-based layout instead of card containers
 - explicit slide workflows: `Ideate Slide`, `Drill Wording`, `Redo Layout`, `Ideate Theme`, and `Ideate Structure`
 - a separated workflow surface where variant generation and variant comparison live in distinct views
@@ -36,13 +36,13 @@ Implemented:
 - shared DOM slide renderer for `cover`, `toc`, `content`, and `summary`, used by the studio preview surfaces and the standalone `/deck-preview` document
 - DOM-rendered current slide preview, thumbnail rail, variant cards, and compare panes for supported structured slides instead of relying on passed-around preview images
 - Playwright-backed studio PDF export and preview PNG generation from the same DOM renderer used by the browser preview surface
-- Playwright-backed studio geometry/text validation for supported slide families, with studio validation now failing explicitly instead of falling back to generator-side slide drawing
+- Playwright-backed studio geometry/text validation for supported slide families, with studio validation now failing explicitly when the DOM path cannot validate a supported slide
 - DOM validation now also covers content-gap floors, contrast, vertical-balance checks, and complete-mode media checks for supported slide families, in addition to bounds, panel padding, minimum font size, and words-per-slide
-- CLI `npm run build` now writes the deck PDF through the same Playwright-backed DOM renderer via repo-level scripts instead of the old generator-side PDF path
-- CLI geometry and text validation entrypoints now also live under repo-level scripts and use the same DOM validation path as the studio instead of generator-side slide drawing
+- CLI `npm run build` now writes the deck PDF through the same Playwright-backed DOM renderer via repo-level scripts
+- CLI geometry and text validation entrypoints now also live under repo-level scripts and use the same DOM validation path as the studio
 - studio-side preview strips, contact sheets, and page manifests now use `studio/server/services/page-artifacts.js` instead of importing those generic helpers from the baseline utility layer
-- approved raster baseline snapshots now live under `studio/baseline/`, with raster diff helpers and CLI wrappers moved alongside the DOM runtime instead of under `generator/`
-- the old generator-side slide drawer, PDF renderer, text-measurement helpers, config modules, and related validation runtime files have been removed, along with the unused `pdfkit` and `pptxgenjs` dependency chain
+- approved raster baseline snapshots now live under `studio/baseline/`, with raster diff helpers and CLI wrappers alongside the DOM runtime
+- obsolete slide drawing, PDF rendering, text-measurement, config, and validation runtime files have been removed, along with the unused `pdfkit` and `pptxgenjs` dependency chain
 - dry-run ideation mode that renders transient variants without saving them to the variant store
 - explicit before-and-after source diff panes plus operation-specific change summaries in the compare area
 - per-slide workflow locking so overlapping ideation requests do not race on the working slide source
@@ -75,7 +75,7 @@ Current gaps:
 
 - shared deck-context steering is now in place for the current local deck-plan modes; future deck-plan modes should keep carrying candidate-level deck patches when their narrative direction changes shared settings
 - DOM validation now has first-pass media-specific checks and fixture coverage in complete mode, but media-heavy slide families may still need sharper screenshot, chart, or diagram-specific legibility heuristics once those slides exist in the DOM runtime
-- deeper historical guidance should continue to be corrected opportunistically if it presents removed generator-era paths as active implementation guidance
+- deeper historical guidance should continue to be corrected opportunistically if it presents removed runtime paths as active implementation guidance
 
 ## Planned Rework
 
@@ -84,7 +84,7 @@ Next major direction:
 - keep slide-spec JSON as the source content model for supported slides
 - keep repo-aware deck-level workflows aligned so new plan modes patch shared deck context when they change more than slide files and order
 - deepen DOM validation only where new slide families or media-heavy slides still require checks beyond the now-configurable bounds, content gaps, padding, font size, word count, contrast, vertical rhythm, and first-pass media rules
-- keep trimming stale generator-era or migration-era guidance from deeper architecture notes and historical plan sections as those surfaces are touched
+- keep documentation aligned with the DOM-first runtime as older surfaces are touched
 
 ## Phase Snapshot
 

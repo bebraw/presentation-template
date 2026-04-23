@@ -32,7 +32,7 @@ Keep this roadmap focused on architecture, rollout order, and the next slice to 
 
 ## Next Focus
 
-The DOM pivot is complete enough that renderer migration is no longer the main task:
+The DOM-first runtime is now the active path:
 
 1. supported JSON slide families render through a shared DOM slide runtime inside the studio
 2. current slide preview, thumbnails, variant cards, and compare panes now use that DOM renderer instead of passing PNGs around
@@ -40,13 +40,13 @@ The DOM pivot is complete enough that renderer migration is no longer the main t
 4. studio-triggered PDF export and preview PNG generation now run through that DOM renderer via Playwright
 5. studio validation and the CLI quality gate now use that same DOM validation path for supported slide families
 6. complete media validation mode now adds rendered-media checks for small or upscaled visuals, unloaded or dimensionless raster media, and caption/source spacing against the saved caption-gap constraint
-7. the render-baseline gate now compares the current DOM-built PDF against the approved raster baseline instead of rebuilding a separate generator-side validation PDF
+7. the render-baseline gate now compares the current DOM-built PDF against the approved raster baseline
 
 The next practical tasks are:
 
 1. keep hardening complete media-validation mode beyond its first image legibility and caption/source spacing checks, now covered by a fixture in the quality gate, especially once media-heavy slide families land
 2. keep extending shared deck-context patches if new deck-plan modes are added; the current sequence, boundary, decision, operator, compressed, composed, and deck-authoring candidates all carry shared-context steering
-3. keep pruning stale “migration” or `generator/` language from deeper docs, and mark old rollout sections as historical whenever they are touched
+3. keep documentation aligned with the DOM-first runtime when older guidance is touched
 
 Recent durable decisions are recorded in [`docs/adr/0001-studio-deck-plan-and-validation-controls.md`](./docs/adr/0001-studio-deck-plan-and-validation-controls.md).
 
@@ -76,17 +76,17 @@ Current implementation is now DOM-first:
 - studio geometry and text validation for supported slide families now run through Playwright DOM inspection in [`studio/server/services/dom-validate.js`](./studio/server/services/dom-validate.js)
 - that DOM validator now covers content-gap floors, contrast, vertical-balance checks, and complete-mode media checks in addition to bounds, panel padding, minimum font size, and words-per-slide
 - the CLI build and geometry/text validation entrypoints now live under [`scripts/`](./scripts/) and call that same Playwright-backed DOM renderer and DOM validator
-- studio preview strips and contact sheets now use [`studio/server/services/page-artifacts.js`](./studio/server/services/page-artifacts.js) instead of importing those generic helpers from the generator runtime
+- studio preview strips and contact sheets now use [`studio/server/services/page-artifacts.js`](./studio/server/services/page-artifacts.js)
 - repo-level [`scripts/`](./scripts/) entrypoints now drive build, diagram rendering, geometry/text validation, and baseline refresh around the DOM runtime
-- the optional render-baseline comparison now checks the current DOM-built PDF against approved raster snapshots under [`studio/baseline/`](./studio/baseline/) instead of building a second generator-side validation PDF
-- the older generator-side slide drawer, PDF renderer, text-measurement helpers, config modules, and CLI wrappers have been removed from the active codebase
+- the optional render-baseline comparison now checks the current DOM-built PDF against approved raster snapshots under [`studio/baseline/`](./studio/baseline/)
+- obsolete slide drawing, PDF rendering, text-measurement, config, and CLI layers have been removed from the active codebase
 
 The active architecture is DOM-first:
 
 - slide-spec JSON stays the source content model for supported slides
 - a shared DOM renderer becomes the source of truth for browser preview
 - the same DOM renderer, via headless browser automation, becomes the source of truth for PDF and PNG export
-- validation reads DOM layout results instead of generator-side geometry
+- validation reads DOM layout results
 
 The point of the pivot was to reduce total complexity, not split it again. Do not reintroduce a second long-lived renderer beside the shared DOM runtime.
 
@@ -183,7 +183,7 @@ Each type should have a clear schema for fields such as:
 
 The server should own the materialization step from slide spec to source. That keeps layout rules and shared runtime constraints in one place instead of leaking them into the UI or prompts.
 
-For structured slides, the roadmap now stores named variants alongside the main slide JSON payload. The current working slide spec remains explicit at the top level, while alternate slide-spec options stay preserved in the same slide-level document so users can swap between them later without losing work. Older structured variants from the repo-global fallback store are now migrated into slide-local JSON as part of the same content model, leaving `studio/state/variants.json` as a compatibility path for non-structured slides only.
+For structured slides, the roadmap now stores named variants alongside the main slide JSON payload. The current working slide spec remains explicit at the top level, while alternate slide-spec options stay preserved in the same slide-level document so users can swap between them later without losing work. `studio/state/variants.json` remains as a compatibility path for non-structured slides only.
 
 A custom DSL should be considered only later if JSON becomes too awkward for composition, references, or layout relationships.
 
@@ -267,15 +267,15 @@ Recommended stack:
 
 Current implementation uses plain browser assets instead of React + Vite so the local-first slice stays small and works directly with the lightweight Node studio server.
 
-## DOM-First Migration
+## DOM-First Runtime
 
-This migration track is now complete for the active deck and runtime. Keep this section as a summary of the architectural shift rather than a pending plan.
+This section summarizes the active deck and runtime.
 
 ### Why This Pivot
 
 - one renderer for editing, preview, and final export is simpler than keeping preview images plus a separate authoring surface
 - CSS layout primitives such as Flexbox and Grid are a better long-term fit than manual slide geometry for many authoring tasks
-- the project targets PDF output, so keeping PPT-specific rendering constraints is no longer a requirement
+- the project targets PDF output, so the renderer can focus on browser layout and PDF export
 - structured slide JSON already exists, so the content model is strong enough to support a rendering reset
 
 ### Target Runtime
@@ -290,11 +290,10 @@ End-state request flow:
 
 ### Non-Goals
 
-- preserving PPT output
-- restoring the removed generator-side slide renderer as a permanent second runtime
+- maintaining a second slide-rendering runtime
 - building a freeform WYSIWYG editor before the DOM renderer is stable
 
-### Migration Summary
+### Runtime Summary
 
 Delivered in this order:
 
@@ -302,16 +301,16 @@ Delivered in this order:
 2. a shared DOM renderer landed for `cover`, `toc`, `content`, and `summary`
 3. studio preview for supported slides moved from PNG-first to DOM-first
 4. headless-browser export took over PDF and preview image generation
-5. validation moved from generator-side geometry to DOM layout inspection plus rendered checks
-6. generator-side slide drawing and legacy config modules were removed for the active deck
-7. repo-level scripts and studio services replaced the older generator-owned command and baseline paths
+5. validation uses DOM layout inspection plus rendered checks
+6. obsolete slide drawing and config modules were removed for the active deck
+7. repo-level scripts and studio services own command and baseline paths
 
 ### Current State
 
 - the same DOM renderer powers live studio preview and exported PDF for supported slides
-- supported slide families no longer depend on generator-side drawing code for authoritative layout
+- supported slide families use the shared DOM renderer for authoritative layout
 - validation results come from DOM layout and rendered output, not from the old slide-canvas geometry model
-- the active demo deck no longer needs a separate generator runtime to build, preview, or validate
+- the active demo deck uses the DOM runtime to build, preview, and validate
 
 ## UX Shape
 

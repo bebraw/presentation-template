@@ -50,7 +50,7 @@ If you add presentation diagrams or other deck graphics, author them as Graphviz
 - `slides/slide-01.json` to `slides/slide-04.json` hold the demo deck content.
 - `studio/` holds the browser studio, shared DOM renderer, Playwright export path, and DOM validation runtime.
 - `scripts/` now holds CLI build, validation, diagram, and baseline commands while shared deck settings and baseline utilities live under `studio/server/services/`.
-- `skills/pdf-slide-generator/SKILL.md` contains the deck-generation workflow guidance.
+- `skills/` contains presentation workflow guidance.
 - `skills/slide-clarity-drill/` contains the wording-tightening skill used for line-by-line slide copy refinement.
 - `archive/demo-presentation.pdf` stores the checked-in PDF snapshot for linking and archival.
 
@@ -73,12 +73,7 @@ If you add presentation diagrams or other deck graphics, author them as Graphviz
 ├── STUDIO_STATUS.md
 ├── TECHNICAL.md
 ├── skills/
-│   ├── pdf-slide-generator/
-│   │   └── SKILL.md
-│   └── slide-clarity-drill/
-│       ├── agents/
-│       │   └── openai.yaml
-│       └── SKILL.md
+│   └── ...
 ├── slides/
 │   ├── assets/
 │   │   └── diagrams/
@@ -107,4 +102,4 @@ If you add presentation diagrams or other deck graphics, author them as Graphviz
 - `archive/demo-presentation.pdf` stores the checked-in PDF snapshot for linking and archival.
 - `studio/baseline/` stores the approved render baseline for the current deck output.
 - `npm run quality:gate` runs DOM-backed geometry/text validation before checking the generated PDF against the approved render baseline.
-- If you extend the deck, follow the JSON slide-spec path and keep new runtime work on the DOM path rather than reintroducing generator-side slide drawing.
+- If you extend the deck, follow the JSON slide-spec path and keep new runtime work on the DOM path.

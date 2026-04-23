@@ -54,5 +54,5 @@ Do not consider presentation work done unless `npm run quality:gate` passes.
 ## Output Expectations
 
 - Preserve the existing deck voice and visual language unless the user asks for a redesign.
-- Optimize for a clean rendered PDF, not for PPTX compatibility.
+- Optimize for a clean rendered PDF.
 - Keep documentation aligned with the current structure when scripts, directories, or validation commands change.

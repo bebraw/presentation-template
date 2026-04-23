@@ -83,7 +83,7 @@ The current implementation is local-first and DOM-first. It currently supports:
 - deck rebuilds and preview rendering
 - geometry/text validation and optional full render validation
 - persisted deck and slide context in `studio/state/`
-- saved deck metadata such as author, company, explicit subject, and language that flow back into shared PPT/PDF document metadata
+- saved deck metadata such as author, company, explicit subject, and language that flow back into the shared DOM document envelope used for preview and PDF export
 - saved design constraints and shared visual theme values, including explicit progress-bar colors and neutral surface color, that flow back into DOM-first validation and shared deck chrome
 - the included four-slide demo deck stored as slide-spec JSON and rendered directly by the shared slide-spec runtime
 - browser-based editing of supported slides through slide-spec JSON instead of direct JavaScript

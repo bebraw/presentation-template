@@ -251,15 +251,35 @@
 
   function renderDocumentHead(config) {
     const title = escapeHtml(config.title || "Deck Preview");
+    const lang = escapeHtml(config.lang || "en");
     const inlineCss = typeof config.inlineCss === "string" ? config.inlineCss : "";
+    const metadata = config.metadata && typeof config.metadata === "object" ? config.metadata : {};
+    const metaTags = [];
+
+    if (metadata.author) {
+      metaTags.push(`    <meta name="author" content="${escapeHtml(metadata.author)}">`);
+    }
+
+    if (metadata.company) {
+      metaTags.push(`    <meta name="application-name" content="${escapeHtml(metadata.company)}">`);
+    }
+
+    if (metadata.subject) {
+      metaTags.push(`    <meta name="subject" content="${escapeHtml(metadata.subject)}">`);
+    }
+
+    if (metadata.objective) {
+      metaTags.push(`    <meta name="description" content="${escapeHtml(metadata.objective)}">`);
+    }
 
     return [
       "<!doctype html>",
-      "<html lang=\"en\">",
+      `<html lang="${lang}">`,
       "  <head>",
       "    <meta charset=\"utf-8\">",
       "    <meta name=\"viewport\" content=\"width=device-width, initial-scale=1\">",
       `    <title>${title}</title>`,
+      ...metaTags,
       inlineCss
         ? `    <style>\n${inlineCss}\n    </style>`
         : "    <link rel=\"stylesheet\" href=\"/styles.css\">",
@@ -270,12 +290,20 @@
   function renderDeckDocument(payload) {
     const config = payload && typeof payload === "object" ? payload : {};
     const title = escapeHtml(config.title || "Deck Preview");
+    const metadata = config.metadata && typeof config.metadata === "object" ? config.metadata : {};
+    const subjectLine = metadata.subject
+      ? `<p class="dom-deck-document__subject">${escapeHtml(metadata.subject)}</p>`
+      : "";
+    const metaParts = [metadata.company, metadata.author].filter(Boolean);
+    const metaLine = metaParts.length
+      ? `<p class="dom-deck-document__meta">${escapeHtml(metaParts.join(" · "))}</p>`
+      : "";
 
     return [
       renderDocumentHead(config),
       "  <body class=\"dom-deck-document\">",
       "    <main class=\"dom-deck-document__page\">",
-      `      <header class="dom-deck-document__header"><p class="eyebrow">DOM preview</p><h1>${title}</h1></header>`,
+      `      <header class="dom-deck-document__header"><p class="eyebrow">Deck preview</p><h1>${title}</h1>${subjectLine}${metaLine}</header>`,
       renderDeckMarkup(config.slides || [], { theme: config.theme }),
       "    </main>",
       "  </body>",

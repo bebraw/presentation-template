@@ -1252,6 +1252,21 @@ textarea {
   letter-spacing: -0.04em;
 }
 
+.dom-deck-document__subject,
+.dom-deck-document__meta {
+  margin: 0;
+  color: var(--muted);
+}
+
+.dom-deck-document__subject {
+  font-size: 1rem;
+  font-weight: 600;
+}
+
+.dom-deck-document__meta {
+  font-size: 0.9rem;
+}
+
 .dom-deck-document__slides {
   display: grid;
   gap: 24px;

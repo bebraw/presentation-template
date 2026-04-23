@@ -5,6 +5,7 @@ const { renderDeckDocument } = require("../../client/slide-dom");
 
 function getDomPreviewState() {
   const context = getDeckContext();
+  const deck = context && context.deck ? context.deck : {};
   const slides = getSlides().map((slide) => {
     try {
       return {
@@ -25,9 +26,16 @@ function getDomPreviewState() {
 
   return {
     generatedAt: new Date().toISOString(),
+    lang: deck.lang || "en",
+    metadata: {
+      author: deck.author || "",
+      company: deck.company || "",
+      objective: deck.objective || "",
+      subject: deck.subject || ""
+    },
     slides,
-    theme: resolveTheme(context && context.deck && context.deck.visualTheme),
-    title: context && context.deck && context.deck.title ? context.deck.title : "Presentation Studio"
+    theme: resolveTheme(deck.visualTheme),
+    title: deck.title ? deck.title : "Presentation Studio"
   };
 }
 

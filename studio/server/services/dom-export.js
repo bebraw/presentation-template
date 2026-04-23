@@ -58,6 +58,8 @@ body {
 function createStandaloneDeckHtml(previewState) {
   return renderDeckDocument({
     inlineCss: `${readInlineStyles()}\n${domExportCss()}`,
+    lang: previewState.lang,
+    metadata: previewState.metadata,
     slides: previewState.slides,
     theme: previewState.theme,
     title: previewState.title
@@ -68,6 +70,8 @@ function createStandaloneSlideHtml(previewState, slideEntry) {
   return renderSlideDocument({
     index: slideEntry.index,
     inlineCss: `${readInlineStyles()}\n${domExportCss()}`,
+    lang: previewState.lang,
+    metadata: previewState.metadata,
     slideSpec: slideEntry.slideSpec,
     theme: previewState.theme,
     title: slideEntry.title || previewState.title,

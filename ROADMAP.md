@@ -261,7 +261,7 @@ Current implementation uses plain browser assets instead of React + Vite so the 
 
 ## DOM-First Migration
 
-This is the next major roadmap track.
+This migration track is now complete for the active deck and runtime. Keep this section as a summary of the architectural shift rather than a pending plan.
 
 ### Why This Pivot
 
@@ -286,24 +286,24 @@ End-state request flow:
 - keeping the current generator-side slide renderer as a permanent second runtime
 - building a freeform WYSIWYG editor before the DOM renderer is stable
 
-### Migration Order
+### Migration Summary
 
-Implement in this order:
+Delivered in this order:
 
-1. keep slide-spec JSON as the only source model for supported slide families
-2. add a DOM renderer for `cover`, `toc`, `content`, and `summary`
-3. switch studio preview for supported slides from server-rendered PNG-first to DOM-first
-4. add a headless-browser export path that produces the deck PDF and preview images from the DOM renderer
-5. move validation from generator-side geometry to DOM layout inspection plus rendered checks
-6. retire generator-side slide drawing for supported slide types once the DOM path is stable
-7. migrate or remove remaining legacy generator-only slides and helpers
+1. slide-spec JSON became the only active source model for the supported slide families
+2. a shared DOM renderer landed for `cover`, `toc`, `content`, and `summary`
+3. studio preview for supported slides moved from PNG-first to DOM-first
+4. headless-browser export took over PDF and preview image generation
+5. validation moved from generator-side geometry to DOM layout inspection plus rendered checks
+6. generator-side slide drawing and legacy config modules were removed for the active deck
+7. repo-level scripts and studio services replaced the older generator-owned command and baseline paths
 
-### Acceptance Criteria
+### Current State
 
 - the same DOM renderer powers live studio preview and exported PDF for supported slides
 - supported slide families no longer depend on generator-side drawing code for authoritative layout
 - validation results come from DOM layout and rendered output, not from the old slide-canvas geometry model
-- the current generator path can be disabled for the supported slide families without losing the demo deck
+- the active demo deck no longer needs a separate generator runtime to build, preview, or validate
 
 ## UX Shape
 
@@ -324,11 +324,11 @@ This is intentionally quieter than a full app shell. If a later iteration adds r
 
 ## Phase Plan
 
-The phases below describe the delivered studio foundation plus the first DOM-preview migration slice. The remaining DOM-first export and validation work above is now the next major implementation track.
+The phases below are historical delivery slices. Use `Next Focus` for the current work rather than reading these as pending implementation.
 
 ### Phase 1: Studio Shell And Runtime Bridge
 
-Objective: establish the browser app shell and connect it to the current generator runtime.
+Objective: establish the browser app shell and connect it to the deck runtime.
 
 Implementation:
 

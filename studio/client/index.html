@@ -255,38 +255,6 @@
             </div>
           </article>
 
-          <article class="editorial-block editorial-block-wide">
-            <div class="section-heading">
-              <div>
-                <p class="eyebrow">Slide Spec</p>
-                <h2>Structured draft</h2>
-              </div>
-            </div>
-
-            <p class="section-note">
-              Edit the active slide as JSON for supported slide families. The studio materializes that spec into source on the server so JavaScript stays out of the user-facing workflow.
-            </p>
-
-            <p class="section-note" id="slide-spec-status">
-              Slide spec status appears here after loading the selected slide.
-            </p>
-
-            <label class="field">
-              <span>Variant label</span>
-              <input id="variant-label" type="text" placeholder="Snapshot name">
-            </label>
-
-            <div class="button-row compact">
-              <button id="save-slide-spec-button">Save spec + rebuild</button>
-              <button id="capture-variant-button" class="secondary">Capture current as variant</button>
-            </div>
-
-            <label class="field field-grow">
-              <span>Slide spec JSON</span>
-              <textarea id="slide-spec-editor" spellcheck="false"></textarea>
-            </label>
-          </article>
-
           <article class="editorial-block">
             <div class="section-heading">
               <div>
@@ -300,6 +268,51 @@
         </section>
       </main>
     </div>
+
+    <aside class="structured-draft-drawer" id="structured-draft-drawer" aria-label="Structured draft editor">
+      <button
+        class="structured-draft-toggle"
+        id="structured-draft-toggle"
+        type="button"
+        aria-controls="structured-draft-panel"
+        aria-expanded="false"
+        aria-label="Open structured draft editor"
+      >
+        <span class="structured-draft-toggle-icon" aria-hidden="true">◀</span>
+        <span class="structured-draft-toggle-label">Draft</span>
+      </button>
+
+      <div class="structured-draft-panel" id="structured-draft-panel">
+        <div class="structured-draft-panel-head">
+          <div>
+            <p class="eyebrow">Slide Spec</p>
+            <h2>Structured Draft</h2>
+          </div>
+          <p class="structured-draft-panel-note">
+            Edit the active slide as JSON for supported slide families. The studio materializes that spec into source on the server so JavaScript stays out of the user-facing workflow.
+          </p>
+        </div>
+
+        <p class="section-note" id="slide-spec-status">
+          Slide spec status appears here after loading the selected slide.
+        </p>
+
+        <label class="field">
+          <span>Variant label</span>
+          <input id="variant-label" type="text" placeholder="Snapshot name">
+        </label>
+
+        <div class="button-row compact">
+          <button id="save-slide-spec-button">Save spec + rebuild</button>
+          <button id="capture-variant-button" class="secondary">Capture current as variant</button>
+        </div>
+
+        <label class="field field-grow structured-draft-field-grow">
+          <span>Slide spec JSON</span>
+          <textarea id="slide-spec-editor" spellcheck="false"></textarea>
+        </label>
+      </div>
+    </aside>
 
     <aside class="assistant-drawer" id="assistant-drawer" aria-label="Workflow chat assistant">
       <button

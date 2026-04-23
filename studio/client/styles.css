@@ -11,6 +11,8 @@
   --app-ring: rgba(29, 95, 209, 0.16);
   --assistant-rail: #223f68;
   --assistant-rail-shadow: rgba(34, 63, 104, 0.2);
+  --draft-rail: #5c493c;
+  --draft-rail-shadow: rgba(92, 73, 60, 0.2);
 }
 
 * {
@@ -25,6 +27,10 @@ body {
 }
 
 body.assistant-open {
+  overflow-x: hidden;
+}
+
+body.structured-draft-open {
   overflow-x: hidden;
 }
 
@@ -90,6 +96,10 @@ textarea {
 
 body.assistant-open .page-shell {
   padding-right: 25rem;
+}
+
+body.structured-draft-open .page-shell {
+  padding-left: 25rem;
 }
 
 .masthead {
@@ -291,6 +301,92 @@ body.assistant-open .page-shell {
   margin-top: 1.5rem;
   padding-top: 1.2rem;
   border-top: 1px solid var(--app-line);
+}
+
+.structured-draft-drawer {
+  position: fixed;
+  top: 6.5rem;
+  left: 0;
+  z-index: 40;
+  display: flex;
+  flex-direction: row-reverse;
+  align-items: stretch;
+  width: min(25rem, calc(100vw - 1rem));
+  transform: translateX(calc(-100% + 4.8rem));
+  transition: transform 220ms ease;
+  filter: drop-shadow(18px 16px 32px rgba(18, 22, 28, 0.08));
+}
+
+.structured-draft-drawer[data-open="true"] {
+  transform: translateX(0);
+}
+
+.structured-draft-toggle {
+  width: 4.8rem;
+  min-width: 4.8rem;
+  border: 0;
+  border-radius: 0 2.7rem 2.7rem 0;
+  background: var(--draft-rail);
+  color: #f8f3eb;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 1rem;
+  padding: 1.2rem 0.8rem;
+  box-shadow: 10px 0 28px var(--draft-rail-shadow);
+}
+
+.structured-draft-toggle:hover {
+  transform: translateX(2px);
+}
+
+.structured-draft-toggle:focus-visible {
+  outline: none;
+  box-shadow: 0 0 0 4px rgba(248, 243, 235, 0.65), 10px 0 28px var(--draft-rail-shadow);
+}
+
+.structured-draft-toggle-icon {
+  font-size: 1.3rem;
+  line-height: 1;
+  transition: transform 220ms ease;
+}
+
+.structured-draft-drawer[data-open="true"] .structured-draft-toggle-icon {
+  transform: rotate(180deg);
+}
+
+.structured-draft-toggle-label {
+  writing-mode: vertical-rl;
+  text-orientation: upright;
+  text-transform: uppercase;
+  letter-spacing: 0.28em;
+  font-size: 0.74rem;
+  line-height: 1;
+}
+
+.structured-draft-panel {
+  width: 20.2rem;
+  min-height: min(43rem, calc(100vh - 8rem));
+  max-height: calc(100vh - 8rem);
+  overflow: auto;
+  background: rgba(249, 247, 242, 0.98);
+  border: 1px solid rgba(18, 22, 28, 0.08);
+  border-left: 0;
+  border-radius: 0 1.9rem 1.9rem 0;
+  padding: 1.35rem 1.2rem 1.4rem;
+  backdrop-filter: blur(16px);
+}
+
+.structured-draft-panel-head h2 {
+  margin: 0;
+  font-size: 1.45rem;
+}
+
+.structured-draft-panel-note {
+  margin: 0.85rem 0 0;
+  color: var(--app-soft-text);
+  line-height: 1.5;
 }
 
 .assistant-drawer {
@@ -583,6 +679,16 @@ body.assistant-open .page-shell {
   background: #fbfcfe;
 }
 
+.structured-draft-field-grow {
+  margin-top: 1rem;
+  margin-bottom: 0;
+}
+
+.structured-draft-field-grow textarea {
+  min-height: min(36rem, calc(100vh - 21rem));
+  background: rgba(255, 255, 255, 0.9);
+}
+
 .preview-frame {
   position: relative;
   min-height: 22rem;
@@ -853,6 +959,10 @@ body.assistant-open .page-shell {
     padding-right: 1.5rem;
   }
 
+  body.structured-draft-open .page-shell {
+    padding-left: 1.5rem;
+  }
+
   .workspace-section {
     grid-template-columns: 1fr;
   }
@@ -884,9 +994,37 @@ body.assistant-open .page-shell {
     min-height: min(34rem, calc(100vh - 4.5rem));
     max-height: calc(100vh - 4.5rem);
   }
+
+  .structured-draft-drawer {
+    top: auto;
+    bottom: 1.2rem;
+    width: min(23rem, calc(100vw - 0.5rem));
+  }
+
+  .structured-draft-panel {
+    min-height: min(35rem, calc(100vh - 4.5rem));
+    max-height: calc(100vh - 4.5rem);
+  }
 }
 
 @media (max-width: 760px) {
+  .structured-draft-drawer {
+    width: calc(100vw - 0.2rem);
+    transform: translateX(calc(-100% + 4rem));
+  }
+
+  .structured-draft-toggle {
+    width: 4rem;
+    min-width: 4rem;
+    border-radius: 0 2.25rem 2.25rem 0;
+  }
+
+  .structured-draft-panel {
+    width: calc(100vw - 4rem);
+    border-radius: 0 1.5rem 1.5rem 0;
+    padding: 1.1rem 1rem 1.2rem;
+  }
+
   .assistant-drawer {
     width: calc(100vw - 0.2rem);
     transform: translateX(calc(100% - 4rem));

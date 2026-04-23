@@ -18,7 +18,8 @@ const state = {
   slides: [],
   transientVariants: [],
   ui: {
-    assistantOpen: false
+    assistantOpen: false,
+    structuredDraftOpen: false
   },
   validation: null,
   variants: []
@@ -83,6 +84,8 @@ const elements = {
   slideMustInclude: document.getElementById("slide-must-include"),
   slideNotes: document.getElementById("slide-notes"),
   slideTitle: document.getElementById("slide-title"),
+  structuredDraftDrawer: document.getElementById("structured-draft-drawer"),
+  structuredDraftToggle: document.getElementById("structured-draft-toggle"),
   thumbRail: document.getElementById("thumb-rail"),
   validateButton: document.getElementById("validate-button"),
   validateRenderButton: document.getElementById("validate-render-button"),
@@ -205,6 +208,22 @@ function persistAssistantDrawerPreference() {
   }
 }
 
+function loadStructuredDraftDrawerPreference() {
+  try {
+    return window.localStorage.getItem("studio.structuredDraftDrawerOpen") === "true";
+  } catch (error) {
+    return false;
+  }
+}
+
+function persistStructuredDraftDrawerPreference() {
+  try {
+    window.localStorage.setItem("studio.structuredDraftDrawerOpen", String(state.ui.structuredDraftOpen));
+  } catch (error) {
+    // Ignore unavailable localStorage in restricted environments.
+  }
+}
+
 function renderAssistantDrawer() {
   document.body.classList.toggle("assistant-open", state.ui.assistantOpen);
   elements.assistantDrawer.dataset.open = state.ui.assistantOpen ? "true" : "false";
@@ -219,6 +238,22 @@ function setAssistantDrawerOpen(open) {
   state.ui.assistantOpen = Boolean(open);
   persistAssistantDrawerPreference();
   renderAssistantDrawer();
+}
+
+function renderStructuredDraftDrawer() {
+  document.body.classList.toggle("structured-draft-open", state.ui.structuredDraftOpen);
+  elements.structuredDraftDrawer.dataset.open = state.ui.structuredDraftOpen ? "true" : "false";
+  elements.structuredDraftToggle.setAttribute("aria-expanded", state.ui.structuredDraftOpen ? "true" : "false");
+  elements.structuredDraftToggle.setAttribute(
+    "aria-label",
+    state.ui.structuredDraftOpen ? "Close structured draft editor" : "Open structured draft editor"
+  );
+}
+
+function setStructuredDraftDrawerOpen(open) {
+  state.ui.structuredDraftOpen = Boolean(open);
+  persistStructuredDraftDrawerPreference();
+  renderStructuredDraftDrawer();
 }
 
 function getSlideVariants() {
@@ -1452,17 +1487,27 @@ elements.assistantSendButton.addEventListener("click", () => sendAssistantMessag
 elements.assistantToggle.addEventListener("click", () => {
   setAssistantDrawerOpen(!state.ui.assistantOpen);
 });
+elements.structuredDraftToggle.addEventListener("click", () => {
+  setStructuredDraftDrawerOpen(!state.ui.structuredDraftOpen);
+});
 elements.saveDeckContextButton.addEventListener("click", () => saveDeckContext().catch((error) => window.alert(error.message)));
 elements.saveSlideContextButton.addEventListener("click", () => saveSlideContext().catch((error) => window.alert(error.message)));
 
 document.addEventListener("keydown", (event) => {
-  if (event.key === "Escape" && state.ui.assistantOpen) {
-    setAssistantDrawerOpen(false);
+  if (event.key === "Escape") {
+    if (state.ui.assistantOpen) {
+      setAssistantDrawerOpen(false);
+    }
+    if (state.ui.structuredDraftOpen) {
+      setStructuredDraftDrawerOpen(false);
+    }
   }
 });
 
 state.ui.assistantOpen = loadAssistantDrawerPreference();
+state.ui.structuredDraftOpen = loadStructuredDraftDrawerPreference();
 renderAssistantDrawer();
+renderStructuredDraftDrawer();
 
 refreshState()
   .then(async () => {

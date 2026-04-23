@@ -146,6 +146,9 @@ function updateDeckFields(fields) {
 function applyDeckStructurePlan(candidate) {
   const current = getDeckContext();
   const plan = Array.isArray(candidate && candidate.slides) ? candidate.slides : [];
+  const deckPatch = candidate && candidate.deckPatch && typeof candidate.deckPatch === "object"
+    ? candidate.deckPatch
+    : {};
   const nextSlides = {
     ...current.slides
   };
@@ -176,10 +179,23 @@ function applyDeckStructurePlan(candidate) {
     ...current,
     deck: {
       ...current.deck,
+      ...deckPatch,
       outline: typeof candidate.outline === "string" ? candidate.outline : current.deck.outline,
       structureLabel: candidate && candidate.label ? candidate.label : "",
       structurePlan: plan,
-      structureSummary: candidate && candidate.summary ? candidate.summary : ""
+      structureSummary: candidate && candidate.summary ? candidate.summary : "",
+      designConstraints: deckPatch.designConstraints
+        ? normalizeDesignConstraints({
+            ...current.deck.designConstraints,
+            ...deckPatch.designConstraints
+          })
+        : current.deck.designConstraints,
+      visualTheme: deckPatch.visualTheme
+        ? normalizeVisualTheme({
+            ...pickEditableVisualTheme(current.deck.visualTheme),
+            ...deckPatch.visualTheme
+          })
+        : current.deck.visualTheme
     },
     slides: nextSlides
   });

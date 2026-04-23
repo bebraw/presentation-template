@@ -402,12 +402,14 @@ async function handleDeckStructureApply(req, res) {
   }
 
   const context = applyDeckStructurePlan({
+    deckPatch: body.deckPatch,
     label: body.label,
     outline: body.outline,
     slides: body.slides,
     summary: body.summary
   });
   const result = await applyDeckStructureCandidate({
+    deckPatch: body.deckPatch,
     label: body.label,
     outline: body.outline,
     slides: body.slides,

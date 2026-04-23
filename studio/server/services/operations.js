@@ -6,7 +6,7 @@ const { createStructuredResponse, getLlmConfig, getLlmStatus } = require("./llm/
 const { buildIdeateSlidePrompts } = require("./llm/prompts");
 const { getIdeateSlideResponseSchema } = require("./llm/schemas");
 const { deckStructurePreviewDir, outputDir, previewDir, variantPreviewDir } = require("./paths");
-const { getDeckContext } = require("./state");
+const { applyDeckStructurePlan, getDeckContext, saveDeckContext } = require("./state");
 const { createStructuredSlide, getSlide, getSlides, peekNextStructuredSlideFileName, readSlideSpec, writeSlideSpec } = require("./slides");
 const { validateSlideSpec } = require("./slide-specs");
 const { captureVariant, updateVariant } = require("./variants");
@@ -2080,6 +2080,7 @@ function restoreDeckStructurePreviewState(originalSpecs) {
 async function renderDeckStructureCandidatePreview(candidate) {
   const originalSlides = getSlides({ includeArchived: true });
   const originalSpecs = new Map(originalSlides.map((slide) => [slide.id, readSlideSpec(slide.id)]));
+  const originalContext = getDeckContext();
   const candidateDir = path.join(deckStructurePreviewDir, candidate.id);
   const currentRenderedPages = listPages(previewDir);
 
@@ -2097,6 +2098,14 @@ async function renderDeckStructureCandidatePreview(candidate) {
     if (currentCopiedPages.length) {
       createContactSheet(currentCopiedPages, currentStripPath);
     }
+
+    applyDeckStructurePlan({
+      deckPatch: candidate.deckPatch,
+      label: candidate.label,
+      outline: candidate.outline,
+      slides: candidate.slides,
+      summary: candidate.summary
+    });
 
     await applyDeckStructureCandidate(candidate, {
       promoteIndices: true,
@@ -2157,6 +2166,7 @@ async function renderDeckStructureCandidatePreview(candidate) {
     };
   } finally {
     restoreDeckStructurePreviewState(originalSpecs);
+    saveDeckContext(originalContext);
     await buildAndRenderDeck();
   }
 }
@@ -2294,9 +2304,13 @@ function createDeckStructurePlan(context, definition) {
   const planStats = collectDeckPlanStats(slides);
   const preview = buildDeckPlanPreview(context, slides, planStats);
   const diff = buildDeckPlanDiff(context, slides, planStats);
+  const deckPatch = definition && definition.deckPatch && typeof definition.deckPatch === "object"
+    ? definition.deckPatch
+    : null;
 
   return {
     changeSummary: buildDeckPlanChangeSummary(definition, preview),
+    deckPatch,
     id: `deck-structure-${definition.label.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "")}`,
     kindLabel: definition.kindLabel || "Deck plan",
     label: definition.label,

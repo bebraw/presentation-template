@@ -18,6 +18,12 @@
           </p>
         </div>
 
+        <div class="page-nav" aria-label="Studio pages">
+          <button class="secondary page-nav-button" id="show-studio-page" type="button">Slide Studio</button>
+          <button class="secondary page-nav-button" id="show-planning-page" type="button">Deck Planning</button>
+          <button class="secondary page-nav-button" id="show-validation-page" type="button">Validation</button>
+        </div>
+
         <div class="masthead-meta">
           <div class="status-strip">
             <div class="status-chip" id="build-status">Build idle</div>
@@ -27,70 +33,229 @@
 
           <div class="button-row">
             <button id="build-button">Rebuild deck</button>
-            <button id="validate-button" class="secondary">Validate geometry + text</button>
-            <button id="validate-render-button" class="secondary">Validate full render</button>
           </div>
         </div>
       </header>
 
       <main class="editorial-flow">
-        <section class="preview-section">
-          <div class="section-heading">
-            <div>
-              <p class="eyebrow">Preview</p>
-              <h2>Current slide</h2>
+        <section class="workspace-page" id="studio-page">
+          <section class="preview-section">
+            <div class="section-heading">
+              <div>
+                <p class="eyebrow">Preview</p>
+                <h2>Current slide</h2>
+              </div>
+              <div class="preview-meta">
+                <span id="selected-slide-label">Slide not selected</span>
+                <span id="preview-count">0 pages</span>
+              </div>
             </div>
-            <div class="preview-meta">
-              <span id="selected-slide-label">Slide not selected</span>
-              <span id="preview-count">0 pages</span>
+
+            <div class="preview-frame">
+              <img id="active-preview" alt="Current slide preview">
+              <div class="preview-empty" id="preview-empty">Build the deck to load previews.</div>
             </div>
-          </div>
 
-          <div class="preview-frame">
-            <img id="active-preview" alt="Current slide preview">
-            <div class="preview-empty" id="preview-empty">Build the deck to load previews.</div>
-          </div>
+            <div class="thumb-rail" id="thumb-rail"></div>
+          </section>
 
-          <div class="thumb-rail" id="thumb-rail"></div>
+          <section class="workspace-section">
+            <article class="editorial-block">
+              <div class="section-heading">
+                <div>
+                  <p class="eyebrow">Context</p>
+                  <h2>Selected slide</h2>
+                </div>
+              </div>
+
+              <div class="field-grid">
+                <label class="field">
+                  <span>Working title</span>
+                  <input id="slide-title" type="text">
+                </label>
+                <label class="field">
+                  <span>Layout hint</span>
+                  <input id="slide-layout-hint" type="text">
+                </label>
+              </div>
+
+              <label class="field">
+                <span>Intent</span>
+                <textarea id="slide-intent"></textarea>
+              </label>
+
+              <label class="field">
+                <span>Must include</span>
+                <textarea id="slide-must-include"></textarea>
+              </label>
+
+              <label class="field">
+                <span>Speaker notes</span>
+                <textarea id="slide-notes"></textarea>
+              </label>
+
+              <div class="button-row compact">
+                <button id="save-slide-context-button">Save slide context</button>
+              </div>
+            </article>
+
+            <article class="editorial-block editorial-block-wide">
+              <div class="section-heading">
+                <div>
+                  <p class="eyebrow">Workflow</p>
+                  <h2>Variant Generation</h2>
+                </div>
+              </div>
+
+              <p class="section-note">
+                Generate candidate slide sources from saved context, explore structural or theme directions, or rebalance the current slide into layout variants. The working slide stays unchanged until you apply one.
+              </p>
+
+              <div class="button-row compact">
+                <button id="ideate-slide-button">Ideate slide variants</button>
+                <button id="ideate-structure-button" class="secondary">Ideate structure variants</button>
+                <button id="ideate-theme-button" class="secondary">Ideate theme variants</button>
+                <button id="redo-layout-button" class="secondary">Redo layout variants</button>
+                <button id="check-llm-button" class="secondary">Check LLM provider</button>
+                <label class="toggle-option toggle-option-select">
+                  <span>Generation mode</span>
+                  <select id="ideate-generation-mode">
+                    <option value="auto">Auto</option>
+                    <option value="local">Local</option>
+                    <option value="llm">LLM</option>
+                  </select>
+                </label>
+                <label class="toggle-option">
+                  <input id="ideate-dry-run" type="checkbox">
+                  <span>Dry run only</span>
+                </label>
+              </div>
+
+              <p class="llm-status-note" id="llm-status-note">
+                LLM provider status appears here after a verification check.
+              </p>
+
+              <p class="operation-note" id="operation-status">
+                Uses deck brief, slide intent, layout hint, notes, outline, and constraints as workflow inputs.
+              </p>
+
+              <div class="workflow-variants">
+                <p class="section-note">
+                  Generated alternatives appear here with their own preview images so you can review and select one before switching into the compare view.
+                </p>
+
+                <div class="variant-list workflow-variant-list" id="variant-list"></div>
+              </div>
+            </article>
+
+            <article class="editorial-block editorial-block-wide">
+              <div class="section-heading">
+                <div>
+                  <p class="eyebrow">Workflow</p>
+                  <h2>Variant Comparison</h2>
+                </div>
+              </div>
+
+              <p class="section-note">
+                Select a generated or captured option to inspect the current slide against one candidate, then apply it with or without validation.
+              </p>
+
+              <div class="workflow-compare" id="workflow-compare">
+                <p class="section-note" id="compare-empty">
+                  Generate or select a variant to compare it against the current slide.
+                </p>
+
+                <div class="compare-grid" id="compare-grid" hidden>
+                  <section class="compare-pane">
+                    <p class="eyebrow">Current</p>
+                    <h3 id="compare-current-label">Current slide</h3>
+                    <img class="compare-preview" id="compare-current-preview" alt="Current slide preview">
+                  </section>
+
+                  <section class="compare-pane">
+                    <p class="eyebrow">Candidate</p>
+                    <h3 id="compare-variant-label">Variant</h3>
+                    <p class="compare-meta" id="compare-variant-meta"></p>
+                    <img class="compare-preview" id="compare-variant-preview" alt="Variant preview">
+                  </section>
+                </div>
+
+                <div class="compare-summary" id="compare-summary" hidden>
+                  <div class="compare-stats" id="compare-stats"></div>
+                  <div class="compare-change-summary" id="compare-change-summary"></div>
+                  <div class="compare-source-grid" id="compare-source-grid"></div>
+                  <div class="compare-highlights" id="compare-highlights"></div>
+                  <div class="button-row compact compare-actions">
+                    <button id="compare-apply-button">Apply variant</button>
+                    <button id="compare-apply-validate-button" class="secondary">Apply + validate</button>
+                  </div>
+                </div>
+              </div>
+            </article>
+          </section>
         </section>
 
-        <section class="workspace-section">
-          <article class="editorial-block">
+        <section class="workspace-page planning-page" id="planning-page" hidden>
+          <article class="editorial-block editorial-block-wide planning-intro">
+            <div class="section-heading">
+              <div>
+                <p class="eyebrow">Planning</p>
+                <h2>Deck Brief</h2>
+              </div>
+            </div>
+
+            <p class="section-note">
+              Keep presentation-level context on its own page. This view is for audience, objective, constraints, outline, and deck-structure ideation rather than slide-level editing.
+            </p>
+          </article>
+
+          <article class="editorial-block editorial-block-wide">
             <div class="section-heading">
               <div>
                 <p class="eyebrow">Context</p>
-                <h2>Selected slide</h2>
+                <h2>Deck brief</h2>
               </div>
             </div>
 
             <div class="field-grid">
               <label class="field">
-                <span>Working title</span>
-                <input id="slide-title" type="text">
+                <span>Title</span>
+                <input id="deck-title" type="text">
               </label>
               <label class="field">
-                <span>Layout hint</span>
-                <input id="slide-layout-hint" type="text">
+                <span>Audience</span>
+                <input id="deck-audience" type="text">
               </label>
             </div>
 
             <label class="field">
-              <span>Intent</span>
-              <textarea id="slide-intent"></textarea>
+              <span>Objective</span>
+              <textarea id="deck-objective"></textarea>
             </label>
 
             <label class="field">
-              <span>Must include</span>
-              <textarea id="slide-must-include"></textarea>
+              <span>Tone</span>
+              <input id="deck-tone" type="text">
             </label>
 
             <label class="field">
-              <span>Speaker notes</span>
-              <textarea id="slide-notes"></textarea>
+              <span>Constraints</span>
+              <textarea id="deck-constraints"></textarea>
+            </label>
+
+            <label class="field">
+              <span>Theme brief</span>
+              <textarea id="deck-theme-brief"></textarea>
+            </label>
+
+            <label class="field">
+              <span>Outline</span>
+              <textarea id="deck-outline"></textarea>
             </label>
 
             <div class="button-row compact">
-              <button id="save-slide-context-button">Save slide context</button>
+              <button id="save-deck-context-button" class="secondary">Save deck context</button>
+              <button id="ideate-deck-structure-button">Ideate presentation structure</button>
             </div>
           </article>
 
@@ -110,199 +275,53 @@
               <div class="variant-list workflow-variant-list" id="deck-structure-list"></div>
             </div>
           </article>
+        </section>
 
-          <article class="editorial-block editorial-block-wide">
+        <section class="workspace-page validation-page" id="validation-page" hidden>
+          <article class="editorial-block editorial-block-wide planning-intro">
             <div class="section-heading">
               <div>
-                <p class="eyebrow">Workflow</p>
-                <h2>Variant Generation</h2>
+                <p class="eyebrow">Validation</p>
+                <h2>Deck Checks</h2>
               </div>
             </div>
 
             <p class="section-note">
-              Generate candidate slide sources from saved context, explore structural or theme directions, or rebalance the current slide into layout variants. The working slide stays unchanged until you apply one.
+              Run geometry, text, or full render validation from a dedicated review page so the latest report, status, and validation actions stay together.
+            </p>
+          </article>
+
+          <article class="editorial-block editorial-block-wide">
+            <div class="section-heading">
+              <div>
+                <p class="eyebrow">Validation</p>
+                <h2>Run Checks</h2>
+              </div>
+            </div>
+
+            <p class="section-note">
+              Use the lightweight check for geometry and text issues, or run full render validation when you need image-level confidence against the baseline.
             </p>
 
             <div class="button-row compact">
-              <button id="ideate-slide-button">Ideate slide variants</button>
-              <button id="ideate-structure-button" class="secondary">Ideate structure variants</button>
-              <button id="ideate-theme-button" class="secondary">Ideate theme variants</button>
-              <button id="redo-layout-button" class="secondary">Redo layout variants</button>
-              <button id="check-llm-button" class="secondary">Check LLM provider</button>
-              <label class="toggle-option toggle-option-select">
-                <span>Generation mode</span>
-                <select id="ideate-generation-mode">
-                  <option value="auto">Auto</option>
-                  <option value="local">Local</option>
-                  <option value="llm">LLM</option>
-                </select>
-              </label>
-              <label class="toggle-option">
-                <input id="ideate-dry-run" type="checkbox">
-                <span>Dry run only</span>
-              </label>
-            </div>
-
-            <p class="llm-status-note" id="llm-status-note">
-              LLM provider status appears here after a verification check.
-            </p>
-
-            <p class="operation-note" id="operation-status">
-              Uses deck brief, slide intent, layout hint, notes, outline, and constraints as workflow inputs.
-            </p>
-
-            <div class="workflow-variants">
-              <p class="section-note">
-                Generated alternatives appear here with their own preview images so you can review and select one before switching into the compare view.
-              </p>
-
-              <div class="variant-list workflow-variant-list" id="variant-list"></div>
+              <button id="validate-button">Validate geometry + text</button>
+              <button id="validate-render-button" class="secondary">Validate full render</button>
             </div>
           </article>
 
           <article class="editorial-block editorial-block-wide">
             <div class="section-heading">
               <div>
-                <p class="eyebrow">Workflow</p>
-                <h2>Variant Comparison</h2>
+                <p class="eyebrow">Report</p>
+                <h2>Latest Result</h2>
               </div>
             </div>
 
-            <p class="section-note">
-              Select a generated or captured option to inspect the current slide against one candidate, then apply it with or without validation.
-            </p>
-
-            <div class="workflow-compare" id="workflow-compare">
-              <p class="section-note" id="compare-empty">
-                Generate or select a variant to compare it against the current slide.
-              </p>
-
-              <div class="compare-grid" id="compare-grid" hidden>
-                <section class="compare-pane">
-                  <p class="eyebrow">Current</p>
-                  <h3 id="compare-current-label">Current slide</h3>
-                  <img class="compare-preview" id="compare-current-preview" alt="Current slide preview">
-                </section>
-
-                <section class="compare-pane">
-                  <p class="eyebrow">Candidate</p>
-                  <h3 id="compare-variant-label">Variant</h3>
-                  <p class="compare-meta" id="compare-variant-meta"></p>
-                  <img class="compare-preview" id="compare-variant-preview" alt="Variant preview">
-                </section>
-              </div>
-
-              <div class="compare-summary" id="compare-summary" hidden>
-                <div class="compare-stats" id="compare-stats"></div>
-                <div class="compare-change-summary" id="compare-change-summary"></div>
-                <div class="compare-source-grid" id="compare-source-grid"></div>
-                <div class="compare-highlights" id="compare-highlights"></div>
-                <div class="button-row compact compare-actions">
-                  <button id="compare-apply-button">Apply variant</button>
-                  <button id="compare-apply-validate-button" class="secondary">Apply + validate</button>
-                </div>
-              </div>
-            </div>
+            <pre class="report validation-report-page" id="report-box">No validation run yet.</pre>
           </article>
-
         </section>
       </main>
     </div>
-
-    <aside class="deck-brief-drawer" id="deck-brief-drawer" aria-label="Deck brief planning view">
-      <button
-        class="deck-brief-toggle"
-        id="deck-brief-toggle"
-        type="button"
-        aria-controls="deck-brief-panel"
-        aria-expanded="false"
-        aria-label="Open deck brief view"
-      >
-        <span class="deck-brief-toggle-icon" aria-hidden="true">▼</span>
-        <span class="deck-brief-toggle-label">Deck Brief</span>
-      </button>
-
-      <div class="deck-brief-panel" id="deck-brief-panel">
-        <div class="deck-brief-panel-head">
-          <div>
-            <p class="eyebrow">Context</p>
-            <h2>Deck Brief</h2>
-          </div>
-          <p class="deck-brief-panel-note">
-            Keep the presentation title, audience, objective, tone, constraints, theme, and outline together in one planning surface before generating deck-level structure changes.
-          </p>
-        </div>
-
-        <div class="field-grid">
-          <label class="field">
-            <span>Title</span>
-            <input id="deck-title" type="text">
-          </label>
-          <label class="field">
-            <span>Audience</span>
-            <input id="deck-audience" type="text">
-          </label>
-        </div>
-
-        <label class="field">
-          <span>Objective</span>
-          <textarea id="deck-objective"></textarea>
-        </label>
-
-        <label class="field">
-          <span>Tone</span>
-          <input id="deck-tone" type="text">
-        </label>
-
-        <label class="field">
-          <span>Constraints</span>
-          <textarea id="deck-constraints"></textarea>
-        </label>
-
-        <label class="field">
-          <span>Theme brief</span>
-          <textarea id="deck-theme-brief"></textarea>
-        </label>
-
-        <label class="field">
-          <span>Outline</span>
-          <textarea id="deck-outline"></textarea>
-        </label>
-
-        <div class="button-row compact">
-          <button id="save-deck-context-button" class="secondary">Save deck context</button>
-          <button id="ideate-deck-structure-button">Ideate presentation structure</button>
-        </div>
-      </div>
-    </aside>
-
-    <aside class="validation-drawer" id="validation-drawer" aria-label="Validation report">
-      <button
-        class="validation-toggle"
-        id="validation-toggle"
-        type="button"
-        aria-controls="validation-panel"
-        aria-expanded="false"
-        aria-label="Open validation report"
-      >
-        <span class="validation-toggle-icon" aria-hidden="true">▲</span>
-        <span class="validation-toggle-label">Validation Report</span>
-      </button>
-
-      <div class="validation-panel" id="validation-panel">
-        <div class="validation-panel-head">
-          <div>
-            <p class="eyebrow">Validation</p>
-            <h2>Report</h2>
-          </div>
-          <p class="validation-panel-note">
-            Geometry, text, and optional render validation continue to run against the real deck pipeline. Review the latest result here without keeping the raw report inline in the workspace.
-          </p>
-        </div>
-
-        <pre class="report validation-report" id="report-box">No validation run yet.</pre>
-      </div>
-    </aside>
 
     <aside class="structured-draft-drawer" id="structured-draft-drawer" aria-label="Structured draft editor">
       <button
@@ -314,7 +333,7 @@
         aria-label="Open structured draft editor"
       >
         <span class="structured-draft-toggle-icon" aria-hidden="true">◀</span>
-        <span class="structured-draft-toggle-label">Draft</span>
+        <span class="structured-draft-toggle-label">Spec</span>
       </button>
 
       <div class="structured-draft-panel" id="structured-draft-panel">
@@ -359,7 +378,7 @@
         aria-label="Open workflow assistant"
       >
         <span class="assistant-toggle-icon" aria-hidden="true">▶</span>
-        <span class="assistant-toggle-label">Assistant</span>
+        <span class="assistant-toggle-label">Chat</span>
       </button>
 
       <div class="assistant-panel" id="assistant-drawer-panel">

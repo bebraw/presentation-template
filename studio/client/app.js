@@ -19,9 +19,8 @@ const state = {
   transientVariants: [],
   ui: {
     assistantOpen: false,
-    deckBriefOpen: false,
+    currentPage: "studio",
     structuredDraftOpen: false,
-    validationOpen: false
   },
   validation: null,
   variants: []
@@ -53,8 +52,6 @@ const elements = {
   compareVariantLabel: document.getElementById("compare-variant-label"),
   compareVariantMeta: document.getElementById("compare-variant-meta"),
   compareVariantPreview: document.getElementById("compare-variant-preview"),
-  deckBriefDrawer: document.getElementById("deck-brief-drawer"),
-  deckBriefToggle: document.getElementById("deck-brief-toggle"),
   deckStructureList: document.getElementById("deck-structure-list"),
   deckStructureNote: document.getElementById("deck-structure-note"),
   ideateDryRun: document.getElementById("ideate-dry-run"),
@@ -80,6 +77,8 @@ const elements = {
   saveSlideContextButton: document.getElementById("save-slide-context-button"),
   saveSlideSpecButton: document.getElementById("save-slide-spec-button"),
   selectionStatus: document.getElementById("selection-status"),
+  showPlanningPageButton: document.getElementById("show-planning-page"),
+  showStudioPageButton: document.getElementById("show-studio-page"),
   slideSpecEditor: document.getElementById("slide-spec-editor"),
   slideSpecStatus: document.getElementById("slide-spec-status"),
   selectedSlideLabel: document.getElementById("selected-slide-label"),
@@ -88,13 +87,15 @@ const elements = {
   slideMustInclude: document.getElementById("slide-must-include"),
   slideNotes: document.getElementById("slide-notes"),
   slideTitle: document.getElementById("slide-title"),
+  planningPage: document.getElementById("planning-page"),
+  showValidationPageButton: document.getElementById("show-validation-page"),
+  studioPage: document.getElementById("studio-page"),
   structuredDraftDrawer: document.getElementById("structured-draft-drawer"),
   structuredDraftToggle: document.getElementById("structured-draft-toggle"),
   thumbRail: document.getElementById("thumb-rail"),
-  validationDrawer: document.getElementById("validation-drawer"),
+  validationPage: document.getElementById("validation-page"),
   validateButton: document.getElementById("validate-button"),
   validateRenderButton: document.getElementById("validate-render-button"),
-  validationToggle: document.getElementById("validation-toggle"),
   validationStatus: document.getElementById("validation-status"),
   variantLabel: document.getElementById("variant-label"),
   variantList: document.getElementById("variant-list")
@@ -230,52 +231,57 @@ function persistStructuredDraftDrawerPreference() {
   }
 }
 
-function loadValidationDrawerPreference() {
+function loadCurrentPagePreference() {
+  const hash = typeof window.location.hash === "string" ? window.location.hash.replace(/^#/, "") : "";
+  if (hash === "planning") {
+    return "planning";
+  }
+  if (hash === "validation") {
+    return "validation";
+  }
+  if (hash === "studio") {
+    return "studio";
+  }
+
   try {
-    return window.localStorage.getItem("studio.validationDrawerOpen") === "true";
+    const value = window.localStorage.getItem("studio.currentPage");
+    return ["planning", "validation"].includes(value) ? value : "studio";
   } catch (error) {
-    return false;
+    return "studio";
   }
 }
 
-function persistValidationDrawerPreference() {
+function persistCurrentPagePreference() {
   try {
-    window.localStorage.setItem("studio.validationDrawerOpen", String(state.ui.validationOpen));
-  } catch (error) {
-    // Ignore unavailable localStorage in restricted environments.
-  }
-}
-
-function loadDeckBriefDrawerPreference() {
-  try {
-    return window.localStorage.getItem("studio.deckBriefDrawerOpen") === "true";
-  } catch (error) {
-    return false;
-  }
-}
-
-function persistDeckBriefDrawerPreference() {
-  try {
-    window.localStorage.setItem("studio.deckBriefDrawerOpen", String(state.ui.deckBriefOpen));
+    window.localStorage.setItem("studio.currentPage", state.ui.currentPage);
   } catch (error) {
     // Ignore unavailable localStorage in restricted environments.
   }
 }
 
-function renderDeckBriefDrawer() {
-  document.body.classList.toggle("deck-brief-open", state.ui.deckBriefOpen);
-  elements.deckBriefDrawer.dataset.open = state.ui.deckBriefOpen ? "true" : "false";
-  elements.deckBriefToggle.setAttribute("aria-expanded", state.ui.deckBriefOpen ? "true" : "false");
-  elements.deckBriefToggle.setAttribute(
-    "aria-label",
-    state.ui.deckBriefOpen ? "Close deck brief view" : "Open deck brief view"
-  );
+function renderPages() {
+  const current = state.ui.currentPage;
+  elements.studioPage.hidden = current !== "studio";
+  elements.planningPage.hidden = current !== "planning";
+  elements.validationPage.hidden = current !== "validation";
+  elements.structuredDraftDrawer.hidden = current !== "studio";
+  elements.showStudioPageButton.classList.toggle("active", current === "studio");
+  elements.showPlanningPageButton.classList.toggle("active", current === "planning");
+  elements.showValidationPageButton.classList.toggle("active", current === "validation");
+  elements.showStudioPageButton.setAttribute("aria-pressed", current === "studio" ? "true" : "false");
+  elements.showPlanningPageButton.setAttribute("aria-pressed", current === "planning" ? "true" : "false");
+  elements.showValidationPageButton.setAttribute("aria-pressed", current === "validation" ? "true" : "false");
+  renderStructuredDraftDrawer();
 }
 
-function setDeckBriefDrawerOpen(open) {
-  state.ui.deckBriefOpen = Boolean(open);
-  persistDeckBriefDrawerPreference();
-  renderDeckBriefDrawer();
+function setCurrentPage(page) {
+  state.ui.currentPage = ["planning", "validation"].includes(page) ? page : "studio";
+  const nextHash = `#${state.ui.currentPage}`;
+  if (window.location.hash !== nextHash) {
+    window.history.replaceState(null, "", nextHash);
+  }
+  persistCurrentPagePreference();
+  renderPages();
 }
 
 function renderAssistantDrawer() {
@@ -295,7 +301,8 @@ function setAssistantDrawerOpen(open) {
 }
 
 function renderStructuredDraftDrawer() {
-  document.body.classList.toggle("structured-draft-open", state.ui.structuredDraftOpen);
+  const available = state.ui.currentPage === "studio";
+  document.body.classList.toggle("structured-draft-open", available && state.ui.structuredDraftOpen);
   elements.structuredDraftDrawer.dataset.open = state.ui.structuredDraftOpen ? "true" : "false";
   elements.structuredDraftToggle.setAttribute("aria-expanded", state.ui.structuredDraftOpen ? "true" : "false");
   elements.structuredDraftToggle.setAttribute(
@@ -308,22 +315,6 @@ function setStructuredDraftDrawerOpen(open) {
   state.ui.structuredDraftOpen = Boolean(open);
   persistStructuredDraftDrawerPreference();
   renderStructuredDraftDrawer();
-}
-
-function renderValidationDrawer() {
-  document.body.classList.toggle("validation-open", state.ui.validationOpen);
-  elements.validationDrawer.dataset.open = state.ui.validationOpen ? "true" : "false";
-  elements.validationToggle.setAttribute("aria-expanded", state.ui.validationOpen ? "true" : "false");
-  elements.validationToggle.setAttribute(
-    "aria-label",
-    state.ui.validationOpen ? "Close validation report" : "Open validation report"
-  );
-}
-
-function setValidationDrawerOpen(open) {
-  state.ui.validationOpen = Boolean(open);
-  persistValidationDrawerPreference();
-  renderValidationDrawer();
 }
 
 function getSlideVariants() {
@@ -983,7 +974,7 @@ function renderValidation() {
   });
 
   elements.reportBox.textContent = lines.join("\n");
-  setValidationDrawerOpen(true);
+  setCurrentPage("validation");
 }
 
 function syncSelectedSlideToActiveList() {
@@ -1492,7 +1483,7 @@ async function sendAssistantMessage() {
     state.runtime = payload.runtime;
     if (payload.validation) {
       state.validation = payload.validation;
-      setValidationDrawerOpen(true);
+      setCurrentPage("validation");
     }
     if (payload.action && payload.action.type === "ideate-deck-structure") {
       state.deckStructureCandidates = payload.deckStructureCandidates || [];
@@ -1559,14 +1550,11 @@ elements.assistantSendButton.addEventListener("click", () => sendAssistantMessag
 elements.assistantToggle.addEventListener("click", () => {
   setAssistantDrawerOpen(!state.ui.assistantOpen);
 });
-elements.deckBriefToggle.addEventListener("click", () => {
-  setDeckBriefDrawerOpen(!state.ui.deckBriefOpen);
-});
+elements.showStudioPageButton.addEventListener("click", () => setCurrentPage("studio"));
+elements.showPlanningPageButton.addEventListener("click", () => setCurrentPage("planning"));
+elements.showValidationPageButton.addEventListener("click", () => setCurrentPage("validation"));
 elements.structuredDraftToggle.addEventListener("click", () => {
   setStructuredDraftDrawerOpen(!state.ui.structuredDraftOpen);
-});
-elements.validationToggle.addEventListener("click", () => {
-  setValidationDrawerOpen(!state.ui.validationOpen);
 });
 elements.saveDeckContextButton.addEventListener("click", () => saveDeckContext().catch((error) => window.alert(error.message)));
 elements.saveSlideContextButton.addEventListener("click", () => saveSlideContext().catch((error) => window.alert(error.message)));
@@ -1576,26 +1564,23 @@ document.addEventListener("keydown", (event) => {
     if (state.ui.assistantOpen) {
       setAssistantDrawerOpen(false);
     }
-    if (state.ui.deckBriefOpen) {
-      setDeckBriefDrawerOpen(false);
-    }
     if (state.ui.structuredDraftOpen) {
       setStructuredDraftDrawerOpen(false);
-    }
-    if (state.ui.validationOpen) {
-      setValidationDrawerOpen(false);
     }
   }
 });
 
-state.ui.deckBriefOpen = loadDeckBriefDrawerPreference();
+window.addEventListener("hashchange", () => {
+  const page = window.location.hash.replace(/^#/, "");
+  setCurrentPage(page === "planning" || page === "validation" ? page : "studio");
+});
+
+state.ui.currentPage = loadCurrentPagePreference();
 state.ui.assistantOpen = loadAssistantDrawerPreference();
 state.ui.structuredDraftOpen = loadStructuredDraftDrawerPreference();
-state.ui.validationOpen = loadValidationDrawerPreference();
-renderDeckBriefDrawer();
+renderPages();
 renderAssistantDrawer();
 renderStructuredDraftDrawer();
-renderValidationDrawer();
 
 refreshState()
   .then(async () => {

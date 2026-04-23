@@ -1,5 +1,5 @@
 const path = require("path");
-const { pdfFile } = require("./output-config");
+const { pdfFile } = require("../studio/server/services/output-config");
 const {
   createContactSheet,
   renderPdfPages

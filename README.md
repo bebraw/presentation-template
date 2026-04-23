@@ -11,7 +11,7 @@ This repository ships with two presentation-focused skills under `skills/`.
 Use this skill for deck-building work:
 
 - adding or editing slides in `slides/`
-- changing shared DOM runtime helpers in `studio/` or shared deck settings and baseline tooling in `generator/`
+- changing shared DOM runtime helpers or deck settings in `studio/`, or the remaining baseline tooling outside that runtime
 - updating assets, PDF output, or render baselines
 - validating deck changes with `npm run build` and `npm run quality:gate`
 

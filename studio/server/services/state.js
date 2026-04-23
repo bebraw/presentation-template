@@ -4,13 +4,13 @@ const { stateDir } = require("./paths");
 const {
   defaultDesignConstraints,
   normalizeDesignConstraints
-} = require("../../../generator/design-constraints");
+} = require("./design-constraints");
 const {
   deckMeta,
   defaultDeckLanguage,
   normalizeVisualTheme,
   theme: defaultVisualTheme
-} = require("../../../generator/theme");
+} = require("./deck-theme");
 const {
   ensureAllowedDir,
   writeAllowedJson

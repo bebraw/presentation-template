@@ -1,4 +1,4 @@
-const { resolveTheme } = require("../../../generator/theme");
+const { resolveTheme } = require("./deck-theme");
 const { getDeckContext } = require("./state");
 const { getSlides, readSlideSpec } = require("./slides");
 const { renderDeckDocument } = require("../../client/slide-dom");

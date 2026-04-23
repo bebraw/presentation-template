@@ -1,7 +1,7 @@
 const fs = require("fs");
 const path = require("path");
 
-const deckContextFile = path.join(__dirname, "..", "studio", "state", "deck-context.json");
+const deckContextFile = path.join(__dirname, "..", "state", "deck-context.json");
 
 const defaultDesignConstraints = Object.freeze({
   maxWordsPerSlide: 80,

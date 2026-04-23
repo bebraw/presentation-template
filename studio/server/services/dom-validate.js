@@ -1,4 +1,4 @@
-const { getValidationConstraintOptions, readDesignConstraints } = require("../../../generator/design-constraints");
+const { getValidationConstraintOptions, readDesignConstraints } = require("./design-constraints");
 const { createStandaloneSlideHtml, withBrowser } = require("./dom-export");
 const { getDomPreviewState } = require("./dom-preview");
 

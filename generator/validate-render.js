@@ -1,6 +1,6 @@
 const fs = require("fs");
 const path = require("path");
-const { outputDir, pdfFile } = require("./output-config");
+const { outputDir, pdfFile } = require("../studio/server/services/output-config");
 const {
   comparePageImages,
   createContactSheet,

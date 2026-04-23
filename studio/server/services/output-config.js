@@ -1,6 +1,7 @@
 const path = require("path");
+const { repoRoot } = require("./paths");
 
-const outputDir = path.join(__dirname, "..", "slides", "output");
+const outputDir = path.join(repoRoot, "slides", "output");
 const outputBaseName = "demo-presentation";
 const pdfFile = path.join(outputDir, `${outputBaseName}.pdf`);
 

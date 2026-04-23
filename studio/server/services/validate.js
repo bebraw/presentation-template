@@ -1,5 +1,5 @@
 const path = require("path");
-const { pdfFile } = require("../../../generator/output-config");
+const { pdfFile } = require("./output-config");
 const {
   comparePageImages,
   listPages,

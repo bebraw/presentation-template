@@ -1,6 +1,6 @@
 const fs = require("fs");
 const path = require("path");
-const { describeDesignConstraints } = require("../../../generator/design-constraints");
+const { describeDesignConstraints } = require("./design-constraints");
 const { buildAndRenderDeck } = require("./build");
 const { createStructuredResponse, getLlmConfig, getLlmStatus } = require("./llm/client");
 const { buildIdeateSlidePrompts } = require("./llm/prompts");

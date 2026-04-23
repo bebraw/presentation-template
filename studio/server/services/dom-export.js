@@ -1,9 +1,9 @@
 const fs = require("fs");
 const path = require("path");
 const { chromium } = require("playwright");
-const { pdfFile } = require("../../../generator/output-config");
 const { renderDeckDocument, renderSlideDocument } = require("../../client/slide-dom");
 const { clientDir, contactSheetFile, outputDir, previewDir } = require("./paths");
+const { pdfFile } = require("./output-config");
 const { createContactSheet, ensureDir, listPages, resetDir } = require("./page-artifacts");
 
 function readInlineStyles() {

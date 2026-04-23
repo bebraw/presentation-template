@@ -49,7 +49,7 @@ If you add presentation diagrams or other deck graphics, author them as Graphviz
 
 - `slides/slide-01.json` to `slides/slide-04.json` hold the demo deck content.
 - `studio/` holds the browser studio, shared DOM renderer, Playwright export path, and DOM validation runtime.
-- `generator/` now mainly holds CLI entrypoints, raster-baseline utilities, diagram generation, theme resolution, and shared deck settings.
+- `generator/` now mainly holds CLI entrypoints, raster-baseline utilities, and diagram generation while shared deck settings live under `studio/server/services/`.
 - `skills/pdf-slide-generator/SKILL.md` contains the deck-generation workflow guidance.
 - `skills/slide-clarity-drill/` contains the wording-tightening skill used for line-by-line slide copy refinement.
 - `archive/demo-presentation.pdf` stores the checked-in PDF snapshot for linking and archival.
@@ -63,11 +63,9 @@ If you add presentation diagrams or other deck graphics, author them as Graphviz
 ├── ARCHITECTURE.md
 ├── generator/
 │   ├── compile.js
-│   ├── output-config.js
 │   ├── render-baseline/
 │   ├── render-diagrams.js
 │   ├── baseline-utils.js
-│   ├── theme.js
 │   ├── update-render-baseline.js
 │   ├── validate-geometry.js
 │   ├── validate-render.js
@@ -99,7 +97,7 @@ If you add presentation diagrams or other deck graphics, author them as Graphviz
 - Diagram graphics in `slides/assets/diagrams/` must come from Graphviz `.dot` sources; do not hand-maintain the generated PNGs.
 - The production build path now renders PDF through Playwright and the shared DOM slide renderer.
 - The deck uses `Avenir Next` for both display and body text.
-- Shared palette and deck metadata resolution still live in `generator/theme.js`, while the authoritative slide layout/runtime now lives in `studio/client/slide-dom.js`.
+- Shared palette, deck metadata, design constraints, and output config now live under `studio/server/services/`, while the authoritative slide layout/runtime lives in `studio/client/slide-dom.js`.
 - `slides/output/` is git-ignored, so generated binaries stay local.
 - `archive/demo-presentation.pdf` stores the checked-in PDF snapshot for linking and archival.
 - `generator/render-baseline/` stores the approved render baseline for the current deck output.

@@ -1,7 +1,7 @@
 const fs = require("fs");
 const path = require("path");
 
-const deckContextFile = path.join(__dirname, "..", "studio", "state", "deck-context.json");
+const deckContextFile = path.join(__dirname, "..", "state", "deck-context.json");
 
 const theme = {
   primary: "183153",
@@ -19,7 +19,7 @@ const theme = {
 
 const deckMeta = {
   title: "Presentation Template Demo",
-  subtitle: "A small runnable deck built around the pdf-slide-generator skill",
+  subtitle: "A small runnable deck built around the DOM-first studio",
   author: "OpenAI Codex",
   company: "presentation-template",
   subject: "Demonstration presentation"

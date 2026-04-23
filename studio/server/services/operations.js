@@ -2068,12 +2068,23 @@ async function renderDeckStructureCandidatePreview(candidate) {
   const originalSlides = getSlides({ includeArchived: true });
   const originalSpecs = new Map(originalSlides.map((slide) => [slide.id, readSlideSpec(slide.id)]));
   const candidateDir = path.join(deckStructurePreviewDir, candidate.id);
+  const currentRenderedPages = listPages(previewDir);
 
   ensureDir(deckStructurePreviewDir);
   fs.rmSync(candidateDir, { force: true, recursive: true });
   ensureDir(candidateDir);
 
   try {
+    const currentCopiedPages = currentRenderedPages.map((pageFile, index) => {
+      const targetPath = path.join(candidateDir, `before-page-${String(index + 1).padStart(2, "0")}.png`);
+      fs.copyFileSync(pageFile, targetPath);
+      return targetPath;
+    });
+    const currentStripPath = path.join(candidateDir, "current-strip.png");
+    if (currentCopiedPages.length) {
+      createContactSheet(currentCopiedPages, currentStripPath);
+    }
+
     await applyDeckStructureCandidate(candidate, {
       promoteIndices: true,
       promoteInsertions: true,
@@ -2117,6 +2128,13 @@ async function renderDeckStructureCandidatePreview(candidate) {
 
     candidate.preview = {
       ...preview,
+      currentStrip: fs.existsSync(currentStripPath)
+        ? {
+          fileName: path.basename(currentStripPath),
+          pageCount: currentCopiedPages.length,
+          url: asAssetUrl(currentStripPath)
+        }
+        : null,
       previewHints: renderedHints,
       strip: {
         fileName: path.basename(stripPath),

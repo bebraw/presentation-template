@@ -853,16 +853,36 @@ textarea {
   border-top: 1px solid var(--app-line);
 }
 
-.deck-structure-strip {
+.deck-structure-strip,
+.deck-structure-strip-card {
   padding-top: 0.25rem;
   border-top: 1px solid var(--app-line);
 }
 
-.deck-structure-strip img {
+.deck-structure-strip img,
+.deck-structure-strip-card img {
   display: block;
   width: 100%;
   border: 1px solid var(--app-line);
   background: #ffffff;
+}
+
+.deck-structure-strip-compare {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0.75rem;
+}
+
+.deck-structure-strip-card {
+  display: grid;
+  gap: 0.45rem;
+}
+
+.deck-structure-strip-label {
+  color: var(--app-soft-text);
+  font-size: 0.68rem;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
 }
 
 .deck-structure-preview-card {
@@ -998,6 +1018,10 @@ textarea {
   }
 
   .compare-source-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .deck-structure-strip-compare {
     grid-template-columns: 1fr;
   }
 

@@ -32,16 +32,16 @@ Keep this roadmap focused on architecture, rollout order, and the next slice to 
 
 ## Next Focus
 
-The next practical slice should make larger workflow changes easier to judge visually now that both deck plans and slide compare flows expose stronger structured diff summaries.
+The next practical slice should move beyond deck-safe compose and rewrite actions now that deck plans already expose stronger textual diffs, changed-slide hints, and before-and-after visual strip summaries.
 
 If choosing one thing to build next, do this:
 
-1. add clearer diff-oriented visual feedback for larger changes, especially before-and-after visual summaries at the deck level
+1. explore generator-aware composition changes beyond the current file-safe compose and rewrite actions
 
 After that:
 
-1. explore generator-aware composition changes beyond the current file-safe compose and rewrite actions
-2. decide whether progress reporting should stay polling-based or move to streaming once more workflows exist
+1. decide whether progress reporting should stay polling-based or move to streaming once more workflows exist
+2. tighten write-target enforcement and documentation around the larger workflow surface
 
 ## Product Intent
 

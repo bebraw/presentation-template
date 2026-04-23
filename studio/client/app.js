@@ -674,10 +674,21 @@ function renderDeckStructureCandidates() {
     const proposedSequence = Array.isArray(preview.proposedSequence) ? preview.proposedSequence : [];
     const diffFiles = Array.isArray(diff.files) ? diff.files : [];
     const outlineDiff = diff.outline || {};
-    const stripMarkup = preview.strip && preview.strip.url
+    const beforeAfterStripMarkup = (preview.currentStrip && preview.currentStrip.url) || (preview.strip && preview.strip.url)
       ? `
-      <div class="deck-structure-strip">
-        <img src="${preview.strip.url}" alt="${escapeHtml(candidate.label || "Deck structure")} preview strip">
+      <div class="deck-structure-strip-compare">
+        ${preview.currentStrip && preview.currentStrip.url ? `
+          <div class="deck-structure-strip-card">
+            <span class="deck-structure-strip-label">Before deck</span>
+            <img src="${preview.currentStrip.url}" alt="${escapeHtml(candidate.label || "Deck plan")} current deck strip">
+          </div>
+        ` : ""}
+        ${preview.strip && preview.strip.url ? `
+          <div class="deck-structure-strip-card">
+            <span class="deck-structure-strip-label">After deck</span>
+            <img src="${preview.strip.url}" alt="${escapeHtml(candidate.label || "Deck plan")} proposed deck strip">
+          </div>
+        ` : ""}
       </div>
     `
       : "";
@@ -737,7 +748,7 @@ function renderDeckStructureCandidates() {
         <span class="compare-stat"><strong>${(diff.counts && diff.counts.afterSlides) || proposedSequence.length}</strong> slides after</span>
         <span class="compare-stat"><strong>${diffFiles.length}</strong> file target${diffFiles.length === 1 ? "" : "s"}</span>
       </div>
-      ${stripMarkup}
+      ${beforeAfterStripMarkup}
       ${previewHintMarkup}
       <div class="deck-structure-outline">
         <div class="deck-structure-outline-line"><strong>Diff summary</strong><span>${escapeHtml(diff.summary || "No deck diff summary available")}</span></div>

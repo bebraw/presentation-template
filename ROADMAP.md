@@ -295,6 +295,7 @@ Current implementation uses a centered white-canvas workspace with page-level se
 - `Validation` page for deck checks and reports
 - fold-out side rails for the assistant and structured draft editor
 - a compact slide-variant workbench that keeps generation modes, dry-run/provider controls, workflow progress, candidate counts, and review state close together
+- compact, scrollable slide-candidate rows for fast alternative inspection before opening the full compare view
 - a consolidated validation console that keeps run actions, summary status, actionable report details, and compact settings on one focused page
 - a compact deck-planning console that keeps brief, outline, palette swatches, guardrails, and deck-plan results close without expanding every plan detail by default
 

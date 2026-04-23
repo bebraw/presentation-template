@@ -594,8 +594,8 @@ input[type="color"]::-moz-color-swatch {
 }
 
 .workflow-variants {
-  margin-top: 1.5rem;
-  padding-top: 1.2rem;
+  margin-top: 1rem;
+  padding-top: 0.9rem;
   border-top: 1px solid var(--app-line);
 }
 
@@ -1187,7 +1187,13 @@ input[type="color"]::-moz-color-swatch {
 }
 
 .workflow-variant-list {
-  margin-top: 1rem;
+  grid-template-columns: 1fr;
+  gap: 0;
+  max-height: clamp(18rem, 54vh, 34rem);
+  margin-top: 0.65rem;
+  overflow-y: auto;
+  padding-right: 0.45rem;
+  overscroll-behavior: contain;
 }
 
 .variant-card {
@@ -1197,6 +1203,19 @@ input[type="color"]::-moz-color-swatch {
   border-top: 1px solid var(--app-line);
   padding: 0.9rem 0 0;
   background: transparent;
+}
+
+.workflow-variant-list .variant-card {
+  grid-template-columns: minmax(8.5rem, 12rem) minmax(0, 1fr) max-content;
+  grid-template-areas:
+    "preview kind actions"
+    "preview title actions"
+    "preview meta actions"
+    "preview summary actions";
+  gap: 0.18rem 0.75rem;
+  align-items: start;
+  min-height: 7rem;
+  padding: 0.7rem 0;
 }
 
 .variant-card.active {
@@ -1222,8 +1241,25 @@ input[type="color"]::-moz-color-swatch {
   color: var(--app-soft-text);
 }
 
+.workflow-variant-list .variant-kind {
+  grid-area: kind;
+  font-size: 0.62rem;
+}
+
+.workflow-variant-list .variant-card strong {
+  grid-area: title;
+  margin: 0;
+  font-size: 0.92rem;
+  line-height: 1.22;
+}
+
 .variant-meta {
   display: block;
+}
+
+.workflow-variant-list .variant-meta {
+  grid-area: meta;
+  font-size: 0.74rem;
 }
 
 .variant-preview {
@@ -1234,6 +1270,20 @@ input[type="color"]::-moz-color-swatch {
   overflow: hidden;
 }
 
+.workflow-variant-list .variant-preview {
+  grid-area: preview;
+}
+
+.workflow-variant-list .variant-card > span:not(.variant-meta) {
+  grid-area: summary;
+  display: -webkit-box;
+  overflow: hidden;
+  font-size: 0.78rem;
+  line-height: 1.35;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+}
+
 .variant-actions {
   display: flex;
   flex-wrap: wrap;
@@ -1241,9 +1291,22 @@ input[type="color"]::-moz-color-swatch {
   margin-top: 0.2rem;
 }
 
+.workflow-variant-list .variant-actions {
+  grid-area: actions;
+  display: grid;
+  gap: 0.45rem;
+  min-width: 7.4rem;
+  margin-top: 0;
+}
+
 .variant-actions button,
 .variant-card button {
   margin-top: 0;
+}
+
+.workflow-variant-list .variant-actions button {
+  padding: 0.48rem 0.66rem;
+  font-size: 0.78rem;
 }
 
 .thumb-preview,
@@ -2181,6 +2244,25 @@ input[type="color"]::-moz-color-swatch {
 
   .variant-mode-card {
     min-height: 0;
+  }
+
+  .workflow-variant-list {
+    max-height: 31rem;
+  }
+
+  .workflow-variant-list .variant-card {
+    grid-template-columns: minmax(7.5rem, 9.5rem) minmax(0, 1fr);
+    grid-template-areas:
+      "preview kind"
+      "preview title"
+      "preview meta"
+      "preview summary"
+      "actions actions";
+  }
+
+  .workflow-variant-list .variant-actions {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    min-width: 0;
   }
 
   .planning-text-grid {

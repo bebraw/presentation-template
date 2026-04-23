@@ -34,6 +34,7 @@ Implemented:
 - feature-flagged `Ideate Slide` generation mode selection with `auto`, `local`, and `llm` paths plus clean local fallback when no LLM is configured
 - provider-aware LLM setup for both OpenAI and LM Studio, with LM Studio using its local OpenAI-compatible server for easier local integration
 - browser-visible LLM provider verification through a guarded server check that validates configuration, reachability, and structured-output support
+- verified live LLM-backed `Ideate Slide` workflow generation in the studio when a provider is configured and reachable, including LM Studio responses that emit structured JSON through `reasoning_content`
 - assistant session persistence through a repo-local session store with request/response history
 - assistant workflow API and browser chat surface that can answer, trigger `Ideate Slide`, and run validation through the existing guarded server flows
 - source-to-slide-spec extraction for the four supported slide families so workflows can tighten current slide copy without editing JavaScript directly
@@ -46,16 +47,14 @@ Implemented:
 Not implemented yet:
 
 - explicit workflow operations such as `Ideate Theme` and `Ideate Structure`
-- verified live LLM-backed workflow generation in the studio when a provider is configured and reachable
 
 ## Next Focus
 
-The next practical slice should deepen the structured workflow surface and verify the live LLM path:
+The next practical slice should deepen the structured workflow surface now that the live LLM path is verified:
 
-1. run the live `llm` ideation path end to end against a configured provider now that connectivity checks exist
-2. let the assistant route to an additional structured workflow such as `Ideate Theme`
-3. add richer assistant action states so long-running operations can report progress before previews are ready
-4. keep the server responsible for validating slide specs, preview rendering, variant storage, and apply gating
+1. let the assistant route to an additional structured workflow such as `Ideate Theme`
+2. add richer assistant action states so long-running operations can report progress before previews are ready
+3. keep the server responsible for validating slide specs, preview rendering, variant storage, and apply gating
 
 ## Product Intent
 

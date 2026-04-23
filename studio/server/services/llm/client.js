@@ -121,22 +121,62 @@ function extractResponseOutputText(payload) {
 }
 
 function extractChatCompletionText(payload) {
-  const content = payload
+  const message = payload
     && Array.isArray(payload.choices)
     && payload.choices[0]
     && payload.choices[0].message
-    ? payload.choices[0].message.content
+    ? payload.choices[0].message
     : null;
 
+  const content = message ? message.content : null;
+
   if (typeof content === "string") {
-    return content.trim();
+    const trimmed = content.trim();
+    if (trimmed) {
+      return trimmed;
+    }
   }
 
   if (Array.isArray(content)) {
-    return content
+    const joined = content
       .map((item) => {
         if (!item) {
           return "";
+        }
+
+        if (typeof item.text === "string") {
+          return item.text;
+        }
+
+        if (typeof item.content === "string") {
+          return item.content;
+        }
+
+        return "";
+      })
+      .filter(Boolean)
+      .join("\n")
+      .trim();
+
+    if (joined) {
+      return joined;
+    }
+  }
+
+  const reasoningContent = message ? message.reasoning_content : null;
+  if (typeof reasoningContent === "string") {
+    return reasoningContent.trim();
+  }
+
+  if (Array.isArray(reasoningContent)) {
+    return reasoningContent
+      .map((item) => {
+        if (!item) {
+          return "";
+        }
+
+        if (typeof item === "string") {
+          return item;
         }
 
         if (typeof item.text === "string") {

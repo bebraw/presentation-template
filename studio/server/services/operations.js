@@ -83,7 +83,7 @@ function resolveGeneration(options = {}) {
 
   if (requestedMode === "llm") {
     if (!llmStatus.available) {
-      throw new Error("LLM generation is not configured. Set OPENAI_API_KEY or switch generation mode to local.");
+      throw new Error(`LLM generation is not configured. ${llmStatus.configuredReason || "Configure a provider or switch generation mode to local."}`);
     }
 
     return {
@@ -109,7 +109,9 @@ function resolveGeneration(options = {}) {
 
   return {
     available: false,
-    fallbackReason: "LLM unavailable, used local generation.",
+    fallbackReason: llmStatus.configuredReason
+      ? `LLM unavailable, used local generation. ${llmStatus.configuredReason}`
+      : "LLM unavailable, used local generation.",
     mode: "local",
     model: null,
     provider: "local",

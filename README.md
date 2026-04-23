@@ -88,6 +88,39 @@ The first implementation slice is local-first and wraps the existing generator r
 
 The studio does not replace the current PDF generator. It uses the same deck source files and rebuild path that the repository already uses for normal presentation work.
 
+### LLM provider setup
+
+The studio can use either OpenAI or LM Studio as its LLM backend.
+
+OpenAI:
+
+```bash
+export STUDIO_LLM_PROVIDER=openai
+export OPENAI_API_KEY=...
+export OPENAI_MODEL=gpt-5.2
+```
+
+LM Studio:
+
+```bash
+lms server start --port 1234
+export STUDIO_LLM_PROVIDER=lmstudio
+export LMSTUDIO_MODEL=openai/gpt-oss-20b
+```
+
+Optional LM Studio overrides:
+
+```bash
+export LMSTUDIO_BASE_URL=http://127.0.0.1:1234
+export STUDIO_LLM_MODEL=openai/gpt-oss-20b
+```
+
+Notes:
+
+- the LM Studio provider talks to the local OpenAI-compatible server and normalizes the base URL to `/v1`
+- `STUDIO_LLM_MODEL` overrides provider-specific model variables for either backend
+- the browser UI still uses the same `Auto`, `Local`, and `LLM` generation modes; provider selection happens through environment variables on the studio server
+
 ## Development
 
 Build, validation, repository structure, and generator details are documented in [TECHNICAL.md](TECHNICAL.md).

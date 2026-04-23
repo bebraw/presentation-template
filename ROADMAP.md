@@ -33,6 +33,7 @@ Implemented:
 - `Ideate Slide` variants now carry validated slide specs alongside generated source for supported slide families
 - server-side LLM client, prompt builder, and structured-output schema modules for future assistant-backed workflows
 - feature-flagged `Ideate Slide` generation mode selection with `auto`, `local`, and `llm` paths plus clean local fallback when no LLM is configured
+- provider-aware LLM setup for both OpenAI and LM Studio, with LM Studio using its local OpenAI-compatible server for easier local integration
 - assistant session persistence through a repo-local session store with request/response history
 - assistant workflow API and browser chat surface that can answer, trigger `Ideate Slide`, and run validation through the existing guarded server flows
 - source-to-slide-spec extraction for the four supported slide families so workflows can tighten current slide copy without editing JavaScript directly
@@ -43,13 +44,13 @@ Implemented:
 Not implemented yet:
 
 - explicit workflow operations such as `Ideate Theme` and `Ideate Structure`
-- verified live LLM-backed workflow generation in the studio when an API key is configured
+- verified live LLM-backed workflow generation in the studio when a provider is configured and reachable
 
 ## Next Focus
 
 The next practical slice should deepen the structured workflow surface and verify the live LLM path:
 
-1. verify the live `llm` ideation path end to end when an API key is configured
+1. verify the live `llm` ideation path end to end when either OpenAI or LM Studio is configured and reachable
 2. let the assistant route to an additional structured workflow such as `Ideate Theme`
 3. add richer assistant action states so long-running operations can report progress before previews are ready
 4. keep the server responsible for validating slide specs, preview rendering, variant storage, and apply gating
@@ -105,6 +106,15 @@ For LLM-backed actions, the request flow should be:
 5. server renders previews, stores artifacts, and returns compare-ready results to the client
 
 This keeps the user experience conversational while preserving deterministic enforcement at the server boundary.
+
+### Provider Setup
+
+The studio should support both hosted and local OpenAI-compatible providers without changing the browser flow.
+
+- `openai`: use `OPENAI_API_KEY` and `OPENAI_MODEL` or `STUDIO_LLM_MODEL`
+- `lmstudio`: use `STUDIO_LLM_PROVIDER=lmstudio`, point at the local OpenAI-compatible server, and set `LMSTUDIO_MODEL` or `STUDIO_LLM_MODEL`
+- normalize local LM Studio base URLs to `/v1` so the server can reuse one provider contract
+- keep provider selection on the studio server through env vars rather than exposing provider-specific logic in the browser client
 
 ### Context Pack
 

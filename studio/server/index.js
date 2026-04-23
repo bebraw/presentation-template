@@ -14,7 +14,14 @@ const { applyDeckStructurePlan, ensureState, getDeckContext, updateDeckFields, u
 const { getSlide, getSlides, readSlideSource, readSlideSpec, writeSlideSource, writeSlideSpec } = require("./services/slides");
 const { applyDeckStructureCandidate, drillWordingSlide, ideateDeckStructure, ideateStructureSlide, ideateThemeSlide, ideateSlide, redoLayoutSlide } = require("./services/operations");
 const { validateDeck } = require("./services/validate");
-const { applyVariant, captureVariant, listAllVariants, listVariantsForSlide } = require("./services/variants");
+const {
+  applyVariant,
+  captureVariant,
+  getVariantStorageStatus,
+  listAllVariants,
+  listVariantsForSlide,
+  migrateLegacyStructuredVariants
+} = require("./services/variants");
 
 const defaultPort = Number(process.env.PORT || 4173);
 const defaultHost = process.env.HOST || "127.0.0.1";
@@ -159,6 +166,7 @@ function sendFile(res, fileName) {
 }
 
 function getWorkspaceState() {
+  const variantMigration = migrateLegacyStructuredVariants();
   return {
     assistant: {
       session: getAssistantSession(),
@@ -168,6 +176,10 @@ function getWorkspaceState() {
     previews: getPreviewManifest(),
     runtime: serializeRuntimeState(),
     slides: getSlides(),
+    variantStorage: {
+      ...getVariantStorageStatus(),
+      migratedThisLoad: variantMigration.migrated
+    },
     variants: listAllVariants()
   };
 }
@@ -408,6 +420,7 @@ async function handleVariantCapture(req, res) {
   publishRuntimeState();
   createJsonResponse(res, 200, {
     variant,
+    variantStorage: getVariantStorageStatus(),
     variants: listVariantsForSlide(body.slideId)
   });
 }
@@ -433,6 +446,7 @@ async function handleVariantApply(req, res) {
     slideSpec: structured.slideSpec,
     source: structured.slideSpec ? serializeSlideSpec(structured.slideSpec) : readSlideSource(variant.slideId),
     slideId: variant.slideId,
+    variantStorage: getVariantStorageStatus(),
     variant
   });
 }
@@ -888,6 +902,7 @@ async function handleApi(req, res, url) {
       slide: getSlide(slideId),
       source,
       structured: structured.structured,
+      variantStorage: getVariantStorageStatus(),
       variants: listVariantsForSlide(slideId)
     });
     return;

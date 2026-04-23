@@ -36,11 +36,11 @@ The next practical slice should build on the first shared generator-aware compos
 
 If choosing one thing to build next, do this:
 
-1. keep reducing legacy fallback paths such as repo-global variant storage now that slide-local variants are the primary content model
+1. keep extending generator-aware deck composition where shared metadata or chrome should reflect saved planning context instead of hardcoded defaults
 
 After that:
 
-1. keep extending generator-aware deck composition where shared metadata or chrome should reflect saved planning context instead of hardcoded defaults
+1. keep refining diff and summary support across more workflow types, especially for larger changes
 2. refine the streaming runtime surface if workflow granularity grows beyond the current SSE event model
 
 ## Product Intent
@@ -164,7 +164,7 @@ Each type should have a clear schema for fields such as:
 
 The server should own the materialization step from slide spec to source. That keeps layout rules and generator constraints in one place instead of leaking them into the UI or prompts.
 
-For structured slides, the roadmap now stores named variants alongside the main slide JSON payload. The current working slide spec remains explicit at the top level, while alternate slide-spec options stay preserved in the same slide-level document so users can swap between them later without losing work.
+For structured slides, the roadmap now stores named variants alongside the main slide JSON payload. The current working slide spec remains explicit at the top level, while alternate slide-spec options stay preserved in the same slide-level document so users can swap between them later without losing work. Older structured variants from the repo-global fallback store are now migrated into slide-local JSON as part of the same content model, leaving `studio/state/variants.json` as a compatibility path for non-structured slides only.
 
 A custom DSL should be considered only later if JSON becomes too awkward for composition, references, or layout relationships.
 

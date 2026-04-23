@@ -1,5 +1,5 @@
 const { getVariants, saveVariants } = require("./state");
-const { validateSlideSpec } = require("./slide-specs");
+const { extractSlideSpec, validateSlideSpec } = require("./slide-specs");
 const {
   getSlide,
   getSlides,
@@ -29,6 +29,31 @@ function parseStructuredSource(source) {
   } catch (error) {
     throw new Error(`Structured variant source is invalid JSON: ${error.message}`);
   }
+}
+
+function repairLegacyStructuredSource(source) {
+  const lines = String(source || "").split("\n");
+
+  for (let index = 0; index < lines.length - 1; index += 1) {
+    const current = lines[index];
+    const next = lines[index + 1];
+    const trimmed = current.trim();
+    const nextTrimmed = next.trim();
+
+    if (!trimmed || !nextTrimmed) {
+      continue;
+    }
+
+    const looksLikeProperty = /^[A-Za-z_][\w-]*:\s*/.test(trimmed);
+    const nextLooksLikeProperty = /^[A-Za-z_][\w-]*:\s*/.test(nextTrimmed);
+    const alreadyClosed = /[,([{]$/.test(trimmed);
+
+    if (looksLikeProperty && nextLooksLikeProperty && !alreadyClosed) {
+      lines[index] = `${current},`;
+    }
+  }
+
+  return lines.join("\n");
 }
 
 function sortVariants(variants) {
@@ -121,6 +146,28 @@ function readStructuredVariantSlideSpec(slideSpec) {
   return validateSlideSpec(slideSpec);
 }
 
+function readLegacyStructuredVariantSlideSpec(variant) {
+  if (variant.slideSpec && typeof variant.slideSpec === "object" && !Array.isArray(variant.slideSpec)) {
+    return readStructuredVariantSlideSpec(variant.slideSpec);
+  }
+
+  if (typeof variant.source !== "string" || !variant.source.trim()) {
+    throw new Error("Legacy structured variant is missing source.");
+  }
+
+  const source = variant.source.trim();
+
+  if (source.startsWith("{")) {
+    return readStructuredVariantSlideSpec(parseStructuredSource(source));
+  }
+
+  try {
+    return readStructuredVariantSlideSpec(extractSlideSpec(source));
+  } catch (error) {
+    return readStructuredVariantSlideSpec(extractSlideSpec(repairLegacyStructuredSource(source)));
+  }
+}
+
 function listLegacyVariants() {
   return getVariants().variants.map((variant) => ({
     ...variant,
@@ -137,6 +184,7 @@ function listStructuredVariantsForSlide(slideId) {
 }
 
 function listVariantsForSlide(slideId) {
+  migrateLegacyStructuredVariants();
   return sortVariants([
     ...listStructuredVariantsForSlide(slideId),
     ...listLegacyVariants().filter((variant) => variant.slideId === slideId)
@@ -144,6 +192,7 @@ function listVariantsForSlide(slideId) {
 }
 
 function listAllVariants() {
+  migrateLegacyStructuredVariants();
   const slideVariants = getSlides()
     .filter((slide) => slide.structured)
     .flatMap((slide) => listStructuredVariantsForSlide(slide.id));
@@ -173,11 +222,150 @@ function findStructuredVariantLocation(variantId) {
   return null;
 }
 
+function normalizeLegacyStructuredVariant(variant) {
+  if (!variant || typeof variant !== "object" || Array.isArray(variant)) {
+    return null;
+  }
+
+  try {
+    const slide = getSlide(variant.slideId, { includeArchived: true });
+    if (!slide.structured) {
+      return null;
+    }
+
+    const slideSpec = readLegacyStructuredVariantSlideSpec(variant);
+    return createVariantRecord({
+      ...variant,
+      persisted: true,
+      slideId: slide.id,
+      slideSpec,
+      source: serializeSlideSpec(slideSpec)
+    });
+  } catch (error) {
+    return null;
+  }
+}
+
+function migrateLegacyStructuredVariants() {
+  const store = getVariants();
+  const variants = Array.isArray(store.variants) ? store.variants : [];
+
+  if (!variants.length) {
+    return {
+      blocked: 0,
+      migrated: 0,
+      remainingLegacy: 0
+    };
+  }
+
+  const groupedStructuredVariants = new Map();
+  const remainingVariants = [];
+  let blocked = 0;
+  let migrated = 0;
+
+  variants.forEach((variant) => {
+    const normalized = normalizeLegacyStructuredVariant(variant);
+
+    if (!normalized) {
+      if (variant && typeof variant.slideId === "string") {
+        try {
+          const slide = getSlide(variant.slideId, { includeArchived: true });
+          if (slide.structured) {
+            blocked += 1;
+            remainingVariants.push(variant);
+            return;
+          }
+        } catch (error) {
+          // Keep legacy entries for unknown slides untouched.
+        }
+      }
+
+      remainingVariants.push(variant);
+      return;
+    }
+
+    migrated += 1;
+    const nextVariants = groupedStructuredVariants.get(normalized.slideId) || [];
+    nextVariants.push(normalized);
+    groupedStructuredVariants.set(normalized.slideId, nextVariants);
+  });
+
+  if (groupedStructuredVariants.size) {
+    groupedStructuredVariants.forEach((normalizedVariants, slideId) => {
+      const existingVariants = listStructuredVariantsForSlide(slideId);
+      const mergedById = new Map();
+
+      normalizedVariants.forEach((variant) => {
+        mergedById.set(variant.id, toStoredStructuredVariant(variant));
+      });
+      existingVariants.forEach((variant) => {
+        if (!mergedById.has(variant.id)) {
+          mergedById.set(variant.id, toStoredStructuredVariant(variant));
+        }
+      });
+
+      writeStructuredSlideVariants(slideId, Array.from(mergedById.values()));
+    });
+  }
+
+  if (migrated > 0 || remainingVariants.length !== variants.length) {
+    saveVariants({
+      variants: remainingVariants
+    });
+  }
+
+  return {
+    blocked,
+    migrated,
+    remainingLegacy: remainingVariants.length
+  };
+}
+
+function getVariantStorageStatus() {
+  const store = getVariants();
+  const variants = Array.isArray(store.variants) ? store.variants : [];
+  let blockedStructured = 0;
+  let legacyStructured = 0;
+  let legacyUnstructured = 0;
+
+  variants.forEach((variant) => {
+    if (!variant || typeof variant.slideId !== "string") {
+      legacyUnstructured += 1;
+      return;
+    }
+
+    try {
+      const slide = getSlide(variant.slideId, { includeArchived: true });
+      if (slide.structured) {
+        legacyStructured += 1;
+        if (!normalizeLegacyStructuredVariant(variant)) {
+          blockedStructured += 1;
+        }
+        return;
+      }
+    } catch (error) {
+      // Unknown slides stay in the legacy bucket.
+    }
+
+    legacyUnstructured += 1;
+  });
+
+  return {
+    blockedStructured,
+    legacyStructured,
+    legacyUnstructured,
+    slideLocalStructured: getSlides()
+      .filter((slide) => slide.structured)
+      .reduce((total, slide) => total + listStructuredVariantsForSlide(slide.id).length, 0)
+  };
+}
+
 function createVariantId() {
   return `variant-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
 }
 
 function captureVariant(options) {
+  migrateLegacyStructuredVariants();
   const slideId = options.slideId;
   const slide = getSlide(slideId);
   let slideSpec = options.slideSpec || null;
@@ -227,6 +415,7 @@ function captureVariant(options) {
 }
 
 function updateVariant(variantId, fields) {
+  migrateLegacyStructuredVariants();
   const structuredLocation = findStructuredVariantLocation(variantId);
 
   if (structuredLocation) {
@@ -286,6 +475,7 @@ function updateVariant(variantId, fields) {
 }
 
 function applyVariant(variantId) {
+  migrateLegacyStructuredVariants();
   const structuredLocation = findStructuredVariantLocation(variantId);
 
   if (structuredLocation) {
@@ -340,7 +530,9 @@ function applyVariant(variantId) {
 module.exports = {
   applyVariant,
   captureVariant,
+  getVariantStorageStatus,
   listAllVariants,
   listVariantsForSlide,
+  migrateLegacyStructuredVariants,
   updateVariant
 };

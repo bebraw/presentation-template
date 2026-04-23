@@ -44,5 +44,202 @@
       "label": "PPTX outputs",
       "value": "0"
     }
+  ],
+  "variants": [
+    {
+      "changeSummary": [],
+      "createdAt": "2026-04-23T06:43:23.512Z",
+      "generator": null,
+      "id": "variant-1776926603512-9jk2xt",
+      "kind": "generated",
+      "label": "Guardrail-led variant",
+      "model": null,
+      "notes": "Built from constraints and workflow guardrails.",
+      "operation": "ideate-slide",
+      "previewImage": {
+        "fileName": "variant-1776926603512-9jk2xt.png",
+        "url": "/studio-output/variant-previews/variant-1776926603512-9jk2xt.png"
+      },
+      "promptSummary": "Uses saved constraints and source-of-truth rules.",
+      "provider": null,
+      "slideSpec": {
+        "eyebrow": "Guardrails",
+        "guardrails": [
+          {
+            "id": "slide-03-guardrail-row-1",
+            "label": "generated previews",
+            "value": "3"
+          },
+          {
+            "id": "slide-03-guardrail-row-2",
+            "label": "final apply",
+            "value": "1"
+          },
+          {
+            "id": "slide-03-guardrail-row-3",
+            "label": "quality gate",
+            "value": "1"
+          }
+        ],
+        "guardrailsTitle": "Workflow guardrails",
+        "signals": [
+          {
+            "id": "slide-03-guardrail-signal-1",
+            "label": "preview",
+            "value": 0.88
+          },
+          {
+            "id": "slide-03-guardrail-signal-2",
+            "label": "restore",
+            "value": 0.93
+          },
+          {
+            "id": "slide-03-guardrail-signal-3",
+            "label": "apply",
+            "value": 0.82
+          },
+          {
+            "id": "slide-03-guardrail-signal-4",
+            "label": "validate",
+            "value": 0.95
+          }
+        ],
+        "signalsTitle": "Guardrail-led signals",
+        "summary": "Keep the generator as the source of truth and let validation catch drift early.",
+        "title": "Why this setup works",
+        "type": "content"
+      },
+      "updatedAt": "2026-04-23T06:43:24.896Z"
+    },
+    {
+      "changeSummary": [],
+      "createdAt": "2026-04-23T06:43:22.120Z",
+      "generator": null,
+      "id": "variant-1776926602120-59ctzo",
+      "kind": "generated",
+      "label": "Structure-led variant",
+      "model": null,
+      "notes": "Built from outline and theme guidance.",
+      "operation": "ideate-slide",
+      "previewImage": {
+        "fileName": "variant-1776926602120-59ctzo.png",
+        "url": "/studio-output/variant-previews/variant-1776926602120-59ctzo.png"
+      },
+      "promptSummary": "Uses outline, theme brief, and slide notes.",
+      "provider": null,
+      "slideSpec": {
+        "eyebrow": "Flow",
+        "guardrails": [
+          {
+            "id": "slide-03-structure-guardrail-1",
+            "label": "variant options",
+            "value": "3"
+          },
+          {
+            "id": "slide-03-structure-guardrail-2",
+            "label": "working file",
+            "value": "1"
+          },
+          {
+            "id": "slide-03-structure-guardrail-3",
+            "label": "theme brief",
+            "value": "1"
+          }
+        ],
+        "guardrailsTitle": "Workflow guardrails",
+        "signals": [
+          {
+            "id": "slide-03-structure-signal-1",
+            "label": "outline",
+            "value": 0.91
+          },
+          {
+            "id": "slide-03-structure-signal-2",
+            "label": "theme",
+            "value": 0.86
+          },
+          {
+            "id": "slide-03-structure-signal-3",
+            "label": "preview",
+            "value": 0.9
+          },
+          {
+            "id": "slide-03-structure-signal-4",
+            "label": "apply",
+            "value": 0.83
+          }
+        ],
+        "signalsTitle": "Structure-led signals",
+        "summary": "Generate options from saved context, preview them, then keep one source file.",
+        "title": "Why this setup works",
+        "type": "content"
+      },
+      "updatedAt": "2026-04-23T06:43:23.511Z"
+    },
+    {
+      "changeSummary": [],
+      "createdAt": "2026-04-23T06:43:20.656Z",
+      "generator": null,
+      "id": "variant-1776926600657-nm84e2",
+      "kind": "generated",
+      "label": "Intent-led variant",
+      "model": null,
+      "notes": "Built from slide intent and deck objective.",
+      "operation": "ideate-slide",
+      "previewImage": {
+        "fileName": "variant-1776926600657-nm84e2.png",
+        "url": "/studio-output/variant-previews/variant-1776926600657-nm84e2.png"
+      },
+      "promptSummary": "Uses stored audience, objective, and slide intent.",
+      "provider": null,
+      "slideSpec": {
+        "eyebrow": "Intent",
+        "guardrails": [
+          {
+            "id": "slide-03-intent-guardrail-1",
+            "label": "saved inputs",
+            "value": "1"
+          },
+          {
+            "id": "slide-03-intent-guardrail-2",
+            "label": "working file",
+            "value": "1"
+          },
+          {
+            "id": "slide-03-intent-guardrail-3",
+            "label": "apply step",
+            "value": "1"
+          }
+        ],
+        "guardrailsTitle": "Workflow guardrails",
+        "signals": [
+          {
+            "id": "slide-03-intent-signal-1",
+            "label": "intent",
+            "value": 0.93
+          },
+          {
+            "id": "slide-03-intent-signal-2",
+            "label": "audience",
+            "value": 0.88
+          },
+          {
+            "id": "slide-03-intent-signal-3",
+            "label": "must-show",
+            "value": 0.9
+          },
+          {
+            "id": "slide-03-intent-signal-4",
+            "label": "apply",
+            "value": 0.84
+          }
+        ],
+        "signalsTitle": "Intent-led signals",
+        "summary": "Use this slide to make the slide's job clear before changing layout.",
+        "title": "Why this setup works",
+        "type": "content"
+      },
+      "updatedAt": "2026-04-23T06:43:22.120Z"
+    }
   ]
 }

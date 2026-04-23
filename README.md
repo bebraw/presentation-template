@@ -86,7 +86,7 @@ The first implementation slice is local-first and wraps the existing generator r
 - saved design constraints and shared visual theme values that flow back into generator validation and deck chrome
 - the included four-slide demo deck stored as slide-spec JSON and rendered directly by the shared slide-spec runtime
 - browser-based editing of supported slides through slide-spec JSON instead of direct JavaScript
-- capture/apply slide variants through structured slide specs for supported slide families, with supported JSON slides saving named variants alongside the active slide spec and legacy fallbacks still available in `studio/state/variants.json`
+- capture/apply slide variants through structured slide specs for supported slide families, with supported JSON slides saving named variants alongside the active slide spec and legacy structured variants migrated into the owning slide JSON
 
 The studio does not replace the current PDF generator. It uses the same deck source files and rebuild path that the repository already uses for normal presentation work.
 

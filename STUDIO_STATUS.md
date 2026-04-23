@@ -16,7 +16,7 @@ Implemented:
 - shared generator metadata and progress chrome that now read live deck context and active slide totals instead of relying only on hardcoded defaults
 - saved design constraints in deck context for minimum font size, spacing floors, and maximum words per slide, wired into studio validation and the CLI quality gate
 - saved visual theme values in deck context that now drive the shared generator palette for slide chrome, panel surfaces, and progress colors
-- capture/apply variant snapshots, with structured slide variants stored alongside slide JSON and legacy fallbacks still available in `studio/state/variants.json`
+- capture/apply variant snapshots, with structured slide variants stored alongside slide JSON and legacy structured variants migrated out of `studio/state/variants.json`
 - a quiet studio UI pass with sans-serif typography, white canvas treatment, and divider-based layout instead of card containers
 - explicit slide workflows: `Ideate Slide`, `Drill Wording`, `Redo Layout`, `Ideate Theme`, and `Ideate Structure`
 - a separated workflow surface where variant generation and variant comparison live in distinct views
@@ -46,7 +46,6 @@ Implemented:
 Current gaps:
 
 - repo-aware deck-level workflows beyond the current file-safe compose and rewrite actions, especially where more shared generator behavior should respond to saved planning context
-- legacy-variant cleanup so older entries in `studio/state/variants.json` can be folded fully into slide-local storage
 
 ## Phase Snapshot
 
@@ -100,7 +99,6 @@ Implemented so far:
 Still needed:
 
 - clearer visual decision support for larger changes beyond the current field-level summaries
-- cleanup path from legacy `studio/state/variants.json` entries into slide-local storage
 
 ### Phase 6: File Editing Boundary
 
@@ -143,6 +141,5 @@ What already works:
 
 What still needs polish:
 
-1. cleanup of remaining legacy fallback paths such as repo-global variant storage
-2. broader deck-level composition flows where more shared generator behavior should respond to saved planning context
-3. richer diff and summary support across more workflow types
+1. broader deck-level composition flows where more shared generator behavior should respond to saved planning context
+2. richer diff and summary support across more workflow types

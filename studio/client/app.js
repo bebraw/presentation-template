@@ -23,6 +23,7 @@ const state = {
     structuredDraftOpen: false,
   },
   validation: null,
+  variantStorage: null,
   variants: []
 };
 
@@ -110,7 +111,8 @@ const elements = {
   validateRenderButton: document.getElementById("validate-render-button"),
   validationStatus: document.getElementById("validation-status"),
   variantLabel: document.getElementById("variant-label"),
-  variantList: document.getElementById("variant-list")
+  variantList: document.getElementById("variant-list"),
+  variantStorageNote: document.getElementById("variant-storage-note")
 };
 
 async function request(url, options = {}) {
@@ -934,7 +936,15 @@ function renderPreviews() {
 
 function renderVariants() {
   const variants = getSlideVariants();
+  const storage = state.variantStorage || {};
   elements.variantList.innerHTML = "";
+  elements.variantStorageNote.textContent = storage.legacyStructured > 0
+    ? `${storage.legacyStructured} structured legacy variant${storage.legacyStructured === 1 ? "" : "s"} still live in studio state; ${storage.blockedStructured > 0 ? `${storage.blockedStructured} need manual cleanup.` : "the rest are ready for slide-local storage."}`
+    : storage.legacyUnstructured > 0
+      ? `${storage.legacyUnstructured} legacy variant${storage.legacyUnstructured === 1 ? "" : "s"} remain in studio state for non-structured or unknown slides.`
+      : storage.slideLocalStructured > 0
+        ? `Structured-slide variants are stored with the slide JSON. ${storage.slideLocalStructured} saved variant${storage.slideLocalStructured === 1 ? "" : "s"} currently live in slide documents.`
+        : "Structured-slide variants are stored with each slide document.";
 
   if (!variants.length) {
     elements.variantList.innerHTML = "<div class=\"variant-card\"><strong>No variants yet</strong><span>Run Ideate Slide, Ideate Structure, Ideate Theme, or Redo Layout to generate comparable options, or capture the current structured draft as a manual snapshot.</span></div>";
@@ -1180,6 +1190,7 @@ async function loadSlide(slideId) {
   state.selectedSlideSpecError = payload.slideSpecError || null;
   state.selectedSlideStructured = payload.structured === true;
   state.selectedSlideSource = payload.source;
+  state.variantStorage = payload.variantStorage || state.variantStorage;
   replacePersistedVariantsForSlide(slideId, payload.variants || []);
   clearTransientVariants(slideId);
   const preferred = getPreferredVariant(payload.variants || []);
@@ -1209,6 +1220,7 @@ async function refreshState() {
   state.selectedDeckStructureId = null;
   state.slides = payload.slides;
   state.transientVariants = [];
+  state.variantStorage = payload.variantStorage || null;
   state.variants = payload.variants;
 
   if (state.runtime && state.runtime.llm && state.runtime.llm.defaultGenerationMode) {
@@ -1431,6 +1443,7 @@ async function captureVariant() {
       body: JSON.stringify(payloadBody),
       method: "POST"
     });
+    state.variantStorage = payload.variantStorage || state.variantStorage;
     replacePersistedVariantsForSlide(state.selectedSlideId, payload.variants || [payload.variant]);
     clearTransientVariants(state.selectedSlideId);
     state.selectedVariantId = payload.variant.id;
@@ -1475,6 +1488,7 @@ async function applyVariantById(variantId, options = {}) {
     });
   }
   state.previews = payload.previews;
+  state.variantStorage = payload.variantStorage || state.variantStorage;
   elements.operationStatus.textContent = `Applied ${options.label || "variant"} to ${payload.slideId}.`;
   clearTransientVariants(payload.slideId);
   await loadSlide(payload.slideId);

@@ -42,7 +42,7 @@ function assertAllowedWriteTarget(targetPath, action = "write") {
 }
 
 function assertAllowedDirectory(targetPath, action = "create directory") {
-  if (isWithinRoot(targetPath, outputDir) || isWithinRoot(targetPath, stateDir)) {
+  if (isWithinRoot(targetPath, outputDir) || isWithinRoot(targetPath, stateDir) || isWithinRoot(targetPath, slidesDir)) {
     return path.resolve(targetPath);
   }
 

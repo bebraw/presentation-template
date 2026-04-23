@@ -24,6 +24,258 @@
   ],
   "variants": [
     {
+      "changeSummary": [],
+      "createdAt": "2026-04-23T07:00:47.742Z",
+      "generator": null,
+      "id": "variant-1776927647742-m329tj",
+      "kind": "generated",
+      "label": "Guardrail-led variant",
+      "model": null,
+      "notes": "Built from constraints and workflow guardrails.",
+      "operation": "ideate-slide",
+      "previewImage": {
+        "fileName": "variant-1776927647742-m329tj.png",
+        "url": "/studio-output/variant-previews/variant-1776927647742-m329tj.png"
+      },
+      "promptSummary": "Uses saved constraints and source-of-truth rules.",
+      "provider": null,
+      "slideSpec": {
+        "cards": [
+          {
+            "body": "keep the generator as the source of truth",
+            "id": "slide-01-guardrail-source",
+            "title": "Source of truth"
+          },
+          {
+            "body": "turn editing into a repeatable studio loop",
+            "id": "slide-01-guardrail-loop",
+            "title": "Short loop"
+          },
+          {
+            "body": "Preview generated variants, then apply one and run validation.",
+            "id": "slide-01-guardrail-validate",
+            "title": "Validation"
+          }
+        ],
+        "eyebrow": "Guardrails",
+        "note": "Built from constraints and workflow guardrails.",
+        "summary": "Keep the generator as the source of truth and let validation catch drift early.",
+        "title": "Presentation Template Demo",
+        "type": "cover"
+      },
+      "updatedAt": "2026-04-23T07:00:49.121Z"
+    },
+    {
+      "changeSummary": [],
+      "createdAt": "2026-04-23T07:00:46.364Z",
+      "generator": null,
+      "id": "variant-1776927646364-deeuhj",
+      "kind": "generated",
+      "label": "Structure-led variant",
+      "model": null,
+      "notes": "Built from outline and theme guidance.",
+      "operation": "ideate-slide",
+      "previewImage": {
+        "fileName": "variant-1776927646364-deeuhj.png",
+        "url": "/studio-output/variant-previews/variant-1776927646364-deeuhj.png"
+      },
+      "promptSummary": "Uses outline, theme brief, and slide notes.",
+      "provider": null,
+      "slideSpec": {
+        "cards": [
+          {
+            "body": "start from stored context, then generate previews before apply",
+            "id": "slide-01-structure-sequence",
+            "title": "Sequence"
+          },
+          {
+            "body": "use sans-serif type on white and separate sections with dividers",
+            "id": "slide-01-structure-theme",
+            "title": "Theme"
+          },
+          {
+            "body": "keep the working slide untouched until one variant is chosen",
+            "id": "slide-01-structure-review",
+            "title": "Review"
+          }
+        ],
+        "eyebrow": "Flow",
+        "note": "Built from outline and theme guidance.",
+        "summary": "Generate options from saved context, preview them, then keep one source file.",
+        "title": "Presentation Template Demo",
+        "type": "cover"
+      },
+      "updatedAt": "2026-04-23T07:00:47.742Z"
+    },
+    {
+      "changeSummary": [],
+      "createdAt": "2026-04-23T07:00:44.926Z",
+      "generator": null,
+      "id": "variant-1776927644926-j13dh0",
+      "kind": "generated",
+      "label": "Intent-led variant",
+      "model": null,
+      "notes": "Built from slide intent and deck objective.",
+      "operation": "ideate-slide",
+      "previewImage": {
+        "fileName": "variant-1776927644926-j13dh0.png",
+        "url": "/studio-output/variant-previews/variant-1776927644926-j13dh0.png"
+      },
+      "promptSummary": "Uses stored audience, objective, and slide intent.",
+      "provider": null,
+      "slideSpec": {
+        "cards": [
+          {
+            "body": "Write for authors iterating on a local deck.",
+            "id": "slide-01-intent-audience",
+            "title": "Audience"
+          },
+          {
+            "body": "make the slide's job clear before changing layout",
+            "id": "slide-01-intent-purpose",
+            "title": "Purpose"
+          },
+          {
+            "body": "show the main point without piling on more chrome",
+            "id": "slide-01-intent-must",
+            "title": "Must show"
+          }
+        ],
+        "eyebrow": "Intent",
+        "note": "Built from slide intent and deck objective.",
+        "summary": "Use this slide to make the slide's job clear before changing layout.",
+        "title": "Presentation Template Demo",
+        "type": "cover"
+      },
+      "updatedAt": "2026-04-23T07:00:46.363Z"
+    },
+    {
+      "changeSummary": [],
+      "createdAt": "2026-04-23T06:48:23.676Z",
+      "generator": null,
+      "id": "variant-1776926903676-frn6rk",
+      "kind": "generated",
+      "label": "Guardrail-led variant",
+      "model": null,
+      "notes": "Built from constraints and workflow guardrails.",
+      "operation": "ideate-slide",
+      "previewImage": {
+        "fileName": "variant-1776926903676-frn6rk.png",
+        "url": "/studio-output/variant-previews/variant-1776926903676-frn6rk.png"
+      },
+      "promptSummary": "Uses saved constraints and source-of-truth rules.",
+      "provider": null,
+      "slideSpec": {
+        "cards": [
+          {
+            "body": "keep the generator as the source of truth",
+            "id": "slide-01-guardrail-source",
+            "title": "Source of truth"
+          },
+          {
+            "body": "turn editing into a repeatable studio loop",
+            "id": "slide-01-guardrail-loop",
+            "title": "Short loop"
+          },
+          {
+            "body": "Preview generated variants, then apply one and run validation.",
+            "id": "slide-01-guardrail-validate",
+            "title": "Validation"
+          }
+        ],
+        "eyebrow": "Guardrails",
+        "note": "Built from constraints and workflow guardrails.",
+        "summary": "Keep the generator as the source of truth and let validation catch drift early.",
+        "title": "Presentation Template Demo",
+        "type": "cover"
+      },
+      "updatedAt": "2026-04-23T06:48:25.030Z"
+    },
+    {
+      "changeSummary": [],
+      "createdAt": "2026-04-23T06:48:22.279Z",
+      "generator": null,
+      "id": "variant-1776926902279-pouybu",
+      "kind": "generated",
+      "label": "Structure-led variant",
+      "model": null,
+      "notes": "Built from outline and theme guidance.",
+      "operation": "ideate-slide",
+      "previewImage": {
+        "fileName": "variant-1776926902279-pouybu.png",
+        "url": "/studio-output/variant-previews/variant-1776926902279-pouybu.png"
+      },
+      "promptSummary": "Uses outline, theme brief, and slide notes.",
+      "provider": null,
+      "slideSpec": {
+        "cards": [
+          {
+            "body": "start from stored context, then generate previews before apply",
+            "id": "slide-01-structure-sequence",
+            "title": "Sequence"
+          },
+          {
+            "body": "use sans-serif type on white and separate sections with dividers",
+            "id": "slide-01-structure-theme",
+            "title": "Theme"
+          },
+          {
+            "body": "keep the working slide untouched until one variant is chosen",
+            "id": "slide-01-structure-review",
+            "title": "Review"
+          }
+        ],
+        "eyebrow": "Flow",
+        "note": "Built from outline and theme guidance.",
+        "summary": "Generate options from saved context, preview them, then keep one source file.",
+        "title": "Presentation Template Demo",
+        "type": "cover"
+      },
+      "updatedAt": "2026-04-23T06:48:23.675Z"
+    },
+    {
+      "changeSummary": [],
+      "createdAt": "2026-04-23T06:48:20.865Z",
+      "generator": null,
+      "id": "variant-1776926900865-ufktl4",
+      "kind": "generated",
+      "label": "Intent-led variant",
+      "model": null,
+      "notes": "Built from slide intent and deck objective.",
+      "operation": "ideate-slide",
+      "previewImage": {
+        "fileName": "variant-1776926900865-ufktl4.png",
+        "url": "/studio-output/variant-previews/variant-1776926900865-ufktl4.png"
+      },
+      "promptSummary": "Uses stored audience, objective, and slide intent.",
+      "provider": null,
+      "slideSpec": {
+        "cards": [
+          {
+            "body": "Write for authors iterating on a local deck.",
+            "id": "slide-01-intent-audience",
+            "title": "Audience"
+          },
+          {
+            "body": "make the slide's job clear before changing layout",
+            "id": "slide-01-intent-purpose",
+            "title": "Purpose"
+          },
+          {
+            "body": "show the main point without piling on more chrome",
+            "id": "slide-01-intent-must",
+            "title": "Must show"
+          }
+        ],
+        "eyebrow": "Intent",
+        "note": "Built from slide intent and deck objective.",
+        "summary": "Use this slide to make the slide's job clear before changing layout.",
+        "title": "Presentation Template Demo",
+        "type": "cover"
+      },
+      "updatedAt": "2026-04-23T06:48:22.279Z"
+    },
+    {
       "changeSummary": [
         "Reworked the cover slide toward a handoff structure.",
         "Reframed the three cards around a clearer narrative role instead of only changing wording or visual tone.",

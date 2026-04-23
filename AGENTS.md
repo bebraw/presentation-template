@@ -28,6 +28,7 @@ These are durable presentation design and workflow rules for this repository. Re
 - For browser studio work, keep `ROADMAP.md` and `STUDIO_STATUS.md` current in the same change.
 - Use `ROADMAP.md` for architecture, rollout order, and the next practical slice.
 - Use `STUDIO_STATUS.md` for the live implementation snapshot, current gaps, and per-phase status.
+- For durable browser-studio product or workflow decisions, prefer adding a short ADR under `docs/adr/` when that is clearer than stretching `ROADMAP.md` or `STUDIO_STATUS.md`.
 
 ### Validation Rules
 

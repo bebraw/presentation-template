@@ -4,6 +4,8 @@ This file tracks the live implementation snapshot for the browser studio.
 
 Use [`ROADMAP.md`](./ROADMAP.md) for architecture, rollout order, and the next build slice.
 
+Durable studio decisions can also be captured under `docs/adr/` when they are more stable than the current implementation snapshot. The current workflow-control decisions are recorded in [`docs/adr/0001-studio-deck-plan-and-validation-controls.md`](./docs/adr/0001-studio-deck-plan-and-validation-controls.md).
+
 Current implementation is now DOM-first. Supported JSON slide families render through a shared DOM runtime in the studio and through a standalone `/deck-preview` document, studio-triggered PDF export plus preview PNG generation run through Playwright on that same DOM renderer, studio geometry/text validation for those slide families uses DOM inspection, and the CLI PDF build plus quality-gate path now uses the same DOM renderer and DOM validation stack. The optional baseline render gate still exists, but it now compares the current DOM-built PDF against approved raster snapshots under `studio/baseline/`.
 
 ## Snapshot
@@ -68,6 +70,7 @@ Current gaps:
 
 - some deck-plan modes still only reshape slide files and ordering; shared deck-context steering is in place for decision, boundary, and operator flows, but it has not been spread across every deck-plan mode yet
 - DOM validation is strong on structure and spacing, but media-specific checks such as screenshot legibility, caption or source spacing, and similar image-adjacent rules still need deeper coverage
+- workflow controls still need implementation for the newly documented decisions: per-candidate shared-setting apply toggles, per-rule warning vs error severity, and fast vs complete media validation modes
 - deeper architecture notes and historical guidance still need cleanup where they describe `generator/` as an active runtime layer or treat the DOM path as a future migration
 
 ## Planned Rework

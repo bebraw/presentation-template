@@ -11,6 +11,7 @@ Keep this roadmap live while implementing the studio.
 - update [`STUDIO_STATUS.md`](./STUDIO_STATUS.md) in the same change as meaningful studio work
 - correct architecture notes when implementation choices change
 - keep the "Next Focus" section aimed at the next practical slice, not long-range ideas only
+- capture durable studio product or workflow decisions in `docs/adr/` when they are likely to outlive one implementation slice
 
 ## Current Status
 
@@ -45,6 +46,8 @@ The next practical tasks are:
 1. extend shared deck-context patches across the remaining deck-plan modes so sequence-, compressed-, and composed-plan candidates can also steer shared context instead of only slide-file shape
 2. add the next DOM-validation checks where they matter most now: image or screenshot legibility, caption and source spacing, and other media-specific rules that are still weaker than the text-and-layout checks
 3. keep pruning stale “migration” or `generator/` language from deeper docs, and mark old rollout sections as historical whenever they are touched
+
+Recent durable decisions are recorded in [`docs/adr/0001-studio-deck-plan-and-validation-controls.md`](./docs/adr/0001-studio-deck-plan-and-validation-controls.md).
 
 ## Product Intent
 

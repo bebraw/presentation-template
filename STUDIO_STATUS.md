@@ -37,6 +37,7 @@ Implemented:
 - CLI `npm run build` now writes the deck PDF through the same Playwright-backed DOM renderer instead of the old generator-side PDF path
 - CLI geometry and text validation entrypoints now use the same DOM validation path as the studio instead of generator-side slide drawing
 - studio-side preview strips, contact sheets, and page manifests now use `studio/server/services/page-artifacts.js` instead of importing those generic helpers from the baseline utility layer
+- the remaining baseline helper layer now works on explicit caller-provided paths instead of owning generic preview or output directories
 - the old generator-side slide drawer, PDF renderer, text-measurement helpers, and related validation runtime files have been removed, along with the unused `pdfkit` and `pptxgenjs` dependency chain
 - dry-run ideation mode that renders transient variants without saving them to the variant store
 - explicit before-and-after source diff panes plus operation-specific change summaries in the compare area
@@ -69,7 +70,8 @@ Next major direction:
 
 - keep slide-spec JSON as the source content model for supported slides
 - keep generic studio preview helpers out of `generator/` so the remaining baseline utilities stay narrow
-- deepen DOM validation further only where checks beyond bounds, content gaps, padding, font size, word count, contrast, and vertical rhythm still prove necessary
+- remove remaining generator-era naming and copy so the DOM-first runtime reads consistently across the deck, prompts, and docs
+- deepen DOM validation only where new slide families still require media-specific checks beyond bounds, content gaps, padding, font size, word count, contrast, and vertical rhythm
 - broaden repo-aware deck-level workflows where saved planning context should steer more shared deck behavior
 
 ## Phase Snapshot

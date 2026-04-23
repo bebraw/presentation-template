@@ -1,11 +1,6 @@
 const fs = require("fs");
 const path = require("path");
 const { spawnSync } = require("child_process");
-const { outputDir, pdfFile } = require("./output-config");
-
-const baselineDir = path.join(__dirname, "render-baseline");
-const renderedDir = path.join(outputDir, "rendered-pages");
-const diffDir = path.join(outputDir, "render-diff");
 
 function run(command, args) {
   const result = spawnSync(command, args, {
@@ -40,7 +35,7 @@ function listPages(dir) {
     .map((name) => path.join(dir, name));
 }
 
-function renderPdfPages(targetDir, inputFile = pdfFile) {
+function renderPdfPages(targetDir, inputFile) {
   if (!fs.existsSync(inputFile)) {
     throw new Error(`Missing PDF input: ${inputFile}`);
   }
@@ -124,11 +119,6 @@ function comparePageImages(baselinePage, currentPage, diffPath) {
 }
 
 module.exports = {
-  baselineDir,
-  diffDir,
-  outputDir,
-  pdfFile,
-  renderedDir,
   comparePageImages,
   createContactSheet,
   ensureDir,

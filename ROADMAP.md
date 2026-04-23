@@ -42,9 +42,9 @@ The first DOM-pivot slices are now in place:
 
 The next practical slice should move beyond the DOM cutover itself:
 
-1. deepen DOM validation further only where checks beyond bounds, content gaps, padding, font-size, word-count, contrast, and vertical rhythm still prove necessary
+1. remove remaining generator-era naming and copy so the DOM-first runtime reads consistently across the deck, prompts, and docs
 2. broaden repo-aware deck-level workflows where saved planning context should steer more shared deck behavior
-3. keep the remaining raster-baseline utilities narrow instead of letting generic preview or export logic drift back under `generator/`
+3. deepen DOM validation only where new slide families still require media-specific checks beyond bounds, content gaps, padding, font-size, word-count, contrast, and vertical rhythm
 
 ## Product Intent
 
@@ -74,7 +74,7 @@ Current implementation is now hybrid during migration:
 - [`generator/compile.js`](./generator/compile.js) now builds the deck PDF through that same Playwright-backed DOM renderer
 - the CLI geometry and text validation entrypoints now also call that DOM validator instead of the older generator-side slide drawer
 - studio preview strips and contact sheets now use [`studio/server/services/page-artifacts.js`](./studio/server/services/page-artifacts.js) instead of importing those generic helpers from the generator runtime
-- [`generator/baseline-utils.js`](./generator/baseline-utils.js) now contains the raster page and image-diff helpers for the baseline render gate
+- [`generator/baseline-utils.js`](./generator/baseline-utils.js) now contains only explicit-path raster page and image-diff helpers for the baseline render gate
 - the optional render-baseline comparison now checks the current DOM-built PDF against those approved raster snapshots instead of building a second generator-side validation PDF
 - the older generator-side slide drawer, PDF renderer, text-measurement helpers, and related validation runtime pieces have been removed from the active codebase
 

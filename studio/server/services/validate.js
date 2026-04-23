@@ -1,7 +1,6 @@
 const path = require("path");
 const { pdfFile } = require("../../../generator/output-config");
 const {
-  baselineDir,
   comparePageImages,
   listPages,
   renderPdfPages,
@@ -20,6 +19,7 @@ const {
 const { buildAndRenderDeck } = require("./build");
 
 const MAX_NORMALIZED_RMSE = 0.001;
+const baselineDir = path.join(__dirname, "..", "..", "..", "generator", "render-baseline");
 
 function asAssetUrl(fileName) {
   const relativePath = path.relative(outputDir, fileName).split(path.sep).join("/");

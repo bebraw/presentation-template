@@ -1,9 +1,7 @@
 const fs = require("fs");
 const path = require("path");
+const { outputDir, pdfFile } = require("./output-config");
 const {
-  baselineDir,
-  diffDir,
-  renderedDir,
   comparePageImages,
   createContactSheet,
   ensureDir,
@@ -13,6 +11,9 @@ const {
 } = require("./baseline-utils");
 
 const MAX_NORMALIZED_RMSE = 0.001;
+const baselineDir = path.join(__dirname, "render-baseline");
+const renderedDir = path.join(outputDir, "rendered-pages");
+const diffDir = path.join(outputDir, "render-diff");
 
 function fail(message) {
   process.stderr.write(`${message}\n`);
@@ -30,7 +31,7 @@ function main() {
     );
   }
 
-  const currentPages = renderPdfPages(renderedDir);
+  const currentPages = renderPdfPages(renderedDir, pdfFile);
   createContactSheet(currentPages, path.join(renderedDir, "contact-sheet.png"));
 
   if (baselinePages.length !== currentPages.length) {

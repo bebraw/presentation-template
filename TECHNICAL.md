@@ -1,49 +1,10 @@
 # Technical Notes
 
-This document contains the development-facing details for the presentation template repository.
+This document contains lower-level technical notes for slideotter.
 
 For the system-level view of how build, rendering, validation, and archival fit together, see [ARCHITECTURE.md](ARCHITECTURE.md).
 For future packaging thoughts about the runtime layer, see the "Future Option: Extract A Runtime Package" section in [ARCHITECTURE.md](ARCHITECTURE.md).
-
-## Usage
-
-Install dependencies:
-
-```bash
-npm install
-```
-
-Build the presentation:
-
-```bash
-npm run build
-```
-
-Run DOM-backed geometry and text validation:
-
-```bash
-npm run validate
-```
-
-Run the full validation suite, including render validation:
-
-```bash
-npm run validate:all
-```
-
-Run the project quality gate used after changes:
-
-```bash
-npm run quality:gate
-```
-
-Refresh the committed render baseline after intentionally changing the deck design:
-
-```bash
-npm run baseline:render
-```
-
-If you add presentation diagrams or other deck graphics, author them as Graphviz `.dot` files in `slides/assets/diagrams/`. The build regenerates sibling `.png` files automatically through `npm run build:diagrams`, and validation rejects generated diagram PNGs that do not have matching `.dot` sources.
+For day-to-day setup and commands, see [DEVELOPMENT.md](DEVELOPMENT.md).
 
 ## Development Layout
 
@@ -61,6 +22,7 @@ If you add presentation diagrams or other deck graphics, author them as Graphviz
 ├── archive/
 │   └── demo-presentation.pdf
 ├── ARCHITECTURE.md
+├── DEVELOPMENT.md
 ├── package.json
 ├── README.md
 ├── scripts/

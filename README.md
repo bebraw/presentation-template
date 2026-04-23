@@ -1,155 +1,63 @@
 # slideotter
 
-slideotter is a small DOM-first demonstration presentation, local browser studio, and presentation workflow workspace.
+slideotter is a local, DOM-first presentation workbench for structured decks. It keeps slide content, previews, workflow actions, variant review, and validation in one browser loop so deck changes can move from intent to checked output without losing the source.
 
-## Included skills
+It is not a PowerPoint replacement and not a broad WYSIWYG editor. The project focuses on pragmatic authoring support for decks that are already structured enough to render, compare, and validate reliably.
 
-This repository ships with presentation-focused workflow guidance under `skills/`.
+## What It Does
 
-### Deck Workflow
+- Edits supported slides from compact JSON slide specs.
+- Renders the active deck through one shared DOM runtime for studio previews, thumbnails, comparison panes, preview PNGs, and PDF export.
+- Supports direct text edits from the rendered slide preview for structured slides.
+- Generates slide and deck-planning candidates through local rules or an optional LLM provider.
+- Keeps variants previewable, comparable, and safely applicable before they overwrite the working slide.
+- Shows visual and structured comparisons for slide candidates and larger deck plans.
+- Runs geometry, text, media, deck-plan, and render-baseline validation through the same quality gate used by the CLI.
 
-Use the deck workflow for implementation work:
+## Current Demo
 
-- adding or editing slides in `slides/`
-- changing shared DOM runtime helpers, deck settings, baseline tooling, or studio workflows
-- updating assets, PDF output, or render baselines
-- validating deck changes with `npm run build` and `npm run quality:gate`
+The repository includes a four-slide demo deck that explains the project itself:
 
-Typical requests:
+- `slides/slide-01.json`: project framing
+- `slides/slide-02.json`: workflow outline
+- `slides/slide-03.json`: architecture signals
+- `slides/slide-04.json`: summary and next steps
 
-- `Add a new slide about X.`
-- `Update the theme and rebuild the PDF.`
-- `Refresh the render baseline after this visual change.`
+Current local PDF output is written to `slides/output/demo-presentation.pdf`. The checked-in archive copy lives at `archive/demo-presentation.pdf`.
 
-### `slide-clarity-drill`
+## Browser Studio
 
-Use this skill when the structure is mostly right but slide wording needs tightening:
+The local studio lives under `studio/` and runs as a small Node server with a static browser client.
 
-- vague or slogan-like claims
-- overlong slide text
-- wording that needs to become more concrete or defensible
-- line-by-line rewrite passes before patching slides
+The UI currently includes:
 
-Typical requests:
+- a compact sticky navigation with the project name first
+- active slide preview and thumbnail navigation
+- collapsible selected-slide context
+- direct slide-text editing from the DOM preview
+- workflow chat with optional selected-text context from the current slide
+- slide variant generation, review, visual comparison, and apply controls
+- deck planning with compact plan summaries, palette controls, and apply previews
+- validation console with compact settings and discoverable rule severity overrides
 
-- `Use slide-clarity-drill on slide 3.`
-- `This wording feels fuzzy. Tighten it one line at a time.`
-- `Help me rewrite these bullets without shrinking the font.`
+The same DOM renderer is also exposed as a standalone deck preview at `/deck-preview` while the studio server is running.
 
-## How to use them
+## Repository Map
 
-Mention the skill name directly in your request when you want Codex to follow that workflow.
+- `slides/`: active demo deck slide specs
+- `studio/client/`: browser UI and shared DOM slide renderer
+- `studio/server/`: local server, workflow actions, export, validation, write boundary, and LLM integration
+- `studio/state/`: repo-local deck context, validation settings, assistant sessions, and related state
+- `studio/baseline/`: approved render-baseline images for visual regression checks
+- `scripts/`: CLI wrappers for build, validation, diagram rendering, and baseline refresh
+- `skills/`: presentation-focused Codex workflow guidance
+- `docs/adr/`: durable studio decisions
 
-- Use the deck workflow for implementation, rendering, validation, and deck structure changes in the DOM-first studio.
-- Use `slide-clarity-drill` for interactive copy refinement and line-by-line wording decisions.
-- Use both when a change needs wording work first and slide/code updates after that.
+## Documentation
 
-Example combined request:
+- [DEVELOPMENT.md](DEVELOPMENT.md): local setup, commands, validation, LLM provider setup, and workflow rules
+- [ARCHITECTURE.md](ARCHITECTURE.md): current rendering, build, validation, and artifact architecture
+- [TECHNICAL.md](TECHNICAL.md): lower-level technical notes and project layout
+- [ROADMAP.md](ROADMAP.md): current architecture direction and next maintenance focus
+- [STUDIO_STATUS.md](STUDIO_STATUS.md): live implementation snapshot
 
-```text
-Use slide-clarity-drill to tighten slide 2, then patch the slide and run the deck validation flow.
-```
-
-## Demo deck
-
-- Archived PDF: `archive/demo-presentation.pdf`
-- Current local PDF build: `slides/output/demo-presentation.pdf`
-
-The demo presentation is a four-slide starter deck:
-
-- Cover
-- Outline
-- Content with implementation signals
-- Summary / next steps
-
-## Browser studio
-
-The repository now includes a local browser-based presentation studio under `studio/`.
-
-Start it with:
-
-```bash
-npm run studio:start
-```
-
-Then open:
-
-```text
-http://127.0.0.1:4173
-```
-
-The current implementation is local-first and DOM-first. It currently supports:
-
-- deck rebuilds and preview rendering
-- geometry/text validation and optional full render validation
-- persisted deck and slide context in `studio/state/`
-- saved deck metadata such as author, company, explicit subject, and language that flow back into the shared DOM document envelope used for preview and PDF export
-- saved design constraints and shared visual theme values, including explicit progress-bar colors and neutral surface color, that flow back into DOM-first validation and shared deck chrome
-- the included four-slide demo deck stored as slide-spec JSON and rendered directly by the shared slide-spec runtime
-- browser-based editing of supported slides through slide-spec JSON instead of direct JavaScript
-- direct text edits from the rendered slide preview for supported structured slides
-- capture/apply slide variants through structured slide specs for supported slide families, with supported JSON slides saving named variants alongside the active slide spec
-- grouped slide-compare summaries for supported JSON slide types so larger changes read as framed content-area diffs instead of only flat line changes
-
-The studio now renders supported structured slides through a shared DOM renderer for the main preview, thumbnails, variant cards, and compare views. A standalone DOM deck view is also available at:
-
-```
-http://127.0.0.1:4173/deck-preview
-```
-
-Studio-triggered PDF export and preview PNG generation now also use that DOM renderer through Playwright, studio geometry/text validation for supported structured slides now uses DOM inspection, and the CLI `npm run build` plus `npm run quality:gate` paths now use the same DOM renderer and DOM validation stack. The optional baseline render gate still exists, but it now compares the current DOM-built PDF against the approved raster baseline stored under `studio/baseline/`.
-
-The next maintenance focus is to keep hardening media-aware DOM validation, preserve shared deck-context steering as new planning modes are added, and keep trimming legacy guidance as older surfaces are touched. See [ROADMAP.md](ROADMAP.md) for the current roadmap.
-
-Studio write targets are intentionally narrow. The server only mutates:
-
-- `slides/slide-*.json` and `slides/slide-*.js`
-- repo-local state files under `studio/state/*.json`
-- generated workflow artifacts under `studio/output/**`
-
-### LLM provider setup
-
-The studio can use either OpenAI or LM Studio as its LLM backend.
-
-The server now loads repo-root `.env` and `.env.local` files automatically when you run `npm run studio:start` or `npm run studio:dev`.
-
-- shell environment variables still take precedence over `.env` values
-- `.env.local` can override `.env`
-- copy `.env.example` to `.env` and fill in the provider you want to use
-
-OpenAI via `.env`:
-
-```dotenv
-STUDIO_LLM_PROVIDER=openai
-OPENAI_API_KEY=your-key-here
-OPENAI_MODEL=gpt-5.2
-```
-
-LM Studio via `.env`:
-
-```dotenv
-STUDIO_LLM_PROVIDER=lmstudio
-LMSTUDIO_MODEL=openai/gpt-oss-20b
-LMSTUDIO_BASE_URL=http://127.0.0.1:1234
-```
-
-Optional LM Studio overrides:
-
-```dotenv
-LMSTUDIO_BASE_URL=http://127.0.0.1:1234
-STUDIO_LLM_MODEL=openai/gpt-oss-20b
-```
-
-Notes:
-
-- the LM Studio provider talks to the local OpenAI-compatible server and normalizes the base URL to `/v1`
-- `STUDIO_LLM_MODEL` overrides provider-specific model variables for either backend
-- the browser UI still uses the same `Auto`, `Local`, and `LLM` generation modes; provider selection happens through environment variables on the studio server
-- use `Check LLM provider` in the studio workflow area to verify config, reachability, and structured-output support before switching ideation to `LLM`
-
-## Development
-
-Build, validation, repository structure, and CLI or baseline details are documented in [TECHNICAL.md](TECHNICAL.md).
-The higher-level system design and runtime flow are documented in [ARCHITECTURE.md](ARCHITECTURE.md).
-For presentation changes, run `npm run quality:gate` before considering the work done. It now runs geometry/text validation before the render-baseline check.
-If you add deck graphics, author them as Graphviz `.dot` sources under `slides/assets/diagrams/`; the build regenerates the matching PNGs automatically.

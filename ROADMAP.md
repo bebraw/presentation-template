@@ -39,11 +39,12 @@ The DOM pivot is complete enough that renderer migration is no longer the main t
 3. the server exposes the same renderer through a standalone `/deck-preview` document path
 4. studio-triggered PDF export and preview PNG generation now run through that DOM renderer via Playwright
 5. studio validation and the CLI quality gate now use that same DOM validation path for supported slide families
-6. the render-baseline gate now compares the current DOM-built PDF against the approved raster baseline instead of rebuilding a separate generator-side validation PDF
+6. complete media validation mode now adds rendered-media checks for small or upscaled visuals, unloaded or dimensionless raster media, and caption/source spacing against the saved caption-gap constraint
+7. the render-baseline gate now compares the current DOM-built PDF against the approved raster baseline instead of rebuilding a separate generator-side validation PDF
 
 The next practical tasks are:
 
-1. make complete media-validation mode meaningfully heavier by adding image or screenshot legibility, caption or source spacing, and other media-adjacent checks on top of the current configurable rule surface
+1. keep hardening complete media-validation mode beyond its first image legibility and caption/source spacing checks, especially once media-heavy slide families land
 2. extend shared deck-context patches across the remaining deck-plan modes so sequence-, compressed-, and composed-plan candidates can also steer shared context instead of only slide-file shape
 3. keep pruning stale “migration” or `generator/` language from deeper docs, and mark old rollout sections as historical whenever they are touched
 
@@ -73,7 +74,7 @@ Current implementation is now DOM-first:
 - supported JSON slide families render through [`studio/client/slide-dom.js`](./studio/client/slide-dom.js) for studio preview and the standalone `/deck-preview` document
 - studio-triggered PDF export and preview PNG generation now run through Playwright in [`studio/server/services/dom-export.js`](./studio/server/services/dom-export.js)
 - studio geometry and text validation for supported slide families now run through Playwright DOM inspection in [`studio/server/services/dom-validate.js`](./studio/server/services/dom-validate.js)
-- that DOM validator now covers content-gap floors, contrast, and vertical-balance checks in addition to bounds, panel padding, minimum font size, and words-per-slide
+- that DOM validator now covers content-gap floors, contrast, vertical-balance checks, and complete-mode media checks in addition to bounds, panel padding, minimum font size, and words-per-slide
 - the CLI build and geometry/text validation entrypoints now live under [`scripts/`](./scripts/) and call that same Playwright-backed DOM renderer and DOM validator
 - studio preview strips and contact sheets now use [`studio/server/services/page-artifacts.js`](./studio/server/services/page-artifacts.js) instead of importing those generic helpers from the generator runtime
 - repo-level [`scripts/`](./scripts/) entrypoints now drive build, diagram rendering, geometry/text validation, and baseline refresh around the DOM runtime

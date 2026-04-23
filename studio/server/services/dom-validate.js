@@ -50,6 +50,75 @@ function normalizeRect(rect) {
   };
 }
 
+function describeDomNode(item, fallback = "media") {
+  const label = String(
+    item.label ||
+    item.alt ||
+    item.className ||
+    item.tagName ||
+    fallback
+  ).replace(/\s+/g, " ").trim();
+
+  return label || fallback;
+}
+
+function shortestDistanceBetweenRects(first, second) {
+  const a = normalizeRect(first);
+  const b = normalizeRect(second);
+  const horizontalOverlap = a.left < b.right && a.right > b.left;
+  const verticalOverlap = a.top < b.bottom && a.bottom > b.top;
+
+  if (horizontalOverlap) {
+    if (b.top >= a.bottom) {
+      return b.top - a.bottom;
+    }
+    if (a.top >= b.bottom) {
+      return a.top - b.bottom;
+    }
+  }
+
+  if (verticalOverlap) {
+    if (b.left >= a.right) {
+      return b.left - a.right;
+    }
+    if (a.left >= b.right) {
+      return a.left - b.right;
+    }
+  }
+
+  if (horizontalOverlap || verticalOverlap) {
+    return -Math.min(
+      Math.abs(a.bottom - b.top),
+      Math.abs(b.bottom - a.top),
+      Math.abs(a.right - b.left),
+      Math.abs(b.right - a.left)
+    );
+  }
+
+  const dx = Math.max(a.left - b.right, b.left - a.right, 0);
+  const dy = Math.max(a.top - b.bottom, b.top - a.bottom, 0);
+  return Math.sqrt((dx * dx) + (dy * dy));
+}
+
+function findNearestMedia(caption, mediaItems) {
+  let nearest = null;
+
+  mediaItems.forEach((media) => {
+    const distance = shortestDistanceBetweenRects(media.rect, caption.rect);
+    const absoluteDistance = Math.abs(distance);
+
+    if (!nearest || absoluteDistance < nearest.absoluteDistance) {
+      nearest = {
+        absoluteDistance,
+        distance,
+        media
+      };
+    }
+  });
+
+  return nearest;
+}
+
 function unionRects(current, next) {
   if (!current) {
     return { ...next };
@@ -147,7 +216,9 @@ function evaluateSlideInDom(slideEntry, previewState) {
       const slide = document.querySelector(".dom-slide");
       if (!slide) {
         return {
+          captionItems: [],
           contentRects: [],
+          mediaItems: [],
           panelBoxes: [],
           progressRect: null,
           sectionHeaderRect: null,
@@ -210,6 +281,105 @@ function evaluateSlideInDom(slideEntry, previewState) {
             },
             scrollHeight: element.scrollHeight || rect.height,
             scrollWidth: element.scrollWidth || rect.width,
+            text
+          };
+        })
+        .filter(Boolean);
+
+      function getSerializableRect(element) {
+        const rect = element.getBoundingClientRect();
+        return {
+          bottom: rect.bottom,
+          height: rect.height,
+          left: rect.left,
+          right: rect.right,
+          top: rect.top,
+          width: rect.width
+        };
+      }
+
+      function getClassName(element) {
+        if (!element || !element.className) {
+          return "";
+        }
+
+        if (typeof element.className === "string") {
+          return element.className;
+        }
+
+        return element.className.baseVal || "";
+      }
+
+      function isDecorativeMedia(element) {
+        const className = getClassName(element);
+        const role = String(element.getAttribute("role") || "").toLowerCase();
+        const dataMedia = String(element.getAttribute("data-media") || "").toLowerCase();
+
+        return element.getAttribute("aria-hidden") === "true" ||
+          role === "presentation" ||
+          role === "none" ||
+          dataMedia === "decorative" ||
+          /\b(icon|badge|decorative)\b/.test(className);
+      }
+
+      const mediaSelector = [
+        ".dom-slide img",
+        ".dom-slide svg",
+        ".dom-slide canvas",
+        ".dom-slide video",
+        ".dom-slide [data-media]",
+        ".dom-slide .dom-media",
+        ".dom-slide .dom-screenshot",
+        ".dom-slide .dom-diagram"
+      ].join(", ");
+
+      const mediaItems = Array.from(new Set(Array.from(document.querySelectorAll(mediaSelector))))
+        .filter((element) => !isDecorativeMedia(element))
+        .map((element) => {
+          const tagName = element.tagName.toLowerCase();
+          const label = element.getAttribute("aria-label") ||
+            element.getAttribute("alt") ||
+            element.getAttribute("data-media") ||
+            element.getAttribute("data-label") ||
+            getClassName(element) ||
+            tagName;
+
+          return {
+            alt: element.getAttribute("alt") || "",
+            className: getClassName(element),
+            complete: typeof element.complete === "boolean" ? element.complete : true,
+            label,
+            naturalHeight: Number(element.naturalHeight || element.videoHeight || 0),
+            naturalWidth: Number(element.naturalWidth || element.videoWidth || 0),
+            rect: getSerializableRect(element),
+            tagName
+          };
+        })
+        .filter((item) => item.rect.width > 1 && item.rect.height > 1);
+
+      const captionSelector = [
+        ".dom-slide figcaption",
+        ".dom-slide [data-caption]",
+        ".dom-slide [data-source]",
+        ".dom-slide .caption",
+        ".dom-slide .source",
+        ".dom-slide .credit",
+        ".dom-slide .dom-caption",
+        ".dom-slide .dom-source",
+        ".dom-slide .dom-credit"
+      ].join(", ");
+
+      const captionItems = Array.from(document.querySelectorAll(captionSelector))
+        .map((element) => {
+          const text = (element.textContent || "").replace(/\s+/g, " ").trim();
+          if (!text) {
+            return null;
+          }
+
+          return {
+            className: getClassName(element) || element.tagName.toLowerCase(),
+            rect: getSerializableRect(element),
+            tagName: element.tagName.toLowerCase(),
             text
           };
         })
@@ -310,6 +480,7 @@ function evaluateSlideInDom(slideEntry, previewState) {
         .filter(Boolean);
 
       return {
+        captionItems,
         contentRects,
         contentGroupGaps: [
           ...collectGroupGaps(".dom-slide__cover-cards", ".dom-card"),
@@ -318,6 +489,7 @@ function evaluateSlideInDom(slideEntry, previewState) {
           ...collectGroupGaps(".dom-slide__summary-columns", ".dom-bullet-list, .dom-panel"),
           ...collectGroupGaps(".dom-resource-list", ".dom-card")
         ],
+        mediaItems,
         panelBoxes,
         progressRect: getRect(".dom-slide__badge"),
         sectionHeaderRect: getRect(".dom-slide__section-header"),
@@ -505,7 +677,7 @@ function collectTextIssues(slideEntry, domData, validationOptions, validationSet
   return issues;
 }
 
-function collectMediaIssues(slideEntry, domData, validationSettings) {
+function collectMediaIssues(slideEntry, domData, validationOptions, validationSettings) {
   const mode = validationSettings && validationSettings.mediaValidationMode === "complete"
     ? "complete"
     : "fast";
@@ -514,7 +686,90 @@ function collectMediaIssues(slideEntry, domData, validationSettings) {
     return [];
   }
 
-  return [];
+  const issues = [];
+  const mediaItems = Array.isArray(domData.mediaItems) ? domData.mediaItems : [];
+  const captionItems = Array.isArray(domData.captionItems) ? domData.captionItems : [];
+  const minCaptionGapIn = validationOptions.captionSpacing && validationOptions.captionSpacing.minGap
+    ? validationOptions.captionSpacing.minGap
+    : 0.1;
+  const minCaptionGapPx = minCaptionGapIn * PX_PER_INCH;
+
+  mediaItems.forEach((item) => {
+    const rect = normalizeRect(item.rect);
+    const descriptor = describeDomNode(item);
+    const shortEdge = Math.min(rect.width, rect.height);
+    const area = rect.width * rect.height;
+    const isRaster = item.tagName === "img" || item.tagName === "video";
+
+    if (shortEdge < 96 || area < 180 * 120) {
+      issues.push(createConfiguredIssue(
+        slideEntry.index,
+        "warn",
+        "media-legibility",
+        `Media "${descriptor}" renders small enough to risk legibility (${(rect.width / PX_PER_INCH).toFixed(2)}in x ${(rect.height / PX_PER_INCH).toFixed(2)}in)`,
+        validationSettings
+      ));
+    }
+
+    if (isRaster && item.complete === false) {
+      issues.push(createConfiguredIssue(
+        slideEntry.index,
+        "warn",
+        "media-legibility",
+        `Media "${descriptor}" did not finish loading before validation`,
+        validationSettings
+      ));
+    }
+
+    if (item.tagName === "img" && (!item.naturalWidth || !item.naturalHeight)) {
+      issues.push(createConfiguredIssue(
+        slideEntry.index,
+        "warn",
+        "media-legibility",
+        `Image "${descriptor}" has no readable native dimensions`,
+        validationSettings
+      ));
+    }
+
+    if (isRaster && item.naturalWidth && item.naturalHeight) {
+      const widthScale = rect.width / item.naturalWidth;
+      const heightScale = rect.height / item.naturalHeight;
+      const maxScale = Math.max(widthScale, heightScale);
+
+      if (maxScale > 1.15) {
+        issues.push(createConfiguredIssue(
+          slideEntry.index,
+          "warn",
+          "media-legibility",
+          `Media "${descriptor}" is scaled above native resolution (${maxScale.toFixed(2)}x)`,
+          validationSettings
+        ));
+      }
+    }
+  });
+
+  if (!mediaItems.length) {
+    return issues;
+  }
+
+  captionItems.forEach((caption) => {
+    const nearest = findNearestMedia(caption, mediaItems);
+    if (!nearest) {
+      return;
+    }
+
+    if (nearest.distance < minCaptionGapPx) {
+      issues.push(createConfiguredIssue(
+        slideEntry.index,
+        "warn",
+        "caption-source-spacing",
+        `Caption/source "${describeDomNode(caption, "caption")}" is closer than ${minCaptionGapIn.toFixed(2)}in to media "${describeDomNode(nearest.media)}" (${(nearest.distance / PX_PER_INCH).toFixed(2)}in)`,
+        validationSettings
+      ));
+    }
+  });
+
+  return issues;
 }
 
 async function validateDeckInDom() {
@@ -540,7 +795,7 @@ async function validateDeckInDom() {
 
       const domData = await evaluateSlideInDom(slideEntry, previewState)(page);
       geometryIssues.push(...collectGeometryIssues(slideEntry, domData, validationOptions, validationSettings));
-      mediaIssues.push(...collectMediaIssues(slideEntry, domData, validationSettings));
+      mediaIssues.push(...collectMediaIssues(slideEntry, domData, validationOptions, validationSettings));
       textIssues.push(...collectTextIssues(slideEntry, domData, validationOptions, validationSettings));
     }
 

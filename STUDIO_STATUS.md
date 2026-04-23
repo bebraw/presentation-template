@@ -37,7 +37,7 @@ Implemented:
 - DOM-rendered current slide preview, thumbnail rail, variant cards, and compare panes for supported structured slides instead of relying on passed-around preview images
 - Playwright-backed studio PDF export and preview PNG generation from the same DOM renderer used by the browser preview surface
 - Playwright-backed studio geometry/text validation for supported slide families, with studio validation now failing explicitly instead of falling back to generator-side slide drawing
-- DOM validation now also covers content-gap floors, contrast, and vertical-balance checks for supported slide families, in addition to bounds, panel padding, minimum font size, and words-per-slide
+- DOM validation now also covers content-gap floors, contrast, vertical-balance checks, and complete-mode media checks for supported slide families, in addition to bounds, panel padding, minimum font size, and words-per-slide
 - CLI `npm run build` now writes the deck PDF through the same Playwright-backed DOM renderer via repo-level scripts instead of the old generator-side PDF path
 - CLI geometry and text validation entrypoints now also live under repo-level scripts and use the same DOM validation path as the studio instead of generator-side slide drawing
 - studio-side preview strips, contact sheets, and page manifests now use `studio/server/services/page-artifacts.js` instead of importing those generic helpers from the baseline utility layer
@@ -68,12 +68,12 @@ Implemented:
 - SSE runtime updates that now include explicit workflow events and a short client-visible progress trail instead of only full-state snapshots
 - centralized studio write-boundary enforcement for slide files under `slides/slide-*`, repo-local state files under `studio/state/*.json`, and generated artifacts under `studio/output/**`
 - validation-page controls for per-rule severity plus fast vs complete media-validation mode, persisted with deck context and honored by the live DOM validation path for current rules
+- complete media-validation mode now inspects rendered images, SVGs, canvases, videos, figure-like media nodes, and caption/source text for small visuals, unloaded or dimensionless raster media, upscaled raster media, and tight caption/source spacing
 
 Current gaps:
 
 - some deck-plan modes still only reshape slide files and ordering; shared deck-context steering is in place for decision, boundary, and operator flows, but it has not been spread across every deck-plan mode yet
-- DOM validation is strong on structure and spacing, but media-specific checks such as screenshot legibility, caption or source spacing, and similar image-adjacent rules still need deeper coverage
-- the saved fast vs complete media-validation mode now exists, but the deeper media-specific checks that should make complete mode meaningfully heavier are still to be implemented
+- DOM validation now has first-pass media-specific checks in complete mode, but media-heavy slide families may still need sharper screenshot, chart, or diagram-specific legibility heuristics once those slides exist in the DOM runtime
 - deeper architecture notes and historical guidance still need cleanup where they describe `generator/` as an active runtime layer or treat the DOM path as a future migration
 
 ## Planned Rework
@@ -82,7 +82,7 @@ Next major direction:
 
 - keep slide-spec JSON as the source content model for supported slides
 - broaden repo-aware deck-level workflows so more plan modes can patch shared deck context, not just slide files and order
-- deepen DOM validation only where new slide families or media-heavy slides still require checks beyond the now-configurable bounds, content gaps, padding, font size, word count, contrast, and vertical rhythm rules
+- deepen DOM validation only where new slide families or media-heavy slides still require checks beyond the now-configurable bounds, content gaps, padding, font size, word count, contrast, vertical rhythm, and first-pass media rules
 - keep trimming stale generator-era or migration-era guidance from deeper architecture notes and historical plan sections as those surfaces are touched
 
 ## Phase Snapshot
@@ -181,4 +181,4 @@ What still needs polish:
 
 1. broader deck-level composition flows where more plan modes steer shared deck context
 2. richer diff and summary support across more workflow types
-3. deeper media-specific DOM validation and the remaining stale-guidance cleanup
+3. sharper media-specific DOM validation for future media-heavy slides and the remaining stale-guidance cleanup

@@ -1,6 +1,7 @@
 const { getValidationConstraintOptions, readDesignConstraints } = require("./design-constraints");
 const { createStandaloneSlideHtml, withBrowser } = require("./dom-export");
 const { getDomPreviewState } = require("./dom-preview");
+const { readValidationSettings, resolveValidationLevel } = require("./validation-settings");
 
 const PX_PER_INCH = 96;
 const PT_PER_PX = 72 / 96;
@@ -19,6 +20,15 @@ function createIssue(slide, level, rule, message) {
     rule,
     slide
   };
+}
+
+function createConfiguredIssue(slide, fallbackLevel, rule, message, validationSettings) {
+  return createIssue(
+    slide,
+    resolveValidationLevel(rule, fallbackLevel, validationSettings),
+    rule,
+    message
+  );
 }
 
 function summarizeIssues(issues) {
@@ -324,7 +334,7 @@ function evaluateSlideInDom(slideEntry, previewState) {
   };
 }
 
-function collectGeometryIssues(slideEntry, domData, validationOptions) {
+function collectGeometryIssues(slideEntry, domData, validationOptions, validationSettings) {
   const issues = [];
   const slideRect = domData.slideRect ? normalizeRect(domData.slideRect) : null;
   if (!slideRect) {
@@ -347,7 +357,7 @@ function collectGeometryIssues(slideEntry, domData, validationOptions) {
     if (outside) {
       issues.push(createIssue(
         slideEntry.index,
-        "error",
+        resolveValidationLevel("bounds", "error", validationSettings),
         "bounds",
         `Text block "${item.className}" exceeds the slide viewport`
       ));
@@ -370,11 +380,12 @@ function collectGeometryIssues(slideEntry, domData, validationOptions) {
     const bottomInset = Math.min(...panel.textRects.map((textRect) => rect.bottom - textRect.bottom));
 
     if (leftInset < minHorizontal || rightInset < minHorizontal || topInset < minTop || bottomInset < minBottom) {
-      issues.push(createIssue(
+      issues.push(createConfiguredIssue(
         slideEntry.index,
         "warn",
         "text-padding",
-        `Panel "${panel.className}" has tight text insets (${(leftInset / PX_PER_INCH).toFixed(2)}/${(topInset / PX_PER_INCH).toFixed(2)}/${(rightInset / PX_PER_INCH).toFixed(2)}/${(bottomInset / PX_PER_INCH).toFixed(2)}in)`
+        `Panel "${panel.className}" has tight text insets (${(leftInset / PX_PER_INCH).toFixed(2)}/${(topInset / PX_PER_INCH).toFixed(2)}/${(rightInset / PX_PER_INCH).toFixed(2)}/${(bottomInset / PX_PER_INCH).toFixed(2)}in)`,
+        validationSettings
       ));
     }
   });
@@ -383,11 +394,12 @@ function collectGeometryIssues(slideEntry, domData, validationOptions) {
   contentGroupGaps.forEach((group) => {
     group.gaps.forEach((entry) => {
       if (entry.gap < minContentGapPx - 2) {
-        issues.push(createIssue(
+        issues.push(createConfiguredIssue(
           slideEntry.index,
           "warn",
           "content-gap-tight",
-          `Content group "${group.className}" is tighter than the ${minContentGapIn.toFixed(2)}in minimum (${(entry.gap / PX_PER_INCH).toFixed(2)}in between "${entry.previousClassName}" and "${entry.currentClassName}")`
+          `Content group "${group.className}" is tighter than the ${minContentGapIn.toFixed(2)}in minimum (${(entry.gap / PX_PER_INCH).toFixed(2)}in between "${entry.previousClassName}" and "${entry.currentClassName}")`,
+          validationSettings
         ));
       }
     });
@@ -413,11 +425,12 @@ function collectGeometryIssues(slideEntry, domData, validationOptions) {
       const difference = Math.abs(topGap - bottomGap);
 
       if (ratio > ratioThreshold && difference > differenceThreshold) {
-        issues.push(createIssue(
+        issues.push(createConfiguredIssue(
           slideEntry.index,
           "warn",
           "vertical-balance",
-          `Content is vertically imbalanced (${(topGap / PX_PER_INCH).toFixed(2)}in below header vs ${(bottomGap / PX_PER_INCH).toFixed(2)}in above progress)`
+          `Content is vertically imbalanced (${(topGap / PX_PER_INCH).toFixed(2)}in below header vs ${(bottomGap / PX_PER_INCH).toFixed(2)}in above progress)`,
+          validationSettings
         ));
       }
     }
@@ -426,7 +439,7 @@ function collectGeometryIssues(slideEntry, domData, validationOptions) {
   return issues;
 }
 
-function collectTextIssues(slideEntry, domData, validationOptions) {
+function collectTextIssues(slideEntry, domData, validationOptions, validationSettings) {
   const issues = [];
   const minFontSizePt = validationOptions.minimumFontSize && validationOptions.minimumFontSize.minFontSizePt
     ? validationOptions.minimumFontSize.minFontSizePt
@@ -450,48 +463,66 @@ function collectTextIssues(slideEntry, domData, validationOptions) {
 
     const fontSizePt = item.fontSizePx * PT_PER_PX;
     if (fontSizePt < minFontSizePt) {
-      issues.push(createIssue(
+      issues.push(createConfiguredIssue(
         slideEntry.index,
         "warn",
         "font-size-small",
-        `Text block "${item.className}" uses ${fontSizePt.toFixed(1)}pt text below the ${minFontSizePt.toFixed(1)}pt minimum`
+        `Text block "${item.className}" uses ${fontSizePt.toFixed(1)}pt text below the ${minFontSizePt.toFixed(1)}pt minimum`,
+        validationSettings
       ));
     }
 
     const ratio = contrastRatio(item.color, item.backgroundColor);
     if (ratio < 2.5) {
-      issues.push(createIssue(
+      issues.push(createConfiguredIssue(
         slideEntry.index,
         "error",
         "contrast-low",
-        `Text block "${item.className}" has low contrast (${ratio.toFixed(2)}:1)`
+        `Text block "${item.className}" has low contrast (${ratio.toFixed(2)}:1)`,
+        validationSettings
       ));
     } else if (ratio < 3) {
-      issues.push(createIssue(
+      issues.push(createConfiguredIssue(
         slideEntry.index,
         "warn",
         "contrast-tight",
-        `Text block "${item.className}" is close to the contrast threshold (${ratio.toFixed(2)}:1)`
+        `Text block "${item.className}" is close to the contrast threshold (${ratio.toFixed(2)}:1)`,
+        validationSettings
       ));
     }
   });
 
   if (domData.wordCount > maxWordsPerSlide) {
-    issues.push(createIssue(
+    issues.push(createConfiguredIssue(
       slideEntry.index,
       "warn",
       "slide-word-count",
-      `Slide carries ${domData.wordCount} visible words above the ${maxWordsPerSlide}-word maximum`
+      `Slide carries ${domData.wordCount} visible words above the ${maxWordsPerSlide}-word maximum`,
+      validationSettings
     ));
   }
 
   return issues;
 }
 
+function collectMediaIssues(slideEntry, domData, validationSettings) {
+  const mode = validationSettings && validationSettings.mediaValidationMode === "complete"
+    ? "complete"
+    : "fast";
+
+  if (mode === "fast") {
+    return [];
+  }
+
+  return [];
+}
+
 async function validateDeckInDom() {
   const previewState = getDomPreviewState();
   const validationOptions = getValidationConstraintOptions(readDesignConstraints());
+  const validationSettings = readValidationSettings();
   const geometryIssues = [];
+  const mediaIssues = [];
   const textIssues = [];
 
   await withBrowser(async (browser) => {
@@ -508,15 +539,16 @@ async function validateDeckInDom() {
       }
 
       const domData = await evaluateSlideInDom(slideEntry, previewState)(page);
-      geometryIssues.push(...collectGeometryIssues(slideEntry, domData, validationOptions));
-      textIssues.push(...collectTextIssues(slideEntry, domData, validationOptions));
+      geometryIssues.push(...collectGeometryIssues(slideEntry, domData, validationOptions, validationSettings));
+      mediaIssues.push(...collectMediaIssues(slideEntry, domData, validationSettings));
+      textIssues.push(...collectTextIssues(slideEntry, domData, validationOptions, validationSettings));
     }
 
     await page.close();
   });
 
   return {
-    geometry: summarizeIssues(geometryIssues),
+    geometry: summarizeIssues(geometryIssues.concat(mediaIssues)),
     text: summarizeIssues(textIssues)
   };
 }

@@ -1413,6 +1413,26 @@ textarea {
   gap: 0.55rem;
 }
 
+.deck-structure-option {
+  display: flex;
+  align-items: center;
+  gap: 0.55rem;
+  padding-top: 0.25rem;
+  border-top: 1px solid var(--app-line);
+  color: var(--app-soft-text);
+  font-size: 0.82rem;
+  line-height: 1.45;
+}
+
+.deck-structure-option input {
+  margin: 0;
+}
+
+.deck-structure-option span {
+  color: inherit;
+  font-size: inherit;
+}
+
 .deck-structure-outline-line {
   grid-template-columns: auto minmax(0, 1fr);
   column-gap: 0.5rem;

@@ -6,6 +6,10 @@ const {
   normalizeDesignConstraints
 } = require("./design-constraints");
 const {
+  defaultValidationSettings,
+  normalizeValidationSettings
+} = require("./validation-settings");
+const {
   deckMeta,
   defaultDeckLanguage,
   normalizeVisualTheme,
@@ -31,6 +35,7 @@ const defaultDeckContext = {
     tone: "",
     constraints: "",
     designConstraints: { ...defaultDesignConstraints },
+    validationSettings: { ...defaultValidationSettings, rules: { ...defaultValidationSettings.rules } },
     visualTheme: { ...defaultVisualTheme },
     themeBrief: "",
     outline: "",
@@ -100,6 +105,7 @@ function normalizeDeckContext(context) {
       ...defaultDeckContext.deck,
       ...deck,
       designConstraints: normalizeDesignConstraints(deck.designConstraints),
+      validationSettings: normalizeValidationSettings(deck.validationSettings),
       visualTheme: normalizeVisualTheme(pickEditableVisualTheme(deck.visualTheme))
     },
     slides
@@ -131,6 +137,16 @@ function updateDeckFields(fields) {
             ...fields.designConstraints
           })
         : current.deck.designConstraints,
+      validationSettings: fields && fields.validationSettings
+        ? normalizeValidationSettings({
+            ...current.deck.validationSettings,
+            ...fields.validationSettings,
+            rules: {
+              ...(current.deck.validationSettings && current.deck.validationSettings.rules ? current.deck.validationSettings.rules : {}),
+              ...(fields.validationSettings.rules || {})
+            }
+          })
+        : current.deck.validationSettings,
       visualTheme: fields && fields.visualTheme
         ? normalizeVisualTheme({
             ...pickEditableVisualTheme(current.deck.visualTheme),
@@ -190,6 +206,16 @@ function applyDeckStructurePlan(candidate) {
             ...deckPatch.designConstraints
           })
         : current.deck.designConstraints,
+      validationSettings: deckPatch.validationSettings
+        ? normalizeValidationSettings({
+            ...current.deck.validationSettings,
+            ...deckPatch.validationSettings,
+            rules: {
+              ...(current.deck.validationSettings && current.deck.validationSettings.rules ? current.deck.validationSettings.rules : {}),
+              ...(deckPatch.validationSettings.rules || {})
+            }
+          })
+        : current.deck.validationSettings,
       visualTheme: deckPatch.visualTheme
         ? normalizeVisualTheme({
             ...pickEditableVisualTheme(current.deck.visualTheme),

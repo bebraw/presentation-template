@@ -23,6 +23,7 @@ const state = {
   transientVariants: [],
   ui: {
     assistantOpen: false,
+    deckPlanApplySharedSettings: {},
     currentPage: "studio",
     structuredDraftOpen: false,
   },
@@ -86,6 +87,7 @@ const elements = {
   reportBox: document.getElementById("report-box"),
   redoLayoutButton: document.getElementById("redo-layout-button"),
   saveDeckContextButton: document.getElementById("save-deck-context-button"),
+  saveValidationSettingsButton: document.getElementById("save-validation-settings-button"),
   saveSlideContextButton: document.getElementById("save-slide-context-button"),
   saveSlideSpecButton: document.getElementById("save-slide-spec-button"),
   selectionStatus: document.getElementById("selection-status"),
@@ -115,6 +117,7 @@ const elements = {
   themeProgressTrack: document.getElementById("theme-progress-track"),
   themeSecondary: document.getElementById("theme-secondary"),
   themeSurface: document.getElementById("theme-surface"),
+  validationMediaMode: document.getElementById("validation-media-mode"),
   validationPage: document.getElementById("validation-page"),
   validateButton: document.getElementById("validate-button"),
   validateRenderButton: document.getElementById("validate-render-button"),
@@ -133,6 +136,10 @@ const domSlideResizeObserver = typeof ResizeObserver === "function"
       });
     })
   : null;
+
+function getValidationRuleSelects() {
+  return Array.from(document.querySelectorAll("[data-validation-rule]"));
+}
 
 async function request(url, options = {}) {
   const response = await fetch(url, {
@@ -886,6 +893,8 @@ function synchronizeCompareSourceScroll() {
 function renderDeckFields() {
   const deck = state.context.deck || {};
   const designConstraints = deck.designConstraints || {};
+  const validationSettings = deck.validationSettings || {};
+  const validationRules = validationSettings.rules || {};
   const visualTheme = deck.visualTheme || {};
   elements.deckTitle.value = deck.title || "";
   elements.deckAudience.value = deck.audience || "";
@@ -911,6 +920,11 @@ function renderDeckFields() {
   elements.themeSurface.value = toColorInputValue(visualTheme.surface, "#ffffff");
   elements.themeProgressTrack.value = toColorInputValue(visualTheme.progressTrack, "#d7e6f5");
   elements.themeProgressFill.value = toColorInputValue(visualTheme.progressFill, "#275d8c");
+  elements.validationMediaMode.value = validationSettings.mediaValidationMode || "fast";
+  getValidationRuleSelects().forEach((element) => {
+    const rule = element.dataset.validationRule;
+    element.value = validationRules[rule] || "warning";
+  });
   elements.deckThemeBrief.value = deck.themeBrief || "";
   elements.deckOutline.value = deck.outline || "";
   elements.deckStructureNote.textContent = deck.structureLabel
@@ -942,6 +956,7 @@ function renderDeckStructureCandidates() {
     const diffFiles = Array.isArray(diff.files) ? diff.files : [];
     const deckDiff = diff.deck || {};
     const deckChanges = Array.isArray(deckDiff.changes) ? deckDiff.changes : [];
+    const applySharedSettings = state.ui.deckPlanApplySharedSettings[candidate.id] !== false;
     const outlineDiff = diff.outline || {};
     const groupedPlan = groupDeckPlanSteps(plan);
     const beforeAfterStripMarkup = (preview.currentStrip && preview.currentStrip.url) || (preview.strip && preview.strip.url)
@@ -1030,6 +1045,12 @@ function renderDeckStructureCandidates() {
         <div class="deck-structure-outline-line"><strong>Retitled beats</strong><span>${escapeHtml((outlineDiff.retitled || []).map((item) => `${item.before} -> ${item.after}`).join(" / ") || "None")}</span></div>
         <div class="deck-structure-outline-line"><strong>Moved beats</strong><span>${escapeHtml((outlineDiff.moved || []).map((item) => `${item.title} ${item.from}->${item.to}`).join(" / ") || "None")}</span></div>
       </div>
+      ${deckChanges.length ? `
+      <label class="deck-structure-option">
+        <input type="checkbox" data-action="toggle-shared-settings" ${applySharedSettings ? "checked" : ""}>
+        <span>Apply shared deck settings with this candidate</span>
+      </label>
+      ` : ""}
       <div class="deck-structure-plan">
         ${deckChanges.map((change) => `
           <div class="deck-structure-step">
@@ -1100,6 +1121,13 @@ function renderDeckStructureCandidates() {
       elements.operationStatus.textContent = `Inspecting deck plan candidate ${candidate.label}.`;
       renderDeckStructureCandidates();
     });
+
+    const sharedSettingsToggle = card.querySelector("[data-action=\"toggle-shared-settings\"]");
+    if (sharedSettingsToggle) {
+      sharedSettingsToggle.addEventListener("change", (event) => {
+        state.ui.deckPlanApplySharedSettings[candidate.id] = Boolean(event.currentTarget.checked);
+      });
+    }
 
     const applyButton = card.querySelector("[data-action=\"apply\"]");
     applyButton.addEventListener("click", async () => {
@@ -1608,6 +1636,15 @@ async function saveDeckContext() {
           subject: elements.deckSubject.value,
           themeBrief: elements.deckThemeBrief.value,
           lang: elements.deckLang.value,
+          validationSettings: {
+            mediaValidationMode: elements.validationMediaMode.value,
+            rules: Object.fromEntries(
+              getValidationRuleSelects().map((element) => [
+                element.dataset.validationRule,
+                element.value
+              ])
+            )
+          },
           visualTheme: {
             accent: elements.themeAccent.value,
             bg: elements.themeBg.value,
@@ -1645,6 +1682,35 @@ async function saveDeckContext() {
   }
 }
 
+async function saveValidationSettings() {
+  const done = setBusy(elements.saveValidationSettingsButton, "Saving...");
+  try {
+    const payload = await request("/api/context", {
+      body: JSON.stringify({
+        deck: {
+          validationSettings: {
+            mediaValidationMode: elements.validationMediaMode.value,
+            rules: Object.fromEntries(
+              getValidationRuleSelects().map((element) => [
+                element.dataset.validationRule,
+                element.value
+              ])
+            )
+          }
+        }
+      }),
+      method: "POST"
+    });
+
+    state.context = payload.context;
+    renderDeckFields();
+    await buildDeck();
+    elements.operationStatus.textContent = "Saved validation settings and rebuilt the live deck.";
+  } finally {
+    done();
+  }
+}
+
 async function saveSlideContext() {
   const payload = await request(`/api/slides/${state.selectedSlideId}/context`, {
     body: JSON.stringify({
@@ -1674,12 +1740,11 @@ async function buildDeck() {
 }
 
 async function applyDeckStructureCandidate(candidate) {
-  const sharedDeckUpdates = candidate && candidate.diff && candidate.diff.deck
-    ? Number(candidate.diff.deck.count) || 0
-    : 0;
+  const applySharedSettings = state.ui.deckPlanApplySharedSettings[candidate.id] !== false;
   const payload = await request("/api/context/deck-structure/apply", {
     body: JSON.stringify({
-      deckPatch: candidate.deckPatch,
+      applyDeckPatch: applySharedSettings,
+      deckPatch: applySharedSettings ? candidate.deckPatch : null,
       label: candidate.label,
       outline: candidate.outline,
       promoteInsertions: true,
@@ -1693,7 +1758,7 @@ async function applyDeckStructureCandidate(candidate) {
     method: "POST"
   });
 
-  elements.operationStatus.textContent = `Applied deck plan candidate ${candidate.label} to the saved outline, slide plan, ${payload.insertedSlides || 0} inserted slide${payload.insertedSlides === 1 ? "" : "s"}, ${payload.replacedSlides || 0} replaced slide${payload.replacedSlides === 1 ? "" : "s"}, ${payload.removedSlides || 0} archived slide${payload.removedSlides === 1 ? "" : "s"}, ${payload.indexUpdates || 0} slide order change${payload.indexUpdates === 1 ? "" : "s"}, ${payload.titleUpdates || 0} slide title${payload.titleUpdates === 1 ? "" : "s"}${sharedDeckUpdates ? `, and ${sharedDeckUpdates} shared deck setting${sharedDeckUpdates === 1 ? "" : "s"}` : ""}.`;
+  elements.operationStatus.textContent = `Applied deck plan candidate ${candidate.label} to the saved outline, slide plan, ${payload.insertedSlides || 0} inserted slide${payload.insertedSlides === 1 ? "" : "s"}, ${payload.replacedSlides || 0} replaced slide${payload.replacedSlides === 1 ? "" : "s"}, ${payload.removedSlides || 0} archived slide${payload.removedSlides === 1 ? "" : "s"}, ${payload.indexUpdates || 0} slide order change${payload.indexUpdates === 1 ? "" : "s"}, ${payload.titleUpdates || 0} slide title${payload.titleUpdates === 1 ? "" : "s"}${payload.sharedDeckUpdates ? `, and ${payload.sharedDeckUpdates} shared deck setting${payload.sharedDeckUpdates === 1 ? "" : "s"}` : ""}.`;
   await refreshState();
 }
 
@@ -2108,6 +2173,7 @@ elements.structuredDraftToggle.addEventListener("click", () => {
   setStructuredDraftDrawerOpen(!state.ui.structuredDraftOpen);
 });
 elements.saveDeckContextButton.addEventListener("click", () => saveDeckContext().catch((error) => window.alert(error.message)));
+elements.saveValidationSettingsButton.addEventListener("click", () => saveValidationSettings().catch((error) => window.alert(error.message)));
 elements.saveSlideContextButton.addEventListener("click", () => saveSlideContext().catch((error) => window.alert(error.message)));
 
 document.addEventListener("keydown", (event) => {

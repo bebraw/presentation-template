@@ -7,6 +7,7 @@ const {
   resetDir
 } = require("./baseline-utils");
 const { validateDeckInDom } = require("./dom-validate");
+const { readValidationSettings, resolveValidationLevel } = require("./validation-settings");
 const {
   baselineDir,
   outputDir,
@@ -27,8 +28,9 @@ function asAssetUrl(fileName) {
 }
 
 function summarizeFailure(error, message) {
+  const validationSettings = readValidationSettings();
   const issue = {
-    level: "error",
+    level: resolveValidationLevel("dom-validation-failed", "error", validationSettings),
     slide: 0,
     rule: "dom-validation-failed",
     message: `${message}: ${error.message}`
@@ -42,11 +44,12 @@ function summarizeFailure(error, message) {
 }
 
 async function runRenderValidation() {
+  const validationSettings = readValidationSettings();
   const baselinePages = listPages(baselineDir);
   if (!baselinePages.length) {
     return {
       errors: [{
-        level: "error",
+        level: resolveValidationLevel("baseline-missing", "error", validationSettings),
         slide: 0,
         rule: "baseline-missing",
         message: "No render baseline found. Run npm run baseline:render to create it."
@@ -62,7 +65,7 @@ async function runRenderValidation() {
   if (baselinePages.length !== currentPages.length) {
     return {
       errors: [{
-        level: "error",
+        level: resolveValidationLevel("render-page-count", "error", validationSettings),
         slide: 0,
         rule: "render-page-count",
         message: `Rendered page count changed. baseline=${baselinePages.length}, current=${currentPages.length}`
@@ -94,7 +97,7 @@ async function runRenderValidation() {
 
   return {
     errors: failures.map((failure) => ({
-      level: "error",
+      level: resolveValidationLevel("render-mismatch", "error", validationSettings),
       slide: failure.page,
       rule: "render-mismatch",
       message: `Page ${failure.page} differs from the approved render baseline (${failure.metric})`

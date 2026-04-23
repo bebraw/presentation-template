@@ -401,15 +401,30 @@ async function handleDeckStructureApply(req, res) {
     throw new Error("Expected a non-empty outline when applying a deck plan candidate");
   }
 
+  const deckPatch = body.applyDeckPatch === false ? null : body.deckPatch;
+  const sharedDeckUpdates = deckPatch && typeof deckPatch === "object"
+    ? Object.keys(deckPatch).reduce((count, key) => {
+      if (deckPatch[key] == null) {
+        return count;
+      }
+
+      if (typeof deckPatch[key] === "object" && !Array.isArray(deckPatch[key])) {
+        return count + Object.keys(deckPatch[key]).length;
+      }
+
+      return count + 1;
+    }, 0)
+    : 0;
+
   const context = applyDeckStructurePlan({
-    deckPatch: body.deckPatch,
+    deckPatch,
     label: body.label,
     outline: body.outline,
     slides: body.slides,
     summary: body.summary
   });
   const result = await applyDeckStructureCandidate({
-    deckPatch: body.deckPatch,
+    deckPatch,
     label: body.label,
     outline: body.outline,
     slides: body.slides,
@@ -427,8 +442,8 @@ async function handleDeckStructureApply(req, res) {
   };
   updateWorkflowState({
     message: body.label
-      ? `Applied deck plan candidate ${body.label} to the saved outline, slide plan, ${result.insertedSlides} inserted slide${result.insertedSlides === 1 ? "" : "s"}, ${result.replacedSlides} replaced slide${result.replacedSlides === 1 ? "" : "s"}, ${result.removedSlides} archived slide${result.removedSlides === 1 ? "" : "s"}, ${result.indexUpdates} slide order change${result.indexUpdates === 1 ? "" : "s"}, and ${result.titleUpdates} slide title${result.titleUpdates === 1 ? "" : "s"}.`
-      : `Applied deck plan candidate to the saved outline, slide plan, ${result.insertedSlides} inserted slide${result.insertedSlides === 1 ? "" : "s"}, ${result.replacedSlides} replaced slide${result.replacedSlides === 1 ? "" : "s"}, ${result.removedSlides} archived slide${result.removedSlides === 1 ? "" : "s"}, ${result.indexUpdates} slide order change${result.indexUpdates === 1 ? "" : "s"}, and ${result.titleUpdates} slide title${result.titleUpdates === 1 ? "" : "s"}.`,
+      ? `Applied deck plan candidate ${body.label} to the saved outline, slide plan, ${result.insertedSlides} inserted slide${result.insertedSlides === 1 ? "" : "s"}, ${result.replacedSlides} replaced slide${result.replacedSlides === 1 ? "" : "s"}, ${result.removedSlides} archived slide${result.removedSlides === 1 ? "" : "s"}, ${result.indexUpdates} slide order change${result.indexUpdates === 1 ? "" : "s"}, ${result.titleUpdates} slide title${result.titleUpdates === 1 ? "" : "s"}${sharedDeckUpdates ? `, and ${sharedDeckUpdates} shared deck setting${sharedDeckUpdates === 1 ? "" : "s"}` : ""}.`
+      : `Applied deck plan candidate to the saved outline, slide plan, ${result.insertedSlides} inserted slide${result.insertedSlides === 1 ? "" : "s"}, ${result.replacedSlides} replaced slide${result.replacedSlides === 1 ? "" : "s"}, ${result.removedSlides} archived slide${result.removedSlides === 1 ? "" : "s"}, ${result.indexUpdates} slide order change${result.indexUpdates === 1 ? "" : "s"}, ${result.titleUpdates} slide title${result.titleUpdates === 1 ? "" : "s"}${sharedDeckUpdates ? `, and ${sharedDeckUpdates} shared deck setting${sharedDeckUpdates === 1 ? "" : "s"}` : ""}.`,
     ok: true,
     operation: "apply-deck-structure",
     stage: "completed",
@@ -444,6 +459,7 @@ async function handleDeckStructureApply(req, res) {
     indexUpdates: result.indexUpdates,
     removedSlides: result.removedSlides,
     replacedSlides: result.replacedSlides,
+    sharedDeckUpdates,
     runtime: serializeRuntimeState()
     ,
     slides: getSlides(),

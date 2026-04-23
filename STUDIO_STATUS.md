@@ -20,6 +20,7 @@ Implemented:
 - shared deck metadata and progress chrome that now read live deck context and active slide totals instead of relying only on hardcoded defaults
 - saved deck author, company, explicit subject, and language metadata in deck context that now drive shared DOM document metadata and language settings instead of hardcoded defaults
 - saved design constraints in deck context for minimum font size, spacing floors, and maximum words per slide, wired into studio validation and the CLI quality gate
+- saved validation settings in deck context for per-rule warning vs error severity plus fast vs complete media-validation mode
 - saved visual theme values in deck context that now drive the shared deck palette for slide chrome, panel surfaces, neutral card surfaces, and explicit progress-bar colors
 - shared deck settings now live under `studio/server/services/` instead of a separate generator-owned config layer
 - capture/apply variant snapshots, with structured slide variants stored alongside slide JSON and legacy structured variants migrated out of `studio/state/variants.json`
@@ -58,6 +59,7 @@ Implemented:
 - deck-plan preview and apply plumbing that can now carry a candidate-level shared deck-context patch alongside slide-file mutations, so shared deck settings can participate in the same guarded flow
 - stronger pre-apply deck-plan summaries, current/proposed sequence previews, affected-slide preview hints, transient deck-level before-and-after strip summaries, and structured deck-plan diff summaries
 - deck-plan compare cards that now show shared deck-setting diffs alongside slide-file diffs, so candidate-wide tone, brief, constraint, and theme changes are inspectable before apply
+- deck-plan cards now also expose a per-candidate toggle for whether shared deck settings should apply, while keeping auto-apply as the default path
 - the first deck-authoring plans now use that path for real shared deck updates, including tone, subject, theme brief, and visible palette shifts in preview
 - key decision, boundary, and operator structure plans now use the same shared deck patch path too, so those deck-level flows steer shared context consistently instead of only slide-file shape
 - grouped deck-plan impact sections so larger candidates read by action type instead of only as one flat plan list
@@ -65,12 +67,13 @@ Implemented:
 - browser-visible workflow progress states through an SSE-backed shared runtime stream instead of request polling
 - SSE runtime updates that now include explicit workflow events and a short client-visible progress trail instead of only full-state snapshots
 - centralized studio write-boundary enforcement for slide files under `slides/slide-*`, repo-local state files under `studio/state/*.json`, and generated artifacts under `studio/output/**`
+- validation-page controls for per-rule severity plus fast vs complete media-validation mode, persisted with deck context and honored by the live DOM validation path for current rules
 
 Current gaps:
 
 - some deck-plan modes still only reshape slide files and ordering; shared deck-context steering is in place for decision, boundary, and operator flows, but it has not been spread across every deck-plan mode yet
 - DOM validation is strong on structure and spacing, but media-specific checks such as screenshot legibility, caption or source spacing, and similar image-adjacent rules still need deeper coverage
-- workflow controls still need implementation for the newly documented decisions: per-candidate shared-setting apply toggles, per-rule warning vs error severity, and fast vs complete media validation modes
+- the saved fast vs complete media-validation mode now exists, but the deeper media-specific checks that should make complete mode meaningfully heavier are still to be implemented
 - deeper architecture notes and historical guidance still need cleanup where they describe `generator/` as an active runtime layer or treat the DOM path as a future migration
 
 ## Planned Rework
@@ -79,7 +82,7 @@ Next major direction:
 
 - keep slide-spec JSON as the source content model for supported slides
 - broaden repo-aware deck-level workflows so more plan modes can patch shared deck context, not just slide files and order
-- deepen DOM validation only where new slide families or media-heavy slides still require checks beyond bounds, content gaps, padding, font size, word count, contrast, and vertical rhythm
+- deepen DOM validation only where new slide families or media-heavy slides still require checks beyond the now-configurable bounds, content gaps, padding, font size, word count, contrast, and vertical rhythm rules
 - keep trimming stale generator-era or migration-era guidance from deeper architecture notes and historical plan sections as those surfaces are touched
 
 ## Phase Snapshot

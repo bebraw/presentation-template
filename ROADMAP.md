@@ -43,8 +43,8 @@ The DOM pivot is complete enough that renderer migration is no longer the main t
 
 The next practical tasks are:
 
-1. extend shared deck-context patches across the remaining deck-plan modes so sequence-, compressed-, and composed-plan candidates can also steer shared context instead of only slide-file shape
-2. add the next DOM-validation checks where they matter most now: image or screenshot legibility, caption and source spacing, and other media-specific rules that are still weaker than the text-and-layout checks
+1. make complete media-validation mode meaningfully heavier by adding image or screenshot legibility, caption or source spacing, and other media-adjacent checks on top of the current configurable rule surface
+2. extend shared deck-context patches across the remaining deck-plan modes so sequence-, compressed-, and composed-plan candidates can also steer shared context instead of only slide-file shape
 3. keep pruning stale “migration” or `generator/` language from deeper docs, and mark old rollout sections as historical whenever they are touched
 
 Recent durable decisions are recorded in [`docs/adr/0001-studio-deck-plan-and-validation-controls.md`](./docs/adr/0001-studio-deck-plan-and-validation-controls.md).

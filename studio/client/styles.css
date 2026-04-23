@@ -327,6 +327,48 @@ input[type="color"]::-moz-color-swatch {
   grid-column: 1 / -1;
 }
 
+.slide-context-panel {
+  padding-top: 0.75rem;
+}
+
+.slide-context-details summary {
+  display: flex;
+  gap: 1rem;
+  align-items: center;
+  justify-content: space-between;
+  cursor: pointer;
+  list-style-position: outside;
+}
+
+.slide-context-details summary strong {
+  display: block;
+  margin-top: 0.12rem;
+  font-size: 1rem;
+  font-weight: 650;
+}
+
+.slide-context-details summary small {
+  color: var(--app-soft-text);
+  font-size: 0.78rem;
+  line-height: 1.35;
+}
+
+.slide-context-fields {
+  display: grid;
+  gap: 0.75rem;
+  margin-top: 0.95rem;
+}
+
+.slide-context-text-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 0.8rem;
+}
+
+.slide-context-text-grid textarea {
+  min-height: 5.4rem;
+}
+
 .section-heading {
   display: flex;
   justify-content: space-between;
@@ -2131,6 +2173,10 @@ input[type="color"]::-moz-color-swatch {
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 
+  .slide-context-text-grid {
+    grid-template-columns: 1fr;
+  }
+
   .compare-grid {
     grid-template-columns: 1fr;
   }
@@ -2263,6 +2309,12 @@ input[type="color"]::-moz-color-swatch {
   .workflow-variant-list .variant-actions {
     grid-template-columns: repeat(2, minmax(0, 1fr));
     min-width: 0;
+  }
+
+  .slide-context-details summary {
+    align-items: start;
+    flex-direction: column;
+    gap: 0.35rem;
   }
 
   .planning-text-grid {

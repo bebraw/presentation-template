@@ -1920,8 +1920,11 @@ function renderPreviews() {
     const button = document.createElement("button");
     button.className = `thumb${slide.index === state.selectedSlideIndex ? " active" : ""}`;
     button.type = "button";
+    button.title = `${slide.index}. ${slide.title || slide.fileName || "Slide"}`;
+    button.setAttribute("aria-label", `Select slide ${slide.index}: ${slide.title || slide.fileName || "Untitled slide"}`);
     button.innerHTML = `
       <div class="thumb-preview"></div>
+      <span class="thumb-index">${slide.index}</span>
       <strong>${escapeHtml(slide.title || `Slide ${slide.index}`)}</strong>
       <span>${escapeHtml(slide.fileName || `slide ${slide.index}`)}</span>
     `;

@@ -67,6 +67,12 @@ async function main() {
               documentScrollWidth: document.documentElement.scrollWidth,
               previewFrame: rectFor(".preview-frame"),
               thumbRail: rectFor(".thumb-rail"),
+              thumbTextVisible: Array.from(document.querySelectorAll(".thumb strong, .thumb span:not(.thumb-index)")).some((element) => {
+                const style = window.getComputedStyle(element);
+                const rect = element.getBoundingClientRect();
+
+                return style.display !== "none" && style.visibility !== "hidden" && rect.width > 2 && rect.height > 2;
+              }),
               viewportHeight: window.innerHeight,
               viewportWidth: window.innerWidth
             };
@@ -88,6 +94,11 @@ async function main() {
             metrics.thumbRail.width <= metrics.viewportWidth + 1,
             `Thumbnail rail should stay within the page viewport at ${viewport.width}x${viewport.height} (${metrics.thumbRail.width.toFixed(1)}px > ${metrics.viewportWidth}px)`
           );
+          assert.ok(
+            metrics.thumbRail.height <= 112,
+            `Thumbnail rail should stay compact at ${viewport.width}x${viewport.height} (${metrics.thumbRail.height.toFixed(1)}px > 112px)`
+          );
+          assert.equal(metrics.thumbTextVisible, false, "Thumbnail rail should not expose title or file labels that can clip");
 
           assert.ok(metrics.checksButton, "Slide Studio should expose deck checks from the masthead");
           await page.click("#show-validation-page");

@@ -30,7 +30,7 @@ The browser studio baseline is complete.
 - Deck checks are available from a compact masthead control that opens an inspectable check console and focused report without becoming a primary workspace page.
 - Check settings and rule severity overrides use explicit show/hide disclosure controls so advanced validation configuration stays discoverable without being visible by default.
 - Deck planning is consolidated into a compact planning console with palette controls, design guardrails, and deck-plan details hidden until inspection.
-- Local deck-planning candidates carry shared deck-context patches and generated content scaffolds use title/body evidence items rather than placeholder metric bars.
+- Local deck-planning candidates carry shared deck-context patches, use presentation-scoped path labels, and generate content scaffolds with title/body evidence items rather than placeholder metric bars.
 - Deck-plan diffs report presentation-scoped slide paths so review copy matches the active storage layout.
 - Slide candidate review and visual comparison share one workspace: direct-select rows drive the adjacent current-versus-candidate preview and diff pane, while the compare pane stays hidden until candidates exist.
 - Selected-slide context is collapsed by default into a compact disclosure, leaving the active preview and workflow surfaces higher on the page.

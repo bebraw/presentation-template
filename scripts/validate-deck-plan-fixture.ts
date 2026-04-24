@@ -48,6 +48,31 @@ assert.deepEqual(
   "deck-plan diffs should report presentation-scoped slide paths"
 );
 
+function collectTextValues(value) {
+  if (typeof value === "string") {
+    return [value];
+  }
+
+  if (Array.isArray(value)) {
+    return value.flatMap(collectTextValues);
+  }
+
+  if (value && typeof value === "object") {
+    return Object.values(value).flatMap(collectTextValues);
+  }
+
+  return [];
+}
+
+const staleStateReferences = candidates.filter((candidate) =>
+  collectTextValues(candidate).some((value) => value.includes("studio/state/deck-context.json"))
+);
+assert.deepEqual(
+  staleStateReferences.map((candidate) => candidate.label),
+  [],
+  "deck-plan candidates should reference presentation-scoped deck context paths"
+);
+
 function collectGeneratedContentSpecs(candidate) {
   const slides = Array.isArray(candidate.slides) ? candidate.slides : [];
   return slides

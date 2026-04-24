@@ -372,6 +372,49 @@ assert.ok(
   sideCaptionIssues.some((issue) => issue.rule === "caption-source-spacing" && issue.message.includes("does not horizontally align")),
   "complete mode should flag captions or source lines that sit beside their nearest media"
 );
+
+const progressCaptionIssues = _test.collectMediaIssues(slideEntry, {
+  captionItems: [
+    {
+      className: "source",
+      rect: {
+        bottom: 505,
+        height: 20,
+        left: 655,
+        right: 815,
+        top: 485,
+        width: 160
+      },
+      tagName: "p",
+      text: "Source: progress"
+    }
+  ],
+  mediaItems: [
+    {
+      accessibleLabel: "progress screenshot",
+      alt: "progress screenshot",
+      className: "dom-screenshot",
+      complete: true,
+      label: "progress screenshot",
+      naturalHeight: 180,
+      naturalWidth: 320,
+      rect: {
+        bottom: 470,
+        height: 180,
+        left: 560,
+        right: 880,
+        top: 290,
+        width: 320
+      },
+      tagName: "img"
+    }
+  ],
+  progressRect: domData.progressRect
+}, validationOptions, validationSettings);
+assert.ok(
+  progressCaptionIssues.some((issue) => issue.rule === "caption-source-spacing" && issue.message.includes("progress area")),
+  "complete mode should flag captions or source lines too close to the progress area"
+);
 assert.ok(
   completeIssues.every((issue) => issue.level === "warn"),
   "fixture warnings should honor configured warning severities"

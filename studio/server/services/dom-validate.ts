@@ -910,6 +910,19 @@ function collectMediaIssues(slideEntry, domData, validationOptions, validationSe
       ));
     }
 
+    if (progressRect) {
+      const progressDistance = shortestDistanceBetweenRects(captionRect, progressRect);
+      if (progressDistance < minProgressGapPx) {
+        issues.push(createConfiguredIssue(
+          slideEntry.index,
+          "warn",
+          "caption-source-spacing",
+          `Caption/source "${describeDomNode(caption, "caption")}" is closer than ${minProgressGapIn.toFixed(2)}in to the progress area (${(progressDistance / PX_PER_INCH).toFixed(2)}in)`,
+          validationSettings
+        ));
+      }
+    }
+
     const horizontalOverlap = Math.max(
       0,
       Math.min(captionRect.right, mediaRect.right) - Math.max(captionRect.left, mediaRect.left)

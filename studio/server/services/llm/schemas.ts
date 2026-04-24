@@ -43,11 +43,11 @@ function createSignalSchema() {
   return {
     additionalProperties: false,
     properties: {
+      body: { type: "string" },
       id: { type: "string" },
-      label: { type: "string" },
-      value: { type: "number" }
+      title: { type: "string" }
     },
-    required: ["id", "label", "value"],
+    required: ["id", "title", "body"],
     type: "object"
   };
 }
@@ -56,11 +56,11 @@ function createGuardrailSchema() {
   return {
     additionalProperties: false,
     properties: {
+      body: { type: "string" },
       id: { type: "string" },
-      label: { type: "string" },
-      value: { type: "string" }
+      title: { type: "string" }
     },
-    required: ["id", "label", "value"],
+    required: ["id", "title", "body"],
     type: "object"
   };
 }

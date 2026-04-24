@@ -9,40 +9,40 @@
   "signals": [
     {
       "id": "signal-types",
-      "label": "Types",
-      "value": 0.9
+      "title": "Type check",
+      "body": "Studio, server, and scripts."
     },
     {
       "id": "signal-layout",
-      "label": "Layout",
-      "value": 0.88
+      "title": "Geometry and text",
+      "body": "Bounds, padding, text, contrast."
     },
     {
       "id": "signal-media",
-      "label": "Media",
-      "value": 0.8
+      "title": "Media fixture",
+      "body": "Spacing, captions, sources."
     },
     {
       "id": "signal-render",
-      "label": "Render diff",
-      "value": 0.86
+      "title": "Render baseline",
+      "body": "PDF against baseline pages."
     }
   ],
   "guardrails": [
     {
       "id": "guardrail-baseline",
-      "label": "approved baseline",
-      "value": "base"
+      "title": "Baseline tracked",
+      "body": "Refresh studio/baseline first."
     },
     {
       "id": "guardrail-warnings",
-      "label": "severity settings",
-      "value": "rules"
+      "title": "Severity settings",
+      "body": "Tunable warnings, fixed errors."
     },
     {
       "id": "guardrail-pdf",
-      "label": "PDF page count",
-      "value": "pages"
+      "title": "Page count",
+      "body": "Unexpected pages fail."
     }
   ]
 }

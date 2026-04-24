@@ -4,45 +4,45 @@
   "title": "Writes stay narrow",
   "eyebrow": "Safety model",
   "summary": "The studio can mutate slides, repo-local state, and generated artifacts, but not arbitrary project files.",
-  "signalsTitle": "Allowed targets",
+  "signalsTitle": "Allowed write targets",
   "guardrailsTitle": "Change discipline",
   "signals": [
     {
       "id": "signal-slides",
-      "label": "Slides",
-      "value": 0.94
+      "title": "slides/slide-*",
+      "body": "Structured deck content."
     },
     {
       "id": "signal-state",
-      "label": "State",
-      "value": 0.88
+      "title": "studio/state/*.json",
+      "body": "Context, settings, sessions."
     },
     {
       "id": "signal-output",
-      "label": "Output",
-      "value": 0.82
+      "title": "studio/output/**",
+      "body": "Generated workflow artifacts."
     },
     {
       "id": "signal-audit",
-      "label": "Review",
-      "value": 0.9
+      "title": "Archive PDF",
+      "body": "Validated project snapshot."
     }
   ],
   "guardrails": [
     {
       "id": "guardrail-allowlist",
-      "label": "write allowlist",
-      "value": "small"
+      "title": "Small allowlist",
+      "body": "Reject unapproved paths."
     },
     {
       "id": "guardrail-conflict",
-      "label": "overlap checks",
-      "value": "on"
+      "title": "Overlap checks",
+      "body": "Reject conflicting edits."
     },
     {
       "id": "guardrail-archive",
-      "label": "archive update",
-      "value": "manual"
+      "title": "Separate archive step",
+      "body": "Validate active output first."
     }
   ]
 }

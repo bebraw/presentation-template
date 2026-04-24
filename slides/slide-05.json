@@ -4,45 +4,45 @@
   "title": "The preview is live",
   "eyebrow": "Editing loop",
   "summary": "Direct text and JSON edits update the active DOM preview immediately, without a separate manual build step.",
-  "signalsTitle": "Feedback path",
+  "signalsTitle": "Live update path",
   "guardrailsTitle": "Edit controls",
   "signals": [
     {
       "id": "signal-text",
-      "label": "Text edits",
-      "value": 0.94
+      "title": "Direct text edits",
+      "body": "DOM field to slide spec."
     },
     {
       "id": "signal-json",
-      "label": "JSON edits",
-      "value": 0.88
+      "title": "Spec editor",
+      "body": "Valid JSON to visible slide."
     },
     {
       "id": "signal-preview",
-      "label": "Preview",
-      "value": 0.96
+      "title": "Shared renderer",
+      "body": "Same renderer as export."
     },
     {
       "id": "signal-save",
-      "label": "Save path",
-      "value": 0.9
+      "title": "No build wait",
+      "body": "No separate build needed."
     }
   ],
   "guardrails": [
     {
       "id": "guardrail-supported",
-      "label": "supported families",
-      "value": "4"
+      "title": "Supported only",
+      "body": "Structured families only."
     },
     {
       "id": "guardrail-server",
-      "label": "server-owned save",
-      "value": "save"
+      "title": "Server-owned save",
+      "body": "Server validates and writes."
     },
     {
       "id": "guardrail-invalid",
-      "label": "invalid JSON blocked",
-      "value": "no"
+      "title": "Invalid JSON blocked",
+      "body": "Errors block bad specs."
     }
   ]
 }

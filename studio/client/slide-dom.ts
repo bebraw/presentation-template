@@ -171,41 +171,67 @@
   function renderContent(slideSpec) {
     const signals = Array.isArray(slideSpec.signals) ? slideSpec.signals : [];
     const guardrails = Array.isArray(slideSpec.guardrails) ? slideSpec.guardrails : [];
+    const renderSignalCards = signals.some((item) => item && (item.title || item.body));
+    const renderGuardrailCards = guardrails.some((item) => item && (item.title || item.body));
 
     return `
       ${renderSectionHeader(slideSpec)}
       <section class="dom-slide__content-columns">
         <article class="dom-panel dom-panel--signals">
           <h3${editAttrs("signalsTitle", "Signals title")}>${escapeHtml(slideSpec.signalsTitle || "")}</h3>
-          <div class="dom-signal-list">
-            ${signals.map((item, index) => {
-              const value = Math.max(0, Math.min(100, Math.round(Number(item.value || 0) * 100)));
-              return `
-                <div class="dom-signal">
-                  <div class="dom-signal__meta">
-                    <span${editAttrs(`signals.${index}.label`, "Signal label")}>${escapeHtml(item.label || "")}</span>
-                    <strong>${value}%</strong>
+          ${renderSignalCards ? `
+            <div class="dom-evidence-list">
+              ${signals.map((item, index) => renderEvidenceItem(item, index, "signals", "Signal")).join("")}
+            </div>
+          ` : `
+            <div class="dom-signal-list">
+              ${signals.map((item, index) => {
+                const value = Math.max(0, Math.min(100, Math.round(Number(item.value || 0) * 100)));
+                return `
+                  <div class="dom-signal">
+                    <div class="dom-signal__meta">
+                      <span${editAttrs(`signals.${index}.label`, "Signal label")}>${escapeHtml(item.label || "")}</span>
+                      <strong>${value}%</strong>
+                    </div>
+                    <div class="dom-signal__track">
+                      <div class="dom-signal__fill" style="width:${value}%;"></div>
+                    </div>
                   </div>
-                  <div class="dom-signal__track">
-                    <div class="dom-signal__fill" style="width:${value}%;"></div>
-                  </div>
-                </div>
-              `;
-            }).join("")}
-          </div>
+                `;
+              }).join("")}
+            </div>
+          `}
         </article>
         <article class="dom-panel dom-panel--guardrails">
           <h3${editAttrs("guardrailsTitle", "Guardrails title")}>${escapeHtml(slideSpec.guardrailsTitle || "")}</h3>
-          <div class="dom-guardrail-list">
-            ${guardrails.map((item, index) => `
-              <div class="dom-guardrail${index < guardrails.length - 1 ? " dom-guardrail--divided" : ""}">
-                <strong${editAttrs(`guardrails.${index}.value`, "Guardrail value")}>${escapeHtml(item.value || "")}</strong>
-                <span${editAttrs(`guardrails.${index}.label`, "Guardrail label")}>${escapeHtml(item.label || "")}</span>
-              </div>
-            `).join("")}
-          </div>
+          ${renderGuardrailCards ? `
+            <div class="dom-evidence-list">
+              ${guardrails.map((item, index) => renderEvidenceItem(item, index, "guardrails", "Guardrail")).join("")}
+            </div>
+          ` : `
+            <div class="dom-guardrail-list">
+              ${guardrails.map((item, index) => `
+                <div class="dom-guardrail${index < guardrails.length - 1 ? " dom-guardrail--divided" : ""}">
+                  <strong${editAttrs(`guardrails.${index}.value`, "Guardrail value")}>${escapeHtml(item.value || "")}</strong>
+                  <span${editAttrs(`guardrails.${index}.label`, "Guardrail label")}>${escapeHtml(item.label || "")}</span>
+                </div>
+              `).join("")}
+            </div>
+          `}
         </article>
       </section>
+    `;
+  }
+
+  function renderEvidenceItem(item, index, basePath, labelPrefix) {
+    const title = item.title || item.label || "";
+    const body = item.body || item.value || "";
+
+    return `
+      <article class="dom-evidence">
+        <h4${editAttrs(`${basePath}.${index}.title`, `${labelPrefix} title`)}>${escapeHtml(title)}</h4>
+        <p${editAttrs(`${basePath}.${index}.body`, `${labelPrefix} body`)}>${escapeHtml(body)}</p>
+      </article>
     `;
   }
 

@@ -4,45 +4,45 @@
   "title": "Generation stays reviewable",
   "eyebrow": "Variants",
   "summary": "Generated slide and theme candidates are temporary until the author selects, inspects, and applies one.",
-  "signalsTitle": "Candidate workflow",
+  "signalsTitle": "Candidate review path",
   "guardrailsTitle": "Apply rules",
   "signals": [
     {
       "id": "signal-count",
-      "label": "Count control",
-      "value": 0.9
+      "title": "Count control",
+      "body": "Default count is five."
     },
     {
       "id": "signal-review",
-      "label": "Review",
-      "value": 0.92
+      "title": "Direct selection",
+      "body": "Rows drive comparison."
     },
     {
       "id": "signal-diff",
-      "label": "Diff",
-      "value": 0.88
+      "title": "Structured diff",
+      "body": "Field-by-field changes."
     },
     {
       "id": "signal-theme",
-      "label": "Theme preview",
-      "value": 0.86
+      "title": "Theme preview",
+      "body": "Fonts and colors included."
     }
   ],
   "guardrails": [
     {
       "id": "guardrail-session",
-      "label": "generated state",
-      "value": "temp"
+      "title": "Session-only",
+      "body": "No slide JSON storage."
     },
     {
       "id": "guardrail-apply",
-      "label": "promotion",
-      "value": "yes"
+      "title": "Explicit apply",
+      "body": "Author-controlled promotion."
     },
     {
       "id": "guardrail-snapshot",
-      "label": "manual snapshots",
-      "value": "keep"
+      "title": "Manual snapshots",
+      "body": "Separate snapshot state."
     }
   ]
 }

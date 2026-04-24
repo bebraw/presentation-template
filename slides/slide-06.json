@@ -4,45 +4,45 @@
   "title": "One DOM path owns output",
   "eyebrow": "Runtime model",
   "summary": "The browser preview, thumbnails, compare panes, PNGs, PDF export, and validation all read the same DOM-rendered slide.",
-  "signalsTitle": "Shared surfaces",
+  "signalsTitle": "Shared output surfaces",
   "guardrailsTitle": "Runtime boundary",
   "signals": [
     {
       "id": "signal-preview",
-      "label": "Preview",
-      "value": 0.95
+      "title": "Studio preview",
+      "body": "Active slide, thumbnails, compare."
     },
     {
       "id": "signal-compare",
-      "label": "Compare",
-      "value": 0.9
+      "title": "Deck preview",
+      "body": "/deck-preview full-deck view."
     },
     {
       "id": "signal-export",
-      "label": "Export",
-      "value": 0.92
+      "title": "PDF export",
+      "body": "Playwright prints the DOM."
     },
     {
       "id": "signal-validate",
-      "label": "Validate",
-      "value": 0.89
+      "title": "DOM validation",
+      "body": "Rendered layout is inspected."
     }
   ],
   "guardrails": [
     {
       "id": "guardrail-renderer",
-      "label": "authoritative renderer",
-      "value": "DOM"
+      "title": "Single renderer",
+      "body": "studio/client/slide-dom.ts."
     },
     {
       "id": "guardrail-playwright",
-      "label": "export runner",
-      "value": "auto"
+      "title": "Headless runner",
+      "body": "Browser automation, real layout."
     },
     {
       "id": "guardrail-no-split",
-      "label": "parallel renderer",
-      "value": "none"
+      "title": "No split path",
+      "body": "No second renderer."
     }
   ]
 }

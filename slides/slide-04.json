@@ -4,45 +4,45 @@
   "title": "Structured slides are the source",
   "eyebrow": "Content model",
   "summary": "Supported slides use compact JSON specs so slide meaning stays readable before rendering.",
-  "signalsTitle": "Structured families",
+  "signalsTitle": "Supported families",
   "guardrailsTitle": "Spec contract",
   "signals": [
     {
       "id": "signal-cover",
-      "label": "Cover",
-      "value": 0.95
+      "title": "Cover",
+      "body": "Identity, summary, logo, and framing cards."
     },
     {
       "id": "signal-toc",
-      "label": "TOC",
-      "value": 0.9
+      "title": "TOC",
+      "body": "Eyebrow, summary, cards, and note."
     },
     {
       "id": "signal-content",
-      "label": "Content",
-      "value": 0.93
+      "title": "Content",
+      "body": "Systems, boundaries, and operating details."
     },
     {
       "id": "signal-summary",
-      "label": "Summary",
-      "value": 0.9
+      "title": "Summary",
+      "body": "Checklist plus implementation paths."
     }
   ],
   "guardrails": [
     {
       "id": "guardrail-json",
-      "label": "slide specs",
-      "value": "JSON"
+      "title": "JSON first",
+      "body": "slides/slide-*.json."
     },
     {
       "id": "guardrail-schema",
-      "label": "validated fields",
-      "value": "strict"
+      "title": "Validated save",
+      "body": "Validate before write."
     },
     {
       "id": "guardrail-escape",
-      "label": "legacy escape hatch",
-      "value": "kept"
+      "title": "Escape hatch",
+      "body": "Migration support remains."
     }
   ]
 }

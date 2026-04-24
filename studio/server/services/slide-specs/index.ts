@@ -42,6 +42,13 @@ function assertCardItem(item, label) {
 function assertSignalItem(item, label) {
   assertObject(item, label);
   assertString(item.id, `${label}.id`);
+
+  if (item.title !== undefined || item.body !== undefined) {
+    assertString(item.title, `${label}.title`);
+    assertString(item.body, `${label}.body`);
+    return;
+  }
+
   assertString(item.label, `${label}.label`);
   assertNumber(item.value, `${label}.value`);
 }
@@ -49,6 +56,13 @@ function assertSignalItem(item, label) {
 function assertGuardrailItem(item, label) {
   assertObject(item, label);
   assertString(item.id, `${label}.id`);
+
+  if (item.title !== undefined || item.body !== undefined) {
+    assertString(item.title, `${label}.title`);
+    assertString(item.body, `${label}.body`);
+    return;
+  }
+
   assertString(item.label, `${label}.label`);
   assertString(item.value, `${label}.value`);
 }

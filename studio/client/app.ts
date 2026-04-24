@@ -1066,16 +1066,16 @@ function buildStructuredComparison(currentSpec, variantSpec) {
       break;
     case "content":
       pushChange("signals", "Signals title", currentSpec.signalsTitle, variantSpec.signalsTitle);
-      currentSpec.signals.forEach((signal, index) => {
-        const nextSignal = variantSpec.signals[index] || {};
-        pushChange("signals", `Signal ${index + 1} label`, signal.label, nextSignal.label);
-        pushChange("signals", `Signal ${index + 1} value`, signal.value, nextSignal.value);
+      (currentSpec.signals || []).forEach((signal, index) => {
+        const nextSignal = (variantSpec.signals || [])[index] || {};
+        pushChange("signals", `Signal ${index + 1} title`, signal.title || signal.label, nextSignal.title || nextSignal.label);
+        pushChange("signals", `Signal ${index + 1} body`, signal.body || signal.value, nextSignal.body || nextSignal.value);
       });
       pushChange("guardrails", "Guardrails title", currentSpec.guardrailsTitle, variantSpec.guardrailsTitle);
-      currentSpec.guardrails.forEach((guardrail, index) => {
-        const nextGuardrail = variantSpec.guardrails[index] || {};
-        pushChange("guardrails", `Guardrail ${index + 1} label`, guardrail.label, nextGuardrail.label);
-        pushChange("guardrails", `Guardrail ${index + 1} value`, guardrail.value, nextGuardrail.value);
+      (currentSpec.guardrails || []).forEach((guardrail, index) => {
+        const nextGuardrail = (variantSpec.guardrails || [])[index] || {};
+        pushChange("guardrails", `Guardrail ${index + 1} title`, guardrail.title || guardrail.label, nextGuardrail.title || nextGuardrail.label);
+        pushChange("guardrails", `Guardrail ${index + 1} body`, guardrail.body || guardrail.value, nextGuardrail.body || nextGuardrail.value);
       });
       break;
     case "summary":

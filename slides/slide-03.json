@@ -4,45 +4,45 @@
   "title": "Authoring starts with context",
   "eyebrow": "Deck intent",
   "summary": "slideotter keeps audience, objective, tone, constraints, and per-slide intent beside the active deck.",
-  "signalsTitle": "Context kept near work",
-  "guardrailsTitle": "Authoring bounds",
+  "signalsTitle": "Context model",
+  "guardrailsTitle": "Scope rules",
   "signals": [
     {
       "id": "signal-audience",
-      "label": "Audience",
-      "value": 0.92
+      "title": "Deck brief",
+      "body": "studio/state/deck-context.json."
     },
     {
       "id": "signal-objective",
-      "label": "Objective",
-      "value": 0.9
+      "title": "Slide context",
+      "body": "Intent, notes, and layout hints."
     },
     {
       "id": "signal-tone",
-      "label": "Tone",
-      "value": 0.86
+      "title": "Operation packs",
+      "body": "Selected slide plus deck context."
     },
     {
       "id": "signal-constraints",
-      "label": "Constraints",
-      "value": 0.88
+      "title": "Visible state",
+      "body": "Slide identity and validation state."
     }
   ],
   "guardrails": [
     {
       "id": "guardrail-local",
-      "label": "local state files",
-      "value": "repo"
+      "title": "Repo-local",
+      "body": "Local files by default."
     },
     {
       "id": "guardrail-focused",
-      "label": "operation context",
-      "value": "small"
+      "title": "Focused inputs",
+      "body": "No whole-repo prompts."
     },
     {
       "id": "guardrail-visible",
-      "label": "current deck",
-      "value": "active"
+      "title": "Author checks",
+      "body": "Compare before apply."
     }
   ]
 }

@@ -19,8 +19,8 @@ function buildSlideTypeGuidance(slideType) {
     case "content":
       return [
         "The slide family is content.",
-        "Return the requested number of variants and preserve the left-signals and right-guardrails structure.",
-        "Each slideSpec must include: title, eyebrow, summary, signalsTitle, guardrailsTitle, exactly four signals, and exactly three guardrails."
+        "Return the requested number of variants and preserve the two-column evidence structure.",
+        "Each slideSpec must include: title, eyebrow, summary, signalsTitle, guardrailsTitle, exactly four signals with title/body, and exactly three guardrails with title/body."
       ].join("\n");
     case "summary":
       return [

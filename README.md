@@ -55,7 +55,7 @@ Checked-in archive snapshots live under `archive/`.
 
 - [Getting Started](docs/GETTING_STARTED.md): required tools, setup, first run, and common commands
 - [DEVELOPMENT.md](DEVELOPMENT.md): development workflow, validation, LLM setup, and slide workflow notes
-- [ARCHITECTURE.md](ARCHITECTURE.md): rendering, export, validation, and artifact architecture
+- [Architecture](docs/ARCHITECTURE.md): rendering, generation, validation, and artifact architecture
 - [TECHNICAL.md](TECHNICAL.md): lower-level project layout notes
 - [ROADMAP.md](ROADMAP.md): current product and architecture direction
 - [STUDIO_STATUS.md](STUDIO_STATUS.md): live implementation snapshot

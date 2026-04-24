@@ -6,6 +6,7 @@ const { listPresentations } = require("../studio/server/services/presentations.t
 function main() {
   const presentationsState = listPresentations();
   const outputConfig = getOutputConfig();
+  const expectedArchive = path.join(path.dirname(outputConfig.archiveFile), `${presentationsState.activePresentationId}.pdf`);
   const expectedPdf = path.join(outputConfig.outputDir, `${presentationsState.activePresentationId}.pdf`);
 
   assert.equal(
@@ -17,6 +18,11 @@ function main() {
     outputConfig.pdfFile,
     expectedPdf,
     "PDF output path should be derived from the active presentation id"
+  );
+  assert.equal(
+    outputConfig.archiveFile,
+    expectedArchive,
+    "Archive output path should be derived from the active presentation id"
   );
 
   process.stdout.write("Output config validation passed.\n");

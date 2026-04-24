@@ -41,7 +41,7 @@ The browser studio baseline is complete.
 ## Maintenance Focus
 
 - Keep future UI changes aligned with the pragmatic review direction: prioritize the active presentation, active slide, current workflow, compact status, and inspectable secondary controls.
-- Harden archive/export naming and generated artifacts around the active presentation instead of assuming the demo deck is the only deck.
+- Keep generated artifacts and archive publishing tied to the active presentation, with future work focused on per-presentation baselines if multiple decks need independent visual approval.
 - Keep new deck-planning modes tied to shared deck-context patches when they change narrative direction, theme, constraints, or other deck-level decisions.
 - Deepen DOM media validation only when new media-heavy slide families expose concrete screenshot, chart, diagram, or legibility gaps beyond the current size, bounds, spacing, labeling, loading, and caption/source attachment checks.
 - Correct stale documentation opportunistically if it refers to removed rendering, validation, or authoring paths as active implementation.

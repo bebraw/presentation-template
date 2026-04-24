@@ -60,7 +60,7 @@ flowchart TD
         previews["studio/output/**"]
         baselineFiles["studio/baseline/*.png"]
         diffs["slides/output/render-diff/*.png"]
-        archive["archive/demo-presentation.pdf"]
+        archive["archive/<presentation-id>.pdf"]
     end
 
     slides --> slideDom
@@ -204,7 +204,7 @@ The local studio under `studio/` is now a control plane around the shared DOM re
 The repo still keeps two long-lived output types:
 
 - `studio/baseline/` is the approved visual regression target
-- `archive/demo-presentation.pdf` is the checked-in presentation snapshot for linking and archival
+- `archive/<presentation-id>.pdf` is the checked-in presentation snapshot for linking and archival when a deck is published
 
 They serve different roles. Refreshing the render baseline is part of intentional visual changes. Refreshing the archive is a separate publishing decision.
 

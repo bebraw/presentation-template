@@ -82,7 +82,7 @@ npm run baseline:render
 - `slides/output/` is git-ignored.
 - `studio/baseline/` stores approved render-baseline PNGs used by the visual regression gate.
 - `docs/assets/studio-home.png` is refreshed manually by `npm run screenshot:home`.
-- `archive/demo-presentation.pdf` is the checked-in archive snapshot and should be refreshed only as a publishing decision.
+- `archive/<presentation-id>.pdf` is the checked-in archive snapshot and should be refreshed only as a publishing decision with `npm run archive:update`.
 
 When slide visuals or theme output intentionally change, run `npm run baseline:render` before `npm run quality:gate`.
 

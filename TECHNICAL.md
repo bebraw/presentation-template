@@ -13,14 +13,14 @@ For day-to-day setup and commands, see [DEVELOPMENT.md](DEVELOPMENT.md).
 - `scripts/` now holds CLI build, validation, diagram, and baseline commands while shared deck settings and baseline utilities live under `studio/server/services/`.
 - `skills/` contains presentation workflow guidance.
 - `skills/slide-clarity-drill/` contains the wording-tightening skill used for line-by-line slide copy refinement.
-- `archive/demo-presentation.pdf` stores the checked-in PDF snapshot for linking and archival.
+- `archive/<presentation-id>.pdf` stores checked-in PDF snapshots for linking and archival.
 
 ## Project Structure
 
 ```text
 .
 ├── archive/
-│   └── demo-presentation.pdf
+│   └── ...
 ├── ARCHITECTURE.md
 ├── DEVELOPMENT.md
 ├── package.json
@@ -62,7 +62,7 @@ For day-to-day setup and commands, see [DEVELOPMENT.md](DEVELOPMENT.md).
 - The deck uses `Avenir Next` for both display and body text.
 - Shared palette, deck metadata, design constraints, and output config now live under `studio/server/services/`, while the authoritative slide layout/runtime lives in `studio/client/slide-dom.ts`.
 - `slides/output/` is git-ignored, so generated per-presentation binaries stay local.
-- `archive/demo-presentation.pdf` stores the checked-in PDF snapshot for linking and archival.
+- `archive/<presentation-id>.pdf` stores checked-in PDF snapshots for linking and archival.
 - `studio/baseline/` stores the approved render baseline for the current deck output.
 - `npm run quality:gate` runs DOM-backed geometry/text validation before checking the generated PDF against the approved render baseline.
 - If you extend the deck, follow the JSON slide-spec path and keep new runtime work on the DOM path.

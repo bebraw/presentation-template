@@ -1,6 +1,7 @@
 const path = require("path");
 
 const repoRoot = path.join(__dirname, "..", "..", "..");
+const archiveDir = path.join(repoRoot, "archive");
 const studioDir = path.join(repoRoot, "studio");
 const clientDir = path.join(studioDir, "client");
 const stateDir = path.join(studioDir, "state");
@@ -17,6 +18,7 @@ const slidesDir = path.join(repoRoot, "slides");
 const presentationsDir = path.join(repoRoot, "presentations");
 
 module.exports = {
+  archiveDir,
   baselineDir,
   clientDir,
   contactSheetFile,

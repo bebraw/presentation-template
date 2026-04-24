@@ -40,7 +40,7 @@ The DOM-first runtime is now the active path:
 
 The next practical tasks are:
 
-1. keep hardening multiple-presentation workflows now that create, select, duplicate, and delete exist; the next useful slice is better archive/export naming per active presentation
+1. keep hardening multiple-presentation workflows now that create, select, duplicate, delete, active export naming, and active archive publishing exist; the next useful slice is per-presentation visual baselines if multiple decks need separate approval history
 2. keep hardening complete media-validation mode beyond its current media legibility, slide bounds, progress-area spacing, and caption/source attachment checks, now covered by a fixture in the quality gate, especially once media-heavy slide families land
 3. keep extending shared deck-context patches if new deck-plan modes are added; the current sequence, boundary, decision, operator, compressed, composed, and deck-authoring candidates all carry shared-context steering, and generated content scaffolds use prose evidence items instead of metric-style placeholders, enforced by the deck-plan fixture in the quality gate
 4. keep documentation aligned with the DOM-first runtime when older guidance is touched

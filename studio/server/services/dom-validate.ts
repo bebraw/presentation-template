@@ -879,6 +879,9 @@ function collectMediaIssues(slideEntry, domData, validationOptions, validationSe
       return;
     }
 
+    const captionRect = normalizeRect(caption.rect);
+    const mediaRect = normalizeRect(nearest.media.rect);
+
     if (nearest.distance < minCaptionGapPx) {
       issues.push(createConfiguredIssue(
         slideEntry.index,
@@ -893,6 +896,16 @@ function collectMediaIssues(slideEntry, domData, validationOptions, validationSe
         "warn",
         "caption-source-spacing",
         `Caption/source "${describeDomNode(caption, "caption")}" is detached from nearest media "${describeDomNode(nearest.media)}" (${(nearest.distance / PX_PER_INCH).toFixed(2)}in)`,
+        validationSettings
+      ));
+    }
+
+    if (captionRect.bottom <= mediaRect.top - 1) {
+      issues.push(createConfiguredIssue(
+        slideEntry.index,
+        "warn",
+        "caption-source-spacing",
+        `Caption/source "${describeDomNode(caption, "caption")}" sits above nearest media "${describeDomNode(nearest.media)}"; attach captions below the visual when possible`,
         validationSettings
       ));
     }

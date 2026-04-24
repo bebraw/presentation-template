@@ -288,6 +288,48 @@ assert.ok(
   detachedCaptionIssues.some((issue) => issue.rule === "caption-source-spacing" && issue.message.includes("is detached from nearest media")),
   "complete mode should flag detached captions or source lines"
 );
+
+const aboveCaptionIssues = _test.collectMediaIssues(slideEntry, {
+  captionItems: [
+    {
+      className: "source",
+      rect: {
+        bottom: 70,
+        height: 20,
+        left: 130,
+        right: 330,
+        top: 50,
+        width: 200
+      },
+      tagName: "p",
+      text: "Source: above"
+    }
+  ],
+  mediaItems: [
+    {
+      accessibleLabel: "workflow screenshot",
+      alt: "workflow screenshot",
+      className: "dom-screenshot",
+      complete: true,
+      label: "workflow screenshot",
+      naturalHeight: 180,
+      naturalWidth: 320,
+      rect: {
+        bottom: 270,
+        height: 180,
+        left: 120,
+        right: 440,
+        top: 90,
+        width: 320
+      },
+      tagName: "img"
+    }
+  ]
+}, validationOptions, validationSettings);
+assert.ok(
+  aboveCaptionIssues.some((issue) => issue.rule === "caption-source-spacing" && issue.message.includes("sits above nearest media")),
+  "complete mode should flag captions or source lines above their nearest media"
+);
 assert.ok(
   completeIssues.every((issue) => issue.level === "warn"),
   "fixture warnings should honor configured warning severities"

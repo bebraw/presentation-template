@@ -37,7 +37,7 @@ The browser studio baseline is complete.
 ## Maintenance Focus
 
 - Keep new deck-planning modes tied to shared deck-context patches when they change narrative direction, theme, constraints, or other deck-level decisions.
-- Deepen DOM media validation only when new media-heavy slide families expose concrete screenshot, chart, diagram, or legibility gaps beyond the current size, bounds, spacing, labeling, loading, and attachment checks.
+- Deepen DOM media validation only when new media-heavy slide families expose concrete screenshot, chart, diagram, or legibility gaps beyond the current size, bounds, spacing, labeling, loading, and caption/source attachment checks.
 - Correct stale documentation opportunistically if it refers to removed rendering, validation, or authoring paths as active implementation.
 
 ## Phase Snapshot

@@ -1,0 +1,18 @@
+{
+  "deck": {
+    "title": "Intro to HTMX",
+    "audience": "BSc students",
+    "objective": "How does HTMX work?",
+    "tone": "Academic",
+    "constraints": "Include references.",
+    "themeBrief": "Clean, modern design.",
+    "lengthProfile": {
+      "activeCount": 3,
+      "skippedCount": 0,
+      "targetCount": 20,
+      "updatedAt": "2026-04-24T14:32:01.350Z"
+    },
+    "outline": "Intro to HTMX"
+  },
+  "slides": {}
+}

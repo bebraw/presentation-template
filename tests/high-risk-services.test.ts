@@ -21,6 +21,10 @@ const {
   planDeckLength,
   restoreSkippedSlides
 } = require("../studio/server/services/deck-length.ts");
+const {
+  generateInitialPresentation,
+  materializePlan
+} = require("../studio/server/services/presentation-generation.ts");
 const { getDeckContext } = require("../studio/server/services/state.ts");
 const {
   createMaterialFromDataUrl,
@@ -48,6 +52,8 @@ const { getPresentationPaths } = require("../studio/server/services/presentation
 const createdPresentationIds = new Set();
 const originalActivePresentationId = listPresentations().activePresentationId;
 const tinyPngDataUrl = "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAIAAAACCAYAAABytg0KAAAAFklEQVR42mN8z8DwnwEJMDGgAcQBAH3kAweoKjmtAAAAAElFTkSuQmCC";
+const htmxPresentationFixture = require("./fixtures/intro-to-htmx/presentation.json");
+const htmxDeckContextFixture = require("./fixtures/intro-to-htmx/deck-context.json");
 
 function createCoveragePresentation(suffix, fields: any = {}) {
   const presentation = createPresentation({
@@ -246,6 +252,87 @@ test("deck length scaling marks slides as skipped and restores them without losi
     getSlides().map((slide) => slide.index),
     [1, 2, 3, 4, 5, 6],
     "restored slides should be compacted back into a contiguous active order"
+  );
+});
+
+test("initial presentation generation repairs weak LLM plan labels and avoids fake references", async () => {
+  const fields = {
+    ...htmxDeckContextFixture.deck,
+    description: htmxPresentationFixture.description,
+    generationMode: "local",
+    targetSlideCount: htmxDeckContextFixture.deck.lengthProfile.targetCount
+  };
+  const weakPlan = {
+    outline: "Intro to HTMX",
+    references: [
+      {
+        note: "Invented citation from a weak model response.",
+        title: "Smith et al.",
+        url: ""
+      }
+    ],
+    slides: [
+      {
+        keyPoints: [
+          { body: "HTMX enables rich interactions with minimal JavaScript by extending HTML attributes.", title: "summary" },
+          { body: "It shifts complexity from client-side scripting to server-driven responses.", title: "title:" },
+          { body: "HTMX enables rich interactions with minimal JavaScript by extending HTML attributes.", title: "summary" },
+          { body: "Students should see a concrete request and response example.", title: "Example" }
+        ],
+        role: "opening",
+        summary: "This presentation introduces HTMX as a server-driven way to build interactive web applications.",
+        title: "Intro to HTMX"
+      },
+      {
+        keyPoints: [
+          { body: "hx-get issues a GET request from an HTML element.", title: "summary" },
+          { body: "hx-target chooses the element that receives the returned fragment.", title: "Target" },
+          { body: "hx-swap chooses how the fragment is inserted.", title: "Swap" },
+          { body: "The server returns HTML, not a JSON view model.", title: "Response" }
+        ],
+        role: "mechanics",
+        summary: "HTMX behavior is mostly declared through attributes on ordinary HTML elements.",
+        title: "How requests work"
+      },
+      {
+        keyPoints: [
+          { body: "Review official documentation before citing specific behavior.", title: "Verify docs" },
+          { body: "Try a small form submission before adopting HTMX broadly.", title: "Practice" },
+          { body: "Compare server-rendered fragments with JSON API client rendering.", title: "Compare" },
+          { body: "Academic References: Smith et al., Journal of Web Technologies, 2023.", title: "Academic References" }
+        ],
+        role: "handoff",
+        summary: "Close by showing what students should verify and try next.",
+        title: "References and next steps"
+      }
+    ],
+    summary: "Weak model response shaped like the HTMX trial deck."
+  };
+  const slideSpecs = materializePlan(fields, weakPlan);
+  const visibleText = slideSpecs.flatMap((slideSpec) => [
+    slideSpec.eyebrow,
+    slideSpec.title,
+    slideSpec.summary,
+    ...(slideSpec.cards || []).flatMap((item) => [item.title, item.body]),
+    ...(slideSpec.signals || []).flatMap((item) => [item.title, item.body]),
+    ...(slideSpec.guardrails || []).flatMap((item) => [item.title, item.body]),
+    ...(slideSpec.bullets || []).flatMap((item) => [item.title, item.body]),
+    ...(slideSpec.resources || []).flatMap((item) => [item.title, item.body])
+  ].filter(Boolean));
+
+  assert.equal(slideSpecs.length, 3, "materializer should keep the requested plan length");
+  assert.ok(!visibleText.some((value) => /^(summary|title:?)$/i.test(String(value))), "materialized slides should not expose schema labels as slide text");
+  assert.ok(!visibleText.some((value) => /Smith et al\.|Journal of Web Technologies/i.test(String(value))), "materialized slides should not preserve invented bibliographic references");
+  assert.ok(
+    slideSpecs[slideSpecs.length - 1].resources.some((resource) => /verified source URL/.test(resource.body)),
+    "reference requests without supplied URLs should become source-verification prompts"
+  );
+
+  const generated = await generateInitialPresentation(fields);
+  assert.equal(generated.slideSpecs.length, 20, "local generation should respect the HTMX target length fixture");
+  assert.ok(
+    generated.slideSpecs.some((slideSpec) => /Example|Tradeoff|Mechanics/.test(slideSpec.eyebrow || "")),
+    "local generation should include teaching-oriented technical slide roles"
   );
 });
 

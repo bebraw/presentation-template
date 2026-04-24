@@ -50,34 +50,133 @@ function splitList(value) {
     .filter(Boolean);
 }
 
-function repeatToLength(items, length, fallbackFactory) {
-  const source = items.filter(Boolean);
+function extractUrls(value) {
+  return String(value || "").match(/https?:\/\/[^\s),\]]+/g) || [];
+}
+
+function collectProvidedUrls(fields: any = {}) {
+  return [
+    fields.title,
+    fields.audience,
+    fields.objective,
+    fields.constraints,
+    fields.themeBrief,
+    fields.outline
+  ].flatMap(extractUrls);
+}
+
+function uniqueBy(values, getKey) {
+  const seen = new Set();
   const result = [];
 
-  for (let index = 0; index < length; index += 1) {
-    result.push(source[index % source.length] || fallbackFactory(index));
+  values.forEach((value) => {
+    const key = getKey(value);
+    if (!key || seen.has(key)) {
+      return;
+    }
+
+    seen.add(key);
+    result.push(value);
+  });
+
+  return result;
+}
+
+function fillToLength(items, length, fallbackFactory) {
+  const result = items.filter(Boolean).slice(0, length);
+
+  for (let index = result.length; index < length; index += 1) {
+    result.push(fallbackFactory(index));
   }
 
   return result;
 }
 
+function isWeakLabel(value) {
+  return /^(summary|title:?|key point|point|item|slide|section|role|body|n\/a|none)$/i.test(String(value || "").trim());
+}
+
+function isUnsupportedBibliographicClaim(value) {
+  return /\b(et al\.|journal|proceedings|doi:|isbn)\b/i.test(String(value || "")) && !/https?:\/\//.test(String(value || ""));
+}
+
+function cleanText(value) {
+  const normalized = String(value || "")
+    .replace(/\s+/g, " ")
+    .replace(/\b(title|summary|body):\s*$/i, "")
+    .trim();
+
+  return isUnsupportedBibliographicClaim(normalized) ? "" : normalized;
+}
+
+function normalizePoint(point, fallbackTitle, fallbackBody) {
+  if (typeof point === "string") {
+    return {
+      body: cleanText(point) || fallbackBody,
+      title: fallbackTitle
+    };
+  }
+
+  const title = cleanText(point && point.title);
+  const body = cleanText(point && point.body);
+
+  return {
+    body: body || title || fallbackBody,
+    title: title && !isWeakLabel(title) ? title : fallbackTitle
+  };
+}
+
+function normalizePoints(points, options: any = {}) {
+  const fallbackTitle = options.fallbackTitle || "Point";
+  const fallbackBody = options.fallbackBody || "Explain the idea with one concrete sentence.";
+  const normalized = Array.isArray(points)
+    ? points.map((point, index) => normalizePoint(point, `${fallbackTitle} ${index + 1}`, fallbackBody))
+    : [];
+
+  return uniqueBy(normalized, (point) => `${point.title.toLowerCase()}|${point.body.toLowerCase()}`);
+}
+
 function createPlanSchema(slideCount) {
+  const pointSchema = {
+    additionalProperties: false,
+    properties: {
+      body: { type: "string" },
+      title: { type: "string" }
+    },
+    required: ["title", "body"],
+    type: "object"
+  };
+
   return {
     additionalProperties: false,
     properties: {
       outline: { type: "string" },
+      references: {
+        items: {
+          additionalProperties: false,
+          properties: {
+            note: { type: "string" },
+            title: { type: "string" },
+            url: { type: "string" }
+          },
+          required: ["title", "url", "note"],
+          type: "object"
+        },
+        maxItems: 4,
+        type: "array"
+      },
       slides: {
         items: {
           additionalProperties: false,
           properties: {
             keyPoints: {
-              items: { type: "string" },
+              items: pointSchema,
               maxItems: 4,
-              minItems: 3,
+              minItems: 4,
               type: "array"
             },
             role: {
-              enum: ["cover", "context", "evidence", "workflow", "decision", "summary"],
+              enum: ["opening", "context", "concept", "mechanics", "example", "tradeoff", "reference", "handoff"],
               type: "string"
             },
             summary: { type: "string" },
@@ -92,7 +191,7 @@ function createPlanSchema(slideCount) {
       },
       summary: { type: "string" }
     },
-    required: ["summary", "outline", "slides"],
+    required: ["summary", "outline", "references", "slides"],
     type: "object"
   };
 }
@@ -156,33 +255,42 @@ function createLocalPlan(fields, slideCount) {
   const objective = sentence(fields.objective, `Help ${audience} understand ${title}.`, 18);
   const constraints = splitList(fields.constraints);
   const themeBrief = sentence(fields.themeBrief, "Keep the deck readable and deliberate.", 14);
-  const contentRoles = ["context", "evidence", "workflow", "decision"];
+  const contentRoles = ["context", "concept", "mechanics", "example", "tradeoff"];
   const slides = [];
 
   for (let index = 0; index < slideCount; index += 1) {
     const isFirst = index === 0;
     const isLast = index === slideCount - 1 && slideCount > 1;
-    const role = isFirst ? "cover" : isLast ? "summary" : contentRoles[(index - 1) % contentRoles.length];
+    const role = isFirst ? "opening" : isLast ? "handoff" : contentRoles[(index - 1) % contentRoles.length];
     const roleTitle = ({
+      concept: "Core concept",
       context: "Context and audience",
-      cover: title,
-      decision: "Decision path",
-      evidence: "Proof and constraints",
-      summary: "Next steps",
-      workflow: "Working approach"
+      example: "Worked example",
+      handoff: "Next steps",
+      mechanics: "How it works",
+      opening: title,
+      reference: "References to verify",
+      tradeoff: "Tradeoffs and limits"
     })[role];
+    const pointSeeds = [
+      { title: "Objective", body: objective },
+      { title: "Audience", body: audience },
+      ...constraints.map((constraint, constraintIndex) => ({
+        title: `Constraint ${constraintIndex + 1}`,
+        body: constraint
+      })),
+      { title: "Theme", body: themeBrief }
+    ];
 
     slides.push({
-      keyPoints: repeatToLength([
-        objective,
-        audience,
-        ...constraints,
-        themeBrief
-      ], 4, (itemIndex) => `${title} point ${itemIndex + 1}`),
+      keyPoints: fillToLength(pointSeeds, 4, (itemIndex) => ({
+        body: `${roleTitle} should make ${title} easier to understand.`,
+        title: `${roleTitle} ${itemIndex + 1}`
+      })),
       role,
-      summary: role === "cover"
+      summary: role === "opening"
         ? objective
-        : role === "summary"
+        : role === "handoff"
           ? `Close with the action ${audience} should take after reviewing ${title}.`
           : `Explain ${roleTitle.toLowerCase()} for ${title}.`,
       title: roleTitle
@@ -191,38 +299,78 @@ function createLocalPlan(fields, slideCount) {
 
   return {
     outline: slides.map((slide, index) => `${index + 1}. ${slide.title}`).join("\n"),
+    references: collectProvidedUrls(fields).map((url, index) => ({
+      note: "Source URL supplied in the presentation brief.",
+      title: `Provided source ${index + 1}`,
+      url
+    })),
     slides,
     summary: `Generated a ${slideCount}-slide starting deck from the saved brief.`
   };
 }
 
 function toCards(planSlide, prefix, count) {
-  return repeatToLength(planSlide.keyPoints || [], count, (index) => `${planSlide.title} point ${index + 1}`)
+  const points = normalizePoints(planSlide.keyPoints, {
+    fallbackBody: sentence(planSlide.summary, "Explain this point clearly.", 16),
+    fallbackTitle: sentence(planSlide.title, "Point", 3)
+  });
+
+  return fillToLength(points, count, (index) => ({
+    body: `${sentence(planSlide.title, "This slide", 6)} needs a concrete supporting point.`,
+    title: `Point ${index + 1}`
+  }))
     .map((point, index) => ({
-      body: sentence(point, `Point ${index + 1}`, 13),
+      body: sentence(point.body, `Point ${index + 1}`, 13),
       id: `${prefix}-${index + 1}`,
-      title: sentence(index === 0 ? planSlide.role : point, `Point ${index + 1}`, 4)
+      title: sentence(point.title, `Point ${index + 1}`, 4)
     }));
+}
+
+function roleLabel(role) {
+  return ({
+    concept: "Concept",
+    context: "Context",
+    example: "Example",
+    handoff: "Handoff",
+    mechanics: "Mechanics",
+    opening: "Opening",
+    reference: "Reference",
+    tradeoff: "Tradeoff"
+  })[role] || "Section";
 }
 
 function toContentSlide(planSlide, index, fields) {
   const prefix = slugPart(planSlide.title, `slide-${index}`);
   const constraints = splitList(fields.constraints);
-  const guardrailPoints = repeatToLength([
-    ...constraints,
-    fields.tone ? `Use a ${fields.tone} tone.` : "",
-    fields.audience ? `Keep ${fields.audience} in view.` : ""
-  ], 3, (guardrailIndex) => `Keep slide ${index} concise and evidence-led.`);
+  const guardrailPoints = fillToLength([
+    {
+      body: fields.audience ? `Keep examples appropriate for ${fields.audience}.` : "Keep examples matched to the intended audience.",
+      title: "Audience"
+    },
+    {
+      body: constraints[0] || "Separate factual claims from implementation advice.",
+      title: "Scope"
+    },
+    {
+      body: /reference|citation|source/i.test(fields.constraints || "")
+        ? "Use only verified source URLs supplied in the brief or checked later."
+        : (fields.tone ? `Keep the tone ${fields.tone}.` : "Keep the wording concise."),
+      title: "Evidence"
+    }
+  ], 3, (guardrailIndex) => ({
+    body: `Keep slide ${index} concise and evidence-led.`,
+    title: `Guardrail ${guardrailIndex + 1}`
+  }));
 
   return validateSlideSpec({
-    eyebrow: sentence(planSlide.role, "Section", 3),
+    eyebrow: roleLabel(planSlide.role),
     guardrails: guardrailPoints.map((point, guardrailIndex) => ({
-      body: sentence(point, "Keep the argument focused.", 13),
+      body: sentence(point.body, "Keep the argument focused.", 13),
       id: `${prefix}-guardrail-${guardrailIndex + 1}`,
-      title: sentence(point, `Guardrail ${guardrailIndex + 1}`, 4)
+      title: sentence(point.title, `Guardrail ${guardrailIndex + 1}`, 4)
     })),
     guardrailsTitle: "Guardrails",
-    layout: planSlide.role === "workflow" ? "steps" : planSlide.role === "decision" ? "checklist" : "standard",
+    layout: planSlide.role === "mechanics" || planSlide.role === "example" ? "steps" : planSlide.role === "tradeoff" ? "checklist" : "standard",
     signals: toCards(planSlide, `${prefix}-signal`, 4),
     signalsTitle: "Key points",
     summary: sentence(planSlide.summary, "Explain this section clearly.", 18),
@@ -235,6 +383,12 @@ function materializePlan(fields, plan) {
   const slides = Array.isArray(plan.slides) ? plan.slides : [];
   const title = sentence(fields.title, "Untitled presentation", 8);
   const total = slides.length;
+  const suppliedUrls = new Set(collectProvidedUrls(fields));
+  const references = Array.isArray(plan.references)
+    ? plan.references
+      .filter((reference) => reference && suppliedUrls.has(String(reference.url || "").trim()))
+      .slice(0, 2)
+    : [];
 
   return slides.map((planSlide, index) => {
     const slideNumber = index + 1;
@@ -245,7 +399,7 @@ function materializePlan(fields, plan) {
     if (isFirst) {
       return validateSlideSpec({
         cards: toCards(planSlide, `${prefix}-card`, 3),
-        eyebrow: sentence(planSlide.role, "Opening", 3),
+        eyebrow: "Opening",
         layout: "focus",
         note: sentence(fields.constraints, "Refine constraints before expanding the deck.", 18),
         summary: sentence(planSlide.summary, fields.objective || `Explain ${title}.`, 18),
@@ -255,23 +409,26 @@ function materializePlan(fields, plan) {
     }
 
     if (isLast) {
+      const resourceItems = fillToLength(references.map((reference, referenceIndex) => ({
+        body: reference.url,
+        id: `${prefix}-resource-${referenceIndex + 1}`,
+        title: sentence(reference.title, `Source ${referenceIndex + 1}`, 5)
+      })), 2, (resourceIndex) => ({
+        body: /reference|citation|source/i.test(fields.constraints || "")
+          ? "Add a verified source URL before publishing."
+          : "Use the saved deck context and slide notes as the next editing source.",
+        id: `${prefix}-resource-${resourceIndex + 1}`,
+        title: /reference|citation|source/i.test(fields.constraints || "")
+          ? `Source needed ${resourceIndex + 1}`
+          : `Working note ${resourceIndex + 1}`
+      }));
+
       return validateSlideSpec({
         bullets: toCards(planSlide, `${prefix}-bullet`, 3),
         eyebrow: "Close",
         layout: "checklist",
-        resources: [
-          {
-            body: "presentations/<id>/slides",
-            id: `${prefix}-resource-slides`,
-            title: "Slides"
-          },
-          {
-            body: "presentations/<id>/state",
-            id: `${prefix}-resource-state`,
-            title: "State"
-          }
-        ],
-        resourcesTitle: "Working files",
+        resources: resourceItems,
+        resourcesTitle: references.length ? "References" : "Sources to verify",
         summary: sentence(planSlide.summary, "Close with the next useful action.", 18),
         title: sentence(planSlide.title, "Next steps", 8),
         type: "summary"
@@ -282,12 +439,64 @@ function materializePlan(fields, plan) {
   });
 }
 
+function collectVisibleText(slideSpec) {
+  return [
+    slideSpec.eyebrow,
+    slideSpec.title,
+    slideSpec.summary,
+    slideSpec.note,
+    slideSpec.signalsTitle,
+    slideSpec.guardrailsTitle,
+    slideSpec.resourcesTitle,
+    ...(slideSpec.cards || []).flatMap((item) => [item.title, item.body]),
+    ...(slideSpec.signals || []).flatMap((item) => [item.title, item.body]),
+    ...(slideSpec.guardrails || []).flatMap((item) => [item.title, item.body]),
+    ...(slideSpec.bullets || []).flatMap((item) => [item.title, item.body]),
+    ...(slideSpec.resources || []).flatMap((item) => [item.title, item.body])
+  ].filter(Boolean);
+}
+
+function assertGeneratedSlideQuality(slideSpecs) {
+  slideSpecs.forEach((slideSpec, slideIndex) => {
+    const visibleText = collectVisibleText(slideSpec);
+    const weakLabels = visibleText.filter((value) => isWeakLabel(value) || /\b(title|summary|body):\s*$/i.test(String(value)));
+    if (weakLabels.length) {
+      throw new Error(`Generated slide ${slideIndex + 1} contains placeholder text: ${weakLabels.join(", ")}`);
+    }
+
+    [
+      slideSpec.cards || [],
+      slideSpec.signals || [],
+      slideSpec.guardrails || [],
+      slideSpec.bullets || []
+    ].forEach((items) => {
+      const itemBodies = items.map((item) => String(item.body || "").toLowerCase());
+      const duplicateBodies = itemBodies.filter((body, index) => body && itemBodies.indexOf(body) !== index);
+      if (duplicateBodies.length) {
+        throw new Error(`Generated slide ${slideIndex + 1} repeats visible card content.`);
+      }
+    });
+
+    const fakeBibliographicClaims = visibleText.filter(isUnsupportedBibliographicClaim);
+    if (fakeBibliographicClaims.length) {
+      throw new Error(`Generated slide ${slideIndex + 1} contains unsourced bibliographic-looking claims.`);
+    }
+  });
+
+  return slideSpecs;
+}
+
 async function createLlmPlan(fields, slideCount) {
+  const suppliedUrls = collectProvidedUrls(fields);
   const result = await createStructuredResponse({
     developerPrompt: [
       "You generate first-draft presentation plans for a local structured-deck studio.",
       "Return JSON only and stay within the provided schema.",
+      "Every key point must have a specific short title and a concrete body sentence.",
       "Do not use placeholders, dummy metrics, markdown fences, or generic filler.",
+      "Do not use field labels such as title, summary, body, key point, or role as visible slide text.",
+      "Do not invent academic papers, authors, journals, publication years, citations, or source URLs.",
+      "Only include references whose URLs were supplied by the user. If none were supplied, return an empty references array.",
       "Make the deck useful as a first real draft for someone who gave the brief.",
       "Keep each slide concise enough for projected presentation content."
     ].join("\n"),
@@ -303,8 +512,10 @@ async function createLlmPlan(fields, slideCount) {
       `Objective: ${fields.objective || "Not specified"}`,
       `Constraints and opinions: ${fields.constraints || "Not specified"}`,
       `Theme brief: ${fields.themeBrief || "Not specified"}`,
+      `Supplied source URLs: ${suppliedUrls.length ? suppliedUrls.join(", ") : "None"}`,
       "",
-      "Use the first slide as the opening frame and the last slide as the closing handoff when there is more than one slide."
+      "Use the first slide as the opening frame and the last slide as the closing handoff when there is more than one slide.",
+      "For a technical teaching deck, include at least one concrete example slide and one tradeoff/limitations slide when the requested length allows it."
     ].join("\n")
   });
 
@@ -329,7 +540,7 @@ async function generateInitialPresentation(fields: any = {}) {
     plan = createLocalPlan(fields, slideCount);
   }
 
-  const slideSpecs = materializePlan(fields, plan);
+  const slideSpecs = assertGeneratedSlideQuality(materializePlan(fields, plan));
 
   return {
     generation: {
@@ -349,5 +560,6 @@ async function generateInitialPresentation(fields: any = {}) {
 
 module.exports = {
   generateInitialPresentation,
+  materializePlan,
   normalizeSlideCount
 };

@@ -74,6 +74,109 @@ function writeJson(fileName, value) {
   writeAllowedJson(fileName, value);
 }
 
+function writeSlideFile(paths, index, slideSpec) {
+  writeJson(path.join(paths.slidesDir, `slide-${String(index).padStart(2, "0")}.json`), {
+    ...slideSpec,
+    index
+  });
+}
+
+function createInitialSlideSpecs(deck) {
+  const title = deck.title || "Untitled presentation";
+  const objective = deck.objective || `Explain ${title} clearly.`;
+  const constraints = deck.constraints || "Keep the presentation concise, readable, and focused.";
+  const audience = deck.audience || "Audience to define";
+  const tone = deck.tone || "Direct and practical";
+
+  return [
+    {
+      type: "cover",
+      title,
+      logo: "slideotter",
+      eyebrow: "Draft deck",
+      summary: objective,
+      note: constraints,
+      cards: [
+        {
+          id: "draft-audience",
+          title: "Audience",
+          body: audience
+        },
+        {
+          id: "draft-tone",
+          title: "Tone",
+          body: tone
+        },
+        {
+          id: "draft-constraints",
+          title: "Constraints",
+          body: constraints
+        }
+      ]
+    },
+    {
+      type: "toc",
+      title: "Starting structure",
+      eyebrow: "Initial plan",
+      summary: "A minimal scaffold generated from the presentation brief. Refine the outline before expanding the deck.",
+      note: "Use Deck Planning to generate alternatives once the constraints read right.",
+      cards: [
+        {
+          id: "plan-context",
+          title: "Context",
+          body: "Audience, objective, and constraints."
+        },
+        {
+          id: "plan-argument",
+          title: "Argument",
+          body: "The claim this deck should make."
+        },
+        {
+          id: "plan-handoff",
+          title: "Handoff",
+          body: "The decision or action the deck should support."
+        }
+      ]
+    },
+    {
+      type: "summary",
+      title: "Next steps",
+      eyebrow: "Authoring path",
+      summary: "Turn the scaffold into a real deck by tightening context, generating variants, and validating before archive.",
+      resourcesTitle: "Working files",
+      bullets: [
+        {
+          id: "next-context",
+          title: "Tighten context",
+          body: "Clarify audience, objective, tone, and constraints."
+        },
+        {
+          id: "next-slides",
+          title: "Shape slides",
+          body: "Add, duplicate, rewrite, or generate structured candidates."
+        },
+        {
+          id: "next-validate",
+          title: "Validate output",
+          body: "Run checks before treating the deck as ready."
+        }
+      ],
+      resources: [
+        {
+          id: "resource-slides",
+          title: "Slides",
+          body: "presentations/<id>/slides"
+        },
+        {
+          id: "resource-state",
+          title: "State",
+          body: "presentations/<id>/state"
+        }
+      ]
+    }
+  ];
+}
+
 function createDefaultDeckContext(fields: any = {}) {
   const visualTheme = normalizeVisualTheme({
     ...defaultVisualTheme,
@@ -244,16 +347,187 @@ function updatePresentationMeta(id, fields) {
   return next;
 }
 
+function getUniquePresentationId(title) {
+  const registry = ensurePresentationsState();
+  const base = createSlug(title, "presentation");
+  let candidate = base;
+  let suffix = 2;
+
+  while (registry.presentations.some((entry) => entry.id === candidate) || fs.existsSync(presentationRoot(candidate))) {
+    candidate = `${base}-${suffix}`;
+    suffix += 1;
+  }
+
+  return candidate;
+}
+
+function readPresentationSummary(id) {
+  const paths = getPresentationPaths(id);
+  const meta = readJson(paths.metaFile, createDefaultPresentationMeta({ id }));
+  const deckContext = readJson(paths.deckContextFile, null);
+  const deck = deckContext && deckContext.deck ? deckContext.deck : {};
+  const slideFiles = fs.existsSync(paths.slidesDir)
+    ? fs.readdirSync(paths.slidesDir).filter((fileName) => /^slide-\d+\.json$/.test(fileName)).sort((left, right) => left.localeCompare(right, undefined, { numeric: true }))
+    : [];
+  const firstSlideSpec = slideFiles.length ? readJson(path.join(paths.slidesDir, slideFiles[0]), null) : null;
+
+  return {
+    id,
+    title: deck.title || meta.title || id,
+    description: meta.description || deck.subject || deck.objective || "",
+    createdAt: meta.createdAt || "",
+    updatedAt: meta.updatedAt || "",
+    slideCount: slideFiles.filter((fileName) => {
+      const slide = readJson(path.join(paths.slidesDir, fileName), {});
+      return slide && slide.archived !== true;
+    }).length,
+    firstSlideSpec,
+    theme: deck.visualTheme || null
+  };
+}
+
+function listPresentations() {
+  const registry = ensurePresentationsState();
+
+  return {
+    activePresentationId: registry.activePresentationId,
+    presentations: registry.presentations.map((entry) => readPresentationSummary(entry.id))
+  };
+}
+
+function createPresentation(fields: any = {}) {
+  const id = getUniquePresentationId(fields.title || "Untitled presentation");
+  const paths = getPresentationPaths(id);
+  const timestamp = new Date().toISOString();
+  const title = fields.title || "Untitled presentation";
+  const context = createDefaultDeckContext({
+    ...fields,
+    title,
+    outline: fields.outline || "1. Opening claim\n2. Supporting evidence\n3. Decision or handoff"
+  });
+  const meta = createDefaultPresentationMeta({
+    id,
+    title,
+    description: fields.objective || fields.description || "",
+    createdAt: timestamp,
+    updatedAt: timestamp
+  });
+
+  ensurePresentationFiles(id, meta);
+  writeJson(paths.metaFile, meta);
+  writeJson(paths.deckContextFile, context);
+  writeJson(paths.variantsFile, { variants: [] });
+  createInitialSlideSpecs(context.deck).forEach((slideSpec, index) => {
+    writeSlideFile(paths, index + 1, slideSpec);
+  });
+
+  const registry = ensurePresentationsState();
+  writeRegistry({
+    activePresentationId: id,
+    presentations: [
+      ...registry.presentations,
+      {
+        id,
+        title
+      }
+    ]
+  });
+
+  return readPresentationSummary(id);
+}
+
+function duplicateDirectory(sourceDir, targetDir) {
+  ensureAllowedDir(targetDir);
+  fs.cpSync(sourceDir, targetDir, {
+    recursive: true
+  });
+}
+
+function duplicatePresentation(sourceId, fields: any = {}) {
+  const sourcePaths = getPresentationPaths(sourceId);
+  if (!fs.existsSync(sourcePaths.rootDir)) {
+    throw new Error(`Unknown presentation: ${sourceId}`);
+  }
+
+  const sourceSummary = readPresentationSummary(sourceId);
+  const title = fields.title || `${sourceSummary.title} copy`;
+  const id = getUniquePresentationId(title);
+  const targetPaths = getPresentationPaths(id);
+  duplicateDirectory(sourcePaths.rootDir, targetPaths.rootDir);
+  const timestamp = new Date().toISOString();
+  updatePresentationMeta(id, {
+    id,
+    title,
+    description: sourceSummary.description,
+    createdAt: timestamp,
+    updatedAt: timestamp
+  });
+  const context = readJson(targetPaths.deckContextFile, createDefaultDeckContext({ title }));
+  writeJson(targetPaths.deckContextFile, {
+    ...context,
+    deck: {
+      ...context.deck,
+      title
+    }
+  });
+
+  const registry = ensurePresentationsState();
+  writeRegistry({
+    activePresentationId: id,
+    presentations: [
+      ...registry.presentations,
+      {
+        id,
+        title
+      }
+    ]
+  });
+
+  return readPresentationSummary(id);
+}
+
+function deletePresentation(id) {
+  const registry = ensurePresentationsState();
+  const safeId = assertPresentationId(id);
+  if (!registry.presentations.some((entry) => entry.id === safeId)) {
+    throw new Error(`Unknown presentation: ${safeId}`);
+  }
+  if (registry.presentations.length <= 1) {
+    throw new Error("Cannot delete the only presentation.");
+  }
+
+  const nextPresentations = registry.presentations.filter((entry) => entry.id !== safeId);
+  const nextActiveId = registry.activePresentationId === safeId
+    ? nextPresentations[0].id
+    : registry.activePresentationId;
+  const rootDir = presentationRoot(safeId);
+  if (fs.existsSync(rootDir)) {
+    fs.rmSync(rootDir, {
+      recursive: true,
+      force: true
+    });
+  }
+
+  return writeRegistry({
+    activePresentationId: nextActiveId,
+    presentations: nextPresentations
+  });
+}
+
 module.exports = {
   createDefaultDeckContext,
   createDefaultPresentationMeta,
+  createPresentation,
   createSlug,
   defaultPresentationId,
+  deletePresentation,
+  duplicatePresentation,
   ensurePresentationFiles,
   ensurePresentationsState,
   getActivePresentationId,
   getActivePresentationPaths,
   getPresentationPaths,
+  listPresentations,
   presentationsRegistryFile,
   setActivePresentation,
   updatePresentationMeta

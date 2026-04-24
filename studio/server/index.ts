@@ -12,6 +12,7 @@ const { buildAndRenderDeck, getPreviewManifest } = require("./services/build.ts"
 const { getDomPreviewState, renderDomPreviewDocument } = require("./services/dom-preview.ts");
 const { getLlmStatus, verifyLlmConnection } = require("./services/llm/client.ts");
 const { clientDir, outputDir } = require("./services/paths.ts");
+const { createPresentation, deletePresentation, duplicatePresentation, listPresentations, setActivePresentation } = require("./services/presentations.ts");
 const { applyDeckStructurePlan, ensureState, getDeckContext, updateDeckFields, updateSlideContext } = require("./services/state.ts");
 const { archiveStructuredSlide, getSlide, getSlides, insertStructuredSlide, readSlideSource, readSlideSpec, writeSlideSource, writeSlideSpec } = require("./services/slides.ts");
 const { applyDeckStructureCandidate, drillWordingSlide, ideateDeckStructure, ideateStructureSlide, ideateThemeSlide, ideateSlide, redoLayoutSlide } = require("./services/operations.ts");
@@ -251,6 +252,7 @@ function getWorkspaceState() {
     },
     context: getDeckContext(),
     domPreview: getDomPreviewState(),
+    presentations: listPresentations(),
     previews: getPreviewManifest(),
     runtime: serializeRuntimeState(),
     slides: getSlides(),
@@ -350,6 +352,68 @@ async function handleLlmCheck(res) {
     result,
     runtime: serializeRuntimeState()
   });
+}
+
+function resetPresentationRuntime() {
+  runtimeState.build = {
+    ok: false,
+    updatedAt: null
+  };
+  runtimeState.lastError = null;
+  runtimeState.validation = null;
+  runtimeState.workflow = null;
+  runtimeState.workflowHistory = [];
+  runtimeState.workflowSequence = 0;
+  publishRuntimeState();
+}
+
+function createPresentationPayload(extra: any = {}) {
+  return {
+    ...extra,
+    ...getWorkspaceState()
+  };
+}
+
+async function handlePresentationSelect(req, res) {
+  const body = await readJsonBody(req);
+  if (typeof body.presentationId !== "string" || !body.presentationId) {
+    throw new Error("Expected presentationId");
+  }
+
+  setActivePresentation(body.presentationId);
+  resetPresentationRuntime();
+  createJsonResponse(res, 200, createPresentationPayload());
+}
+
+async function handlePresentationCreate(req, res) {
+  const body = await readJsonBody(req);
+  const presentation = createPresentation(body || {});
+  resetPresentationRuntime();
+  createJsonResponse(res, 200, createPresentationPayload({ presentation }));
+}
+
+async function handlePresentationDuplicate(req, res) {
+  const body = await readJsonBody(req);
+  if (typeof body.presentationId !== "string" || !body.presentationId) {
+    throw new Error("Expected presentationId");
+  }
+
+  const presentation = duplicatePresentation(body.presentationId, {
+    title: body.title
+  });
+  resetPresentationRuntime();
+  createJsonResponse(res, 200, createPresentationPayload({ presentation }));
+}
+
+async function handlePresentationDelete(req, res) {
+  const body = await readJsonBody(req);
+  if (typeof body.presentationId !== "string" || !body.presentationId) {
+    throw new Error("Expected presentationId");
+  }
+
+  deletePresentation(body.presentationId);
+  resetPresentationRuntime();
+  createJsonResponse(res, 200, createPresentationPayload());
 }
 
 async function handleSlideSourceUpdate(req, res, slideId) {
@@ -1145,6 +1209,31 @@ async function handleApi(req, res, url) {
 
   if (req.method === "POST" && url.pathname === "/api/llm/check") {
     await handleLlmCheck(res);
+    return;
+  }
+
+  if (req.method === "GET" && url.pathname === "/api/presentations") {
+    createJsonResponse(res, 200, listPresentations());
+    return;
+  }
+
+  if (req.method === "POST" && url.pathname === "/api/presentations/select") {
+    await handlePresentationSelect(req, res);
+    return;
+  }
+
+  if (req.method === "POST" && url.pathname === "/api/presentations") {
+    await handlePresentationCreate(req, res);
+    return;
+  }
+
+  if (req.method === "POST" && url.pathname === "/api/presentations/duplicate") {
+    await handlePresentationDuplicate(req, res);
+    return;
+  }
+
+  if (req.method === "POST" && url.pathname === "/api/presentations/delete") {
+    await handlePresentationDelete(req, res);
     return;
   }
 

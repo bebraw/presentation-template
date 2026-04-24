@@ -368,12 +368,15 @@ async function handleSlideSpecUpdate(req, res, slideId) {
   }
 
   writeSlideSpec(slideId, body.slideSpec);
-  const previews = body.rebuild === false ? getPreviewManifest() : (await buildAndRenderDeck()).previews;
+  const shouldRebuild = body.rebuild !== false;
+  const previews = shouldRebuild ? (await buildAndRenderDeck()).previews : getPreviewManifest();
 
-  runtimeState.build = {
-    ok: true,
-    updatedAt: new Date().toISOString()
-  };
+  if (shouldRebuild) {
+    runtimeState.build = {
+      ok: true,
+      updatedAt: new Date().toISOString()
+    };
+  }
   runtimeState.lastError = null;
   publishRuntimeState();
   const structured = describeStructuredSlide(slideId);

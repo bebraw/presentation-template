@@ -16,6 +16,7 @@ const state = {
   selectedSlideId: null,
   selectedSlideIndex: 1,
   selectedSlideSpec: null,
+  selectedSlideSpecDraftError: null,
   selectedSlideSpecError: null,
   selectedSlideStructured: false,
   selectedSlideSource: "",
@@ -143,6 +144,7 @@ const domSlideResizeObserver = typeof ResizeObserver === "function"
     })
   : null;
 let activeInlineTextEdit = null;
+let slideSpecPreviewFrame = null;
 
 function getValidationRuleSelects() {
   return Array.from(document.querySelectorAll("[data-validation-rule]"));
@@ -354,6 +356,7 @@ function normalizeInlineText(value) {
 function applySlideSpecPayload(payload, fallbackSpec) {
   const nextSpec = payload.slideSpec || fallbackSpec;
   state.selectedSlideSpec = nextSpec;
+  state.selectedSlideSpecDraftError = null;
   state.selectedSlideSpecError = payload.slideSpecError || null;
   state.selectedSlideStructured = payload.structured === true;
   state.selectedSlideSource = payload.source;
@@ -464,7 +467,7 @@ function beginInlineTextEdit(element, path) {
     try {
       const payload = await request(`/api/slides/${state.selectedSlideId}/slide-spec`, {
         body: JSON.stringify({
-          rebuild: true,
+          rebuild: false,
           slideSpec: nextSpec
         }),
         method: "POST"
@@ -531,7 +534,10 @@ function renderStatus() {
   elements.ideateThemeButton.disabled = !selected || workflowRunning;
   elements.redoLayoutButton.disabled = !selected || workflowRunning;
   elements.captureVariantButton.disabled = !selected;
-  elements.saveSlideSpecButton.disabled = !selected;
+  elements.saveSlideSpecButton.disabled = !selected
+    || !state.selectedSlideStructured
+    || !state.selectedSlideSpec
+    || Boolean(state.selectedSlideSpecDraftError);
   elements.selectedSlideLabel.textContent = selected
     ? `${selected.index}. ${selected.title}`
     : "Slide not selected";
@@ -1768,14 +1774,16 @@ function renderSlideFields() {
   elements.slideLayoutHint.value = slideContext.layoutHint || "";
 
   if (state.selectedSlideStructured && state.selectedSlideSpec) {
+    state.selectedSlideSpecDraftError = null;
     elements.slideSpecEditor.disabled = false;
     elements.saveSlideSpecButton.disabled = false;
     elements.captureVariantButton.disabled = false;
     elements.slideSpecEditor.value = JSON.stringify(state.selectedSlideSpec, null, 2);
-    elements.slideSpecStatus.textContent = "Editing the structured slide spec. The server will materialize it into source during save.";
+    elements.slideSpecStatus.textContent = "Valid JSON changes preview immediately. Save persists the spec without rebuilding.";
     return;
   }
 
+  state.selectedSlideSpecDraftError = null;
   elements.slideSpecEditor.disabled = true;
   elements.saveSlideSpecButton.disabled = true;
   elements.captureVariantButton.disabled = false;
@@ -1855,26 +1863,56 @@ function renderVariants() {
     return;
   }
 
+  const selectVariantForComparison = (variant) => {
+    state.selectedVariantId = variant.id;
+    elements.operationStatus.textContent = `Comparing ${variant.label} against the current slide.`;
+    renderVariants();
+  };
+
   variants.forEach((variant) => {
     const card = document.createElement("div");
-    card.className = `variant-card${variant.id === state.selectedVariantId ? " active" : ""}`;
+    const selected = variant.id === state.selectedVariantId;
+    card.className = `variant-card${selected ? " active" : ""}`;
+    card.tabIndex = 0;
+    card.setAttribute("aria-label", `Compare ${variant.label}`);
+    card.setAttribute("aria-current", selected ? "true" : "false");
     const kindLabel = describeVariantKind(variant);
     const summary = variant.promptSummary || variant.notes || "No notes";
     card.innerHTML = `
-      <p class="variant-kind">${escapeHtml(kindLabel)}</p>
+      <div class="variant-select-line">
+        <span class="variant-select-mark" aria-hidden="true"></span>
+        <p class="variant-kind">${escapeHtml(kindLabel)}</p>
+      </div>
       <strong>${escapeHtml(variant.label)}</strong>
       <span class="variant-meta">${escapeHtml(new Date(variant.createdAt).toLocaleString())}</span>
       <span>${escapeHtml(summary)}</span>
       <div class="variant-actions">
-        <button type="button" class="secondary" data-action="compare">${variant.id === state.selectedVariantId ? "Reviewing" : "Review"}</button>
+        <button type="button" class="secondary" data-action="compare">${selected ? "Comparing" : "Compare"}</button>
         <button type="button" data-action="apply">Apply variant</button>
       </div>
     `;
 
+    card.addEventListener("click", (event) => {
+      if (event.target.closest("button")) {
+        return;
+      }
+
+      selectVariantForComparison(variant);
+    });
+
+    card.addEventListener("keydown", (event) => {
+      if (event.target.closest("button")) {
+        return;
+      }
+
+      if (event.key === "Enter" || event.key === " ") {
+        event.preventDefault();
+        selectVariantForComparison(variant);
+      }
+    });
+
     card.querySelector("[data-action=\"compare\"]").addEventListener("click", () => {
-      state.selectedVariantId = variant.id;
-      elements.operationStatus.textContent = `Comparing ${variant.label} against the current slide.`;
-      renderVariants();
+      selectVariantForComparison(variant);
     });
 
     const applyButton = card.querySelector("[data-action=\"apply\"]");
@@ -2133,6 +2171,7 @@ function syncSelectedSlideToActiveList() {
     state.selectedSlideId = null;
     state.selectedSlideIndex = 1;
     state.selectedSlideSpec = null;
+    state.selectedSlideSpecDraftError = null;
     state.selectedSlideSpecError = null;
     state.selectedSlideStructured = false;
     state.selectedSlideSource = "";
@@ -2153,6 +2192,7 @@ async function loadSlide(slideId) {
   state.selectedSlideId = slideId;
   state.selectedSlideIndex = payload.slide.index;
   state.selectedSlideSpec = payload.slideSpec || null;
+  state.selectedSlideSpecDraftError = null;
   state.selectedSlideSpecError = payload.slideSpecError || null;
   state.selectedSlideStructured = payload.structured === true;
   state.selectedSlideSource = payload.source;
@@ -2401,10 +2441,59 @@ function parseSlideSpecEditor() {
   }
 
   try {
-    return JSON.parse(elements.slideSpecEditor.value);
+    const slideSpec = JSON.parse(elements.slideSpecEditor.value);
+    if (!slideSpec || typeof slideSpec !== "object" || Array.isArray(slideSpec)) {
+      throw new Error("Slide spec JSON must be an object.");
+    }
+    return slideSpec;
   } catch (error) {
     throw new Error(`Slide spec JSON is invalid: ${error.message}`);
   }
+}
+
+function previewSlideSpecEditorDraft() {
+  if (!state.selectedSlideStructured || !state.selectedSlideId) {
+    return;
+  }
+
+  let slideSpec;
+  try {
+    slideSpec = JSON.parse(elements.slideSpecEditor.value);
+    if (!slideSpec || typeof slideSpec !== "object" || Array.isArray(slideSpec)) {
+      throw new Error("Slide spec JSON must be an object.");
+    }
+  } catch (error) {
+    state.selectedSlideSpecDraftError = error.message;
+    elements.saveSlideSpecButton.disabled = true;
+    elements.slideSpecStatus.textContent = `Slide spec JSON is invalid: ${error.message}`;
+    return;
+  }
+
+  state.selectedSlideSpec = slideSpec;
+  state.selectedSlideSpecDraftError = null;
+  patchDomSlideSpec(state.selectedSlideId, slideSpec);
+  elements.saveSlideSpecButton.disabled = false;
+  elements.slideSpecStatus.textContent = "Previewing unsaved JSON edits. Save persists the spec without rebuilding.";
+  renderPreviews();
+  renderVariantComparison();
+}
+
+function scheduleSlideSpecEditorPreview() {
+  if (slideSpecPreviewFrame !== null && typeof window.cancelAnimationFrame === "function") {
+    window.cancelAnimationFrame(slideSpecPreviewFrame);
+  }
+
+  const preview = () => {
+    slideSpecPreviewFrame = null;
+    previewSlideSpecEditorDraft();
+  };
+
+  if (typeof window.requestAnimationFrame === "function") {
+    slideSpecPreviewFrame = window.requestAnimationFrame(preview);
+    return;
+  }
+
+  preview();
 }
 
 async function saveSlideSpec() {
@@ -2417,7 +2506,7 @@ async function saveSlideSpec() {
   try {
     const payload = await request(`/api/slides/${state.selectedSlideId}/slide-spec`, {
       body: JSON.stringify({
-        rebuild: true,
+        rebuild: false,
         slideSpec
       }),
       method: "POST"
@@ -2427,6 +2516,7 @@ async function saveSlideSpec() {
     renderPreviews();
     renderVariantComparison();
     renderStatus();
+    elements.operationStatus.textContent = "Saved slide spec.";
   } finally {
     done();
   }
@@ -2758,6 +2848,7 @@ elements.compareApplyValidateButton.addEventListener("click", () => {
   }).catch((error) => window.alert(error.message));
 });
 elements.saveSlideSpecButton.addEventListener("click", () => saveSlideSpec().catch((error) => window.alert(error.message)));
+elements.slideSpecEditor.addEventListener("input", scheduleSlideSpecEditorPreview);
 elements.activePreview.addEventListener("dblclick", (event) => {
   const target = event.target.closest("[data-edit-path]");
   if (!target || !elements.activePreview.contains(target)) {

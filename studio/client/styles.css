@@ -1344,10 +1344,26 @@ input[type="color"]::-moz-color-swatch {
   align-items: start;
   min-height: 0;
   padding: 0.75rem 0;
+  border-left: 3px solid transparent;
+  cursor: pointer;
+  padding-left: 0.7rem;
+  transition: background 160ms ease, border-color 160ms ease, padding-left 160ms ease;
 }
 
 .variant-card.active {
   border-top-color: var(--app-accent);
+}
+
+.workflow-variant-list .variant-card:hover,
+.workflow-variant-list .variant-card:focus-visible {
+  background: color-mix(in srgb, var(--app-surface) 72%, #ffffff);
+  border-left-color: var(--app-line-strong);
+  outline: none;
+}
+
+.workflow-variant-list .variant-card.active {
+  border-left-color: var(--app-accent);
+  background: color-mix(in srgb, var(--app-accent) 7%, transparent);
 }
 
 .variant-card.active .variant-kind::after {
@@ -1361,6 +1377,28 @@ input[type="color"]::-moz-color-swatch {
   letter-spacing: 0.08em;
 }
 
+.variant-select-line {
+  display: flex;
+  grid-area: kind;
+  gap: 0.45rem;
+  align-items: center;
+  min-width: 0;
+}
+
+.variant-select-mark {
+  width: 0.62rem;
+  height: 0.62rem;
+  border: 1px solid var(--app-line-strong);
+  border-radius: 999px;
+  background: var(--app-bg);
+}
+
+.variant-card.active .variant-select-mark {
+  border-color: var(--app-accent);
+  background: var(--app-accent);
+  box-shadow: inset 0 0 0 2px var(--app-bg);
+}
+
 .variant-kind {
   margin: 0;
   text-transform: uppercase;
@@ -1370,7 +1408,6 @@ input[type="color"]::-moz-color-swatch {
 }
 
 .workflow-variant-list .variant-kind {
-  grid-area: kind;
   font-size: 0.62rem;
 }
 

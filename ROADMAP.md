@@ -33,7 +33,7 @@ The DOM-first runtime is now the active path:
 2. current slide preview, thumbnails, variant cards, and compare panes now use that DOM renderer instead of passing PNGs around
 3. the server exposes the same renderer through a standalone `/deck-preview` document path
 4. studio-triggered PDF export and preview PNG generation now run through that DOM renderer via Playwright
-5. studio validation and the CLI quality gate now use that same DOM validation path for supported slide families
+5. studio validation and the CLI quality gate now use that same DOM validation path for supported slide families, with a browser layout fixture guarding the Slide Studio preview viewport
 6. complete media validation mode now adds rendered-media checks for small, clipped, upscaled, distorted, unlabeled, unloaded, dimensionless, text-overlapping, or progress-area-crowding visuals plus caption/source attachment, preferred caption position, minimum spacing, and maximum attachment distance
 7. the render-baseline gate now compares the current DOM-built PDF against the approved raster baseline
 

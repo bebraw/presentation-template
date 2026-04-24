@@ -1342,13 +1342,15 @@ async function requestHandler(req, res) {
 
 function startServer(options: any = {}) {
   const host = options.host || defaultHost;
-  const port = Number(options.port || defaultPort);
+  const port = Number(options.port ?? defaultPort);
 
   ensureState();
 
   const server = http.createServer(requestHandler);
   server.listen(port, host, () => {
-    process.stdout.write(`Presentation studio available at http://${host}:${port}\n`);
+    const address = server.address();
+    const actualPort = address && typeof address === "object" ? address.port : port;
+    process.stdout.write(`Presentation studio available at http://${host}:${actualPort}\n`);
   });
 
   return server;

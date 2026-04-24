@@ -16,6 +16,7 @@ const { clientDir, outputDir } = require("./services/paths.ts");
 const { createPresentation, deletePresentation, duplicatePresentation, listPresentations, setActivePresentation } = require("./services/presentations.ts");
 const { applyDeckStructurePlan, ensureState, getDeckContext, updateDeckFields, updateSlideContext } = require("./services/state.ts");
 const { archiveStructuredSlide, getSlide, getSlides, insertStructuredSlide, readSlideSource, readSlideSpec, writeSlideSource, writeSlideSpec } = require("./services/slides.ts");
+const { applyDeckLengthPlan, planDeckLength, restoreSkippedSlides } = require("./services/deck-length.ts");
 const { applyDeckStructureCandidate, drillWordingSlide, ideateDeckStructure, ideateStructureSlide, ideateThemeSlide, ideateSlide, redoLayoutSlide } = require("./services/operations.ts");
 const { validateDeck } = require("./services/validate.ts");
 const {
@@ -261,6 +262,7 @@ function getWorkspaceState() {
     presentations: listPresentations(),
     previews: getPreviewManifest(),
     runtime: serializeRuntimeState(),
+    skippedSlides: getSlides({ includeSkipped: true }).filter((slide) => slide.skipped && !slide.archived),
     slides: getSlides(),
     variantStorage: {
       ...getVariantStorageStatus(),
@@ -619,6 +621,82 @@ async function handleDeckStructureApply(req, res) {
     ,
     slides: getSlides(),
     titleUpdates: result.titleUpdates
+  });
+}
+
+async function handleDeckLengthPlan(req, res) {
+  const body = await readJsonBody(req);
+  createJsonResponse(res, 200, {
+    plan: planDeckLength(body || {})
+  });
+}
+
+async function handleDeckLengthApply(req, res) {
+  const body = await readJsonBody(req);
+  const result = applyDeckLengthPlan(body || {});
+  const context = updateDeckFields({
+    lengthProfile: result.lengthProfile
+  });
+  const previews = (await buildAndRenderDeck()).previews;
+
+  runtimeState.build = {
+    ok: true,
+    updatedAt: new Date().toISOString()
+  };
+  updateWorkflowState({
+    message: `Scaled deck to ${result.lengthProfile.activeCount} active slide${result.lengthProfile.activeCount === 1 ? "" : "s"} with ${result.skippedSlides} skipped and ${result.restoredSlides} restored.`,
+    ok: true,
+    operation: "scale-deck-length",
+    stage: "completed",
+    status: "completed"
+  });
+  runtimeState.lastError = null;
+  publishRuntimeState();
+
+  createJsonResponse(res, 200, {
+    context,
+    domPreview: getDomPreviewState(),
+    lengthProfile: result.lengthProfile,
+    previews,
+    restoredSlides: result.restoredSlides,
+    runtime: serializeRuntimeState(),
+    skippedSlides: getSlides({ includeSkipped: true }).filter((slide) => slide.skipped && !slide.archived),
+    skippedSlidesChanged: result.skippedSlides,
+    slides: result.slides
+  });
+}
+
+async function handleSkippedSlideRestore(req, res) {
+  const body = await readJsonBody(req);
+  const result = restoreSkippedSlides(body || {});
+  const context = updateDeckFields({
+    lengthProfile: result.lengthProfile
+  });
+  const previews = (await buildAndRenderDeck()).previews;
+
+  runtimeState.build = {
+    ok: true,
+    updatedAt: new Date().toISOString()
+  };
+  updateWorkflowState({
+    message: `Restored ${result.restoredSlides} skipped slide${result.restoredSlides === 1 ? "" : "s"}.`,
+    ok: true,
+    operation: "restore-skipped-slides",
+    stage: "completed",
+    status: "completed"
+  });
+  runtimeState.lastError = null;
+  publishRuntimeState();
+
+  createJsonResponse(res, 200, {
+    context,
+    domPreview: getDomPreviewState(),
+    lengthProfile: result.lengthProfile,
+    previews,
+    restoredSlides: result.restoredSlides,
+    runtime: serializeRuntimeState(),
+    skippedSlides: getSlides({ includeSkipped: true }).filter((slide) => slide.skipped && !slide.archived),
+    slides: result.slides
   });
 }
 
@@ -1299,6 +1377,21 @@ async function handleApi(req, res, url) {
 
   if (req.method === "POST" && url.pathname === "/api/context/deck-structure/apply") {
     await handleDeckStructureApply(req, res);
+    return;
+  }
+
+  if (req.method === "POST" && url.pathname === "/api/deck/scale-length/plan") {
+    await handleDeckLengthPlan(req, res);
+    return;
+  }
+
+  if (req.method === "POST" && url.pathname === "/api/deck/scale-length/apply") {
+    await handleDeckLengthApply(req, res);
+    return;
+  }
+
+  if (req.method === "POST" && url.pathname === "/api/slides/restore-skipped") {
+    await handleSkippedSlideRestore(req, res);
     return;
   }
 

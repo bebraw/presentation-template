@@ -17,6 +17,11 @@ const {
   readSlideSpec
 } = require("../studio/server/services/slides.ts");
 const {
+  applyDeckLengthPlan,
+  planDeckLength,
+  restoreSkippedSlides
+} = require("../studio/server/services/deck-length.ts");
+const {
   createMaterialFromDataUrl,
   getMaterial,
   getMaterialFilePath,
@@ -167,6 +172,72 @@ test("structured slide insert and archive preserve active order and hidden histo
     archivedSlides.find((slide) => slide.id === created.id)?.archived,
     true,
     "archived slides should stay inspectable when requested"
+  );
+});
+
+test("deck length scaling marks slides as skipped and restores them without losing files", () => {
+  createCoveragePresentation("deck-length");
+
+  insertStructuredSlide(createContentSlideSpec("Implementation detail slide", 4), 4);
+  insertStructuredSlide(createContentSlideSpec("Technical appendix slide", 5), 5);
+  insertStructuredSlide(createContentSlideSpec("Reference material slide", 6), 6);
+
+  assert.equal(getSlides().length, 6, "fixture should start with six active slides");
+
+  const plan = planDeckLength({ mode: "appendix-first", targetCount: 4 });
+  const skipActions = plan.actions.filter((action) => action.action === "skip");
+
+  assert.equal(plan.currentCount, 6, "planning should describe the active deck length");
+  assert.equal(plan.nextCount, 4, "planning should converge on the requested shorter length");
+  assert.equal(skipActions.length, 2, "shortening should propose skips instead of deletion");
+
+  const shortened = applyDeckLengthPlan({
+    actions: plan.actions,
+    mode: plan.mode,
+    targetCount: plan.targetCount
+  });
+  const skippedSlideIds = getSlides({ includeSkipped: true })
+    .filter((slide) => slide.skipped)
+    .map((slide) => slide.id);
+
+  assert.equal(shortened.lengthProfile.activeCount, 4, "applying a shorter plan should reduce only the active slide count");
+  assert.equal(shortened.lengthProfile.skippedCount, 2, "skipped slides should be counted in the length profile");
+  assert.equal(getSlides().length, 4, "default slide listing should hide skipped slides");
+  assert.equal(getSlides({ includeSkipped: true }).length, 6, "skipped slides should remain inspectable");
+  assert.equal(skippedSlideIds.length, 2, "skipped slides should be marked on their slide specs");
+  skippedSlideIds.forEach((slideId) => {
+    const slideSpec = readSlideSpec(slideId);
+    assert.equal(slideSpec.skipped, true, "skipped specs should persist the skipped marker");
+    assert.equal(slideSpec.skipMeta.operation, "scale-deck-length", "skipped specs should record their source operation");
+  });
+
+  const restorePlan = planDeckLength({ targetCount: 6 });
+  assert.equal(
+    restorePlan.actions.filter((action) => action.action === "restore").length,
+    2,
+    "lengthening should propose restoring previously skipped slides first"
+  );
+
+  const restoredByPlan = applyDeckLengthPlan({
+    actions: restorePlan.actions,
+    targetCount: restorePlan.targetCount
+  });
+  assert.equal(restoredByPlan.lengthProfile.activeCount, 6, "restore actions should return skipped slides to the active deck");
+  assert.equal(getSlides({ includeSkipped: true }).filter((slide) => slide.skipped).length, 0, "restore actions should clear skipped markers");
+
+  const oneSkipPlan = planDeckLength({ targetCount: 5 });
+  applyDeckLengthPlan({
+    actions: oneSkipPlan.actions,
+    targetCount: oneSkipPlan.targetCount
+  });
+  assert.equal(getSlides().length, 5, "second shortening pass should leave one skipped slide");
+
+  const restoredAll = restoreSkippedSlides({ all: true });
+  assert.equal(restoredAll.restoredSlides, 1, "bulk restore should report restored skipped slides");
+  assert.deepEqual(
+    getSlides().map((slide) => slide.index),
+    [1, 2, 3, 4, 5, 6],
+    "restored slides should be compacted back into a contiguous active order"
   );
 });
 

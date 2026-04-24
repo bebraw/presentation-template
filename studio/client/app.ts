@@ -5,6 +5,7 @@ const state: any = {
     suggestions: []
   },
   context: null,
+  deckLengthPlan: null,
   deckStructureCandidates: [],
   domPreview: {
     slides: [],
@@ -26,6 +27,7 @@ const state: any = {
   selectedSlideStructured: false,
   selectedSlideSource: "",
   selectedVariantId: null,
+  skippedSlides: [],
   slides: [],
   transientVariants: [],
   ui: {
@@ -90,6 +92,13 @@ const elements: Record<string, any> = {
   deckCompany: document.getElementById("deck-company"),
   deckConstraints: document.getElementById("deck-constraints"),
   deckLang: document.getElementById("deck-lang"),
+  deckLengthApplyButton: document.getElementById("deck-length-apply-button"),
+  deckLengthMode: document.getElementById("deck-length-mode"),
+  deckLengthPlanButton: document.getElementById("deck-length-plan-button"),
+  deckLengthPlanList: document.getElementById("deck-length-plan-list"),
+  deckLengthRestoreList: document.getElementById("deck-length-restore-list"),
+  deckLengthSummary: document.getElementById("deck-length-summary"),
+  deckLengthTarget: document.getElementById("deck-length-target"),
   deckObjective: document.getElementById("deck-objective"),
   deckOutline: document.getElementById("deck-outline"),
   deckSubject: document.getElementById("deck-subject"),
@@ -1634,6 +1643,84 @@ function renderManualDeckEditOptions() {
   }
 }
 
+function renderDeckLengthPlan() {
+  const activeCount = state.slides.length;
+  const skippedSlides = Array.isArray(state.skippedSlides) ? state.skippedSlides : [];
+  const lengthProfile = state.context && state.context.deck ? state.context.deck.lengthProfile : null;
+  const plan = state.deckLengthPlan;
+  const actions = plan && Array.isArray(plan.actions) ? plan.actions : [];
+
+  if (!elements.deckLengthTarget.value) {
+    elements.deckLengthTarget.value = lengthProfile && lengthProfile.targetCount
+      ? lengthProfile.targetCount
+      : activeCount || 1;
+  }
+
+  elements.deckLengthApplyButton.disabled = !actions.length;
+  elements.deckLengthSummary.innerHTML = `
+    <div class="compare-stats">
+      <span class="compare-stat"><strong>${activeCount}</strong> active</span>
+      <span class="compare-stat"><strong>${skippedSlides.length}</strong> skipped</span>
+      ${plan ? `<span class="compare-stat"><strong>${plan.targetCount}</strong> target</span>` : ""}
+      ${plan ? `<span class="compare-stat"><strong>${plan.nextCount}</strong> after apply</span>` : ""}
+    </div>
+    <p class="section-note">${escapeHtml(plan ? plan.summary : "Set a target length and plan a reversible keep/skip/restore pass.")}</p>
+  `;
+
+  elements.deckLengthPlanList.innerHTML = "";
+  if (!actions.length) {
+    elements.deckLengthPlanList.innerHTML = "<div class=\"variant-card\"><strong>No length plan yet</strong><span>Plan a target length to review which slides would be skipped or restored.</span></div>";
+  } else {
+    actions.forEach((action) => {
+      const card = document.createElement("div");
+      card.className = "variant-card deck-length-card";
+      card.innerHTML = `
+        <p class="variant-kind">${escapeHtml(action.action === "restore" ? "Restore" : "Skip")}</p>
+        <strong>${escapeHtml(action.title || action.slideId)}</strong>
+        <span class="variant-meta">${escapeHtml(action.confidence || "medium")} confidence · ${escapeHtml(action.slideId)}</span>
+        <span>${escapeHtml(action.reason || "No reason recorded.")}</span>
+      `;
+      elements.deckLengthPlanList.appendChild(card);
+    });
+  }
+
+  if (!skippedSlides.length) {
+    elements.deckLengthRestoreList.innerHTML = "";
+    return;
+  }
+
+  elements.deckLengthRestoreList.innerHTML = `
+    <div class="workflow-variants-head">
+      <div>
+        <p class="eyebrow">Restore</p>
+        <h3>Skipped slides</h3>
+      </div>
+      <button type="button" class="secondary" data-action="restore-all">Restore all</button>
+    </div>
+    <div class="variant-list workflow-variant-list">
+      ${skippedSlides.map((slide) => `
+        <div class="variant-card deck-length-card">
+          <p class="variant-kind">Skipped</p>
+          <strong>${escapeHtml(slide.title || slide.id)}</strong>
+          <span>${escapeHtml(slide.skipReason || "Hidden by length scaling.")}</span>
+          <div class="variant-actions">
+            <button type="button" class="secondary" data-slide-id="${escapeHtml(slide.id)}">Restore</button>
+          </div>
+        </div>
+      `).join("")}
+    </div>
+  `;
+
+  elements.deckLengthRestoreList.querySelector("[data-action=\"restore-all\"]").addEventListener("click", () => {
+    restoreSkippedSlides({ all: true }).catch((error) => window.alert(error.message));
+  });
+  Array.from(elements.deckLengthRestoreList.querySelectorAll("[data-slide-id]")).forEach((button: any) => {
+    button.addEventListener("click", () => {
+      restoreSkippedSlides({ slideId: button.dataset.slideId }).catch((error) => window.alert(error.message));
+    });
+  });
+}
+
 function renderDeckStructureCandidates() {
   const candidates = Array.isArray(state.deckStructureCandidates) ? state.deckStructureCandidates : [];
   elements.deckStructureList.innerHTML = "";
@@ -2729,8 +2816,10 @@ async function refreshState() {
   state.presentations = payload.presentations || { activePresentationId: null, presentations: [] };
   state.previews = payload.previews;
   state.runtime = payload.runtime;
+  state.skippedSlides = payload.skippedSlides || [];
   state.workflowHistory = Array.isArray(payload.runtime && payload.runtime.workflowHistory) ? payload.runtime.workflowHistory : [];
   state.selectedDeckStructureId = null;
+  state.deckLengthPlan = null;
   state.slides = payload.slides;
   state.transientVariants = [];
   state.variantStorage = payload.variantStorage || null;
@@ -2743,6 +2832,7 @@ async function refreshState() {
   syncSelectedSlideToActiveList();
 
   renderDeckFields();
+  renderDeckLengthPlan();
   renderDeckStructureCandidates();
   renderPresentations();
   renderAssistant();
@@ -2813,6 +2903,7 @@ async function saveDeckContext() {
     state.deckStructureCandidates = [];
     state.selectedDeckStructureId = null;
     renderDeckFields();
+    renderDeckLengthPlan();
     renderDeckStructureCandidates();
     renderPreviews();
     renderVariants();
@@ -2856,6 +2947,7 @@ async function createSystemSlide() {
     elements.manualSystemTitle.value = "";
     elements.manualSystemSummary.value = "";
     renderDeckFields();
+    renderDeckLengthPlan();
     renderDeckStructureCandidates();
     renderStatus();
     renderPreviews();
@@ -2899,6 +2991,7 @@ async function deleteSlideFromDeck() {
     state.selectedSlideId = payload.selectedSlideId || (state.slides[0] ? state.slides[0].id : null);
     state.selectedVariantId = null;
     renderDeckFields();
+    renderDeckLengthPlan();
     renderDeckStructureCandidates();
     renderStatus();
     renderPreviews();
@@ -2908,6 +3001,95 @@ async function deleteSlideFromDeck() {
       await loadSlide(state.selectedSlideId);
     }
     elements.operationStatus.textContent = `Removed ${slide.title} from the deck.`;
+  } finally {
+    done();
+  }
+}
+
+function applyDeckLengthPayload(payload) {
+  state.context = payload.context || state.context;
+  if (payload.domPreview) {
+    setDomPreviewState(payload);
+  }
+  state.previews = payload.previews || state.previews;
+  state.runtime = payload.runtime || state.runtime;
+  state.skippedSlides = payload.skippedSlides || [];
+  state.slides = payload.slides || state.slides;
+  state.deckLengthPlan = null;
+  syncSelectedSlideToActiveList();
+  renderDeckFields();
+  renderDeckLengthPlan();
+  renderStatus();
+  renderPreviews();
+  renderVariants();
+}
+
+async function planDeckLength() {
+  const targetCount = Number.parseInt(elements.deckLengthTarget.value, 10);
+  if (!Number.isFinite(targetCount) || targetCount < 1) {
+    window.alert("Set a target slide count of at least 1.");
+    elements.deckLengthTarget.focus();
+    return;
+  }
+
+  const done = setBusy(elements.deckLengthPlanButton, "Planning...");
+  try {
+    const payload = await request("/api/deck/scale-length/plan", {
+      body: JSON.stringify({
+        includeSkippedForRestore: true,
+        mode: elements.deckLengthMode.value,
+        targetCount
+      }),
+      method: "POST"
+    });
+
+    state.deckLengthPlan = payload.plan;
+    renderDeckLengthPlan();
+    elements.operationStatus.textContent = payload.plan.summary;
+  } finally {
+    done();
+  }
+}
+
+async function applyDeckLength() {
+  if (!state.deckLengthPlan || !Array.isArray(state.deckLengthPlan.actions) || !state.deckLengthPlan.actions.length) {
+    return;
+  }
+
+  const done = setBusy(elements.deckLengthApplyButton, "Applying...");
+  try {
+    const payload = await request("/api/deck/scale-length/apply", {
+      body: JSON.stringify({
+        actions: state.deckLengthPlan.actions,
+        mode: state.deckLengthPlan.mode,
+        targetCount: state.deckLengthPlan.targetCount
+      }),
+      method: "POST"
+    });
+
+    applyDeckLengthPayload(payload);
+    elements.operationStatus.textContent = `Scaled deck to ${payload.lengthProfile.activeCount} active slide${payload.lengthProfile.activeCount === 1 ? "" : "s"}.`;
+    if (state.selectedSlideId) {
+      await loadSlide(state.selectedSlideId);
+    }
+  } finally {
+    done();
+  }
+}
+
+async function restoreSkippedSlides(options) {
+  const done = setBusy(elements.deckLengthPlanButton, "Restoring...");
+  try {
+    const payload = await request("/api/slides/restore-skipped", {
+      body: JSON.stringify(options || {}),
+      method: "POST"
+    });
+
+    applyDeckLengthPayload(payload);
+    elements.operationStatus.textContent = `Restored ${payload.restoredSlides || 0} skipped slide${payload.restoredSlides === 1 ? "" : "s"}.`;
+    if (state.selectedSlideId) {
+      await loadSlide(state.selectedSlideId);
+    }
   } finally {
     done();
   }
@@ -3519,6 +3701,8 @@ async function sendAssistantMessage() {
 
 elements.checkLlmButton.addEventListener("click", () => checkLlmProvider().catch((error) => window.alert(error.message)));
 elements.ideateDeckStructureButton.addEventListener("click", () => ideateDeckStructure().catch((error) => window.alert(error.message)));
+elements.deckLengthPlanButton.addEventListener("click", () => planDeckLength().catch((error) => window.alert(error.message)));
+elements.deckLengthApplyButton.addEventListener("click", () => applyDeckLength().catch((error) => window.alert(error.message)));
 elements.createSystemSlideButton.addEventListener("click", () => createSystemSlide().catch((error) => window.alert(error.message)));
 elements.deleteSlideButton.addEventListener("click", () => deleteSlideFromDeck().catch((error) => window.alert(error.message)));
 elements.materialUploadButton.addEventListener("click", () => uploadMaterial().catch((error) => window.alert(error.message)));

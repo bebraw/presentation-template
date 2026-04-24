@@ -7,6 +7,7 @@ const repoRoot = path.join(__dirname, "..");
 const coverageDir = fs.mkdtempSync(path.join(os.tmpdir(), "slideotter-service-coverage-"));
 const targetFiles = [
   "studio/server/services/presentations.ts",
+  "studio/server/services/deck-length.ts",
   "studio/server/services/slides.ts",
   "studio/server/services/materials.ts",
   "studio/server/services/variants.ts",

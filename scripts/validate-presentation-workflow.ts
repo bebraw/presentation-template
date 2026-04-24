@@ -204,6 +204,29 @@ async function main() {
 
         await page.click("#show-planning-page");
         await waitForPage(page, "#planning-page");
+
+        await page.fill("#deck-length-target", "2");
+        const lengthPlanResponse = waitForJsonResponse(page, "/api/deck/scale-length/plan", 60_000);
+        await page.click("#deck-length-plan-button");
+        await lengthPlanResponse;
+        await page.waitForSelector("#deck-length-plan-list .variant-card");
+        const applyLengthResponse = waitForJsonResponse(page, "/api/deck/scale-length/apply", 120_000);
+        await page.click("#deck-length-apply-button");
+        await applyLengthResponse;
+        await page.waitForFunction(async () => {
+          const response = await fetch("/api/state");
+          const payload = await response.json();
+          return payload.slides.length === 2 && payload.skippedSlides.length === 1;
+        });
+        const restoreSkippedResponse = waitForJsonResponse(page, "/api/slides/restore-skipped", 120_000);
+        await page.click("#deck-length-restore-list [data-action='restore-all']");
+        await restoreSkippedResponse;
+        await page.waitForFunction(async () => {
+          const response = await fetch("/api/state");
+          const payload = await response.json();
+          return payload.slides.length === 3 && payload.skippedSlides.length === 0;
+        });
+
         const deckPlanResponse = waitForJsonResponse(page, "/api/operations/ideate-deck-structure", 120_000);
         await page.click("#ideate-deck-structure-button");
         await deckPlanResponse;

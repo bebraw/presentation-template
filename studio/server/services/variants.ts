@@ -79,7 +79,7 @@ function normalizeStoredVariant(variant) {
   }
 
   try {
-    const slide = getSlide(variant.slideId, { includeArchived: true });
+    const slide = getSlide(variant.slideId, { includeArchived: true, includeSkipped: true });
     let slideSpec = null;
     let source = typeof variant.source === "string" ? variant.source : null;
 

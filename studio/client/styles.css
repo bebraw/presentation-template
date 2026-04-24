@@ -2068,6 +2068,29 @@ html[data-app-theme="dark"] .json-token-literal {
   background: var(--app-accent-soft);
 }
 
+.deck-length-grid {
+  grid-template-columns: minmax(8rem, 0.45fr) minmax(10rem, 0.55fr) auto;
+  align-items: end;
+}
+
+.deck-length-actions {
+  align-self: end;
+  justify-content: end;
+}
+
+.deck-length-summary {
+  margin-top: 0.85rem;
+}
+
+.deck-length-plan-list .deck-length-card,
+.deck-length-restore-list .deck-length-card {
+  cursor: default;
+}
+
+.deck-length-restore-list {
+  margin-top: 1.25rem;
+}
+
 .variant-card.active .variant-kind::after {
   content: "Selected";
   display: inline-block;
@@ -3645,6 +3668,10 @@ html[data-app-theme="dark"] .json-token-literal {
 
   .planning-page .field-grid {
     grid-template-columns: 1fr;
+  }
+
+  .deck-length-actions {
+    justify-content: start;
   }
 
   .presentation-grid {

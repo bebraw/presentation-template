@@ -33,6 +33,7 @@ The browser studio baseline is complete.
 - Deck checks are available from a compact masthead control that opens an inspectable check console and focused report without becoming a primary workspace page.
 - Check settings and rule severity overrides use explicit show/hide disclosure controls so advanced validation configuration stays discoverable without being visible by default.
 - Deck planning is consolidated into a compact planning console with palette controls, design guardrails, and deck-plan details hidden until inspection.
+- Deck Planning can scale the active presentation to a target slide count through a deterministic keep/skip/restore plan; scaling down marks slide specs as skipped rather than deleting them, and skipped slides can be restored individually or in bulk.
 - Local deck-planning candidates carry shared deck-context patches, use presentation-scoped path labels, and generate content scaffolds with title/body evidence items rather than placeholder metric bars.
 - Deck-plan diffs report presentation-scoped slide paths so review copy matches the active storage layout.
 - Slide candidate review and visual comparison share one workspace: direct-select rows drive the adjacent current-versus-candidate preview and diff pane, while the compare pane stays hidden until candidates exist.
@@ -43,7 +44,7 @@ The browser studio baseline is complete.
 - Studio writes are server-controlled and limited to approved presentation folders, repo-local state, and generated studio artifacts.
 - Geometry, text, render, deck-plan, Studio layout, and media-validation fixtures run through the same quality gate used by the CLI; complete media mode also catches visuals that leave the slide viewport, crowd the slide progress area, or have captions/source lines that are detached, above, horizontally misaligned from the visual, or too close to the progress area.
 - The quality gate validates presentation slide specs directly, including known layout treatments, so schema drift is caught before browser rendering.
-- Browser workflow validation covers presentation create, material upload/attach, duplicate, and delete through the UI and cleans up temporary decks after the run.
+- Browser workflow validation covers presentation create, material upload/attach, reversible deck length scaling, duplicate, and delete through the UI and cleans up temporary decks after the run.
 
 ## Maintenance Focus
 

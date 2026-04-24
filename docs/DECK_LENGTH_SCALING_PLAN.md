@@ -1,5 +1,7 @@
 # Deck Length Scaling Plan
 
+Status: implemented in the browser studio. The plan remains as the durable product and maintenance reference for reversible deck length scaling.
+
 This plan describes how to add a workflow that scales a presentation to a target page count without losing slides.
 
 The key behavior is:
@@ -215,9 +217,11 @@ Maintenance behavior:
 
 ## Implementation Slices
 
-1. Add slide filtering support for `skipped` and `includeSkipped`.
-2. Add helpers to mark slides skipped, restore skipped slides, and compact active indices.
-3. Add deterministic scale-plan generation.
+1. Add slide filtering support for `skipped` and `includeSkipped`. Done.
+2. Add helpers to mark slides skipped, restore skipped slides, and compact active indices. Done.
+3. Add deterministic scale-plan generation. Done.
+4. Add Deck Planning UI for target count, mode, review, apply, and restore. Done.
+5. Add service and browser workflow coverage for reversible skip/restore behavior. Done.
 4. Add scale-plan apply endpoint.
 5. Add Deck Planning UI for target count and plan review.
 6. Add restore skipped slides UI.

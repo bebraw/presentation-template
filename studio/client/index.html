@@ -624,6 +624,43 @@
             </details>
           </article>
 
+          <article class="editorial-block editorial-block-wide deck-length-panel">
+            <div class="section-heading">
+              <div>
+                <p class="eyebrow">Length</p>
+                <h2>Scale Deck</h2>
+              </div>
+            </div>
+
+            <p class="section-note">
+              Plan a shorter or longer active deck without deleting slides. Hidden slides are marked as skipped and can be restored later.
+            </p>
+
+            <div class="field-grid deck-length-grid">
+              <label class="field">
+                <span>Target slides</span>
+                <input id="deck-length-target" type="number" min="1" step="1">
+              </label>
+              <label class="field">
+                <span>Mode</span>
+                <select id="deck-length-mode">
+                  <option value="balanced">Balanced</option>
+                  <option value="front-loaded">Front-loaded</option>
+                  <option value="appendix-first">Appendix first</option>
+                  <option value="manual">Manual review</option>
+                </select>
+              </label>
+              <div class="button-row compact deck-length-actions">
+                <button id="deck-length-plan-button" class="secondary" type="button">Plan length</button>
+                <button id="deck-length-apply-button" type="button" disabled>Apply length plan</button>
+              </div>
+            </div>
+
+            <div class="deck-length-summary" id="deck-length-summary"></div>
+            <div class="variant-list workflow-variant-list deck-length-plan-list" id="deck-length-plan-list"></div>
+            <div class="deck-length-restore-list" id="deck-length-restore-list"></div>
+          </article>
+
           <article class="editorial-block editorial-block-wide">
             <div class="section-heading">
               <div>

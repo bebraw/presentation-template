@@ -10,7 +10,7 @@
     {
       "id": "signal-audience",
       "title": "Deck brief",
-      "body": "studio/state/deck-context.json."
+      "body": "presentations/<id>/state/deck-context.json."
     },
     {
       "id": "signal-objective",

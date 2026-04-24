@@ -229,7 +229,7 @@ function createIdeaThemes(slide, context) {
       ],
       resources: [
         {
-          body: "studio/state/deck-context.json",
+          body: "presentations/<id>/state/deck-context.json",
           bodyFontSize: 11.2,
           id: `${slide.id}-intent-resource-1`,
           title: "Saved brief"
@@ -661,7 +661,7 @@ function createThemeDirections(slide, currentSpec, context) {
       ],
       resources: [
         {
-          body: "studio/state/deck-context.json",
+          body: "presentations/<id>/state/deck-context.json",
           bodyFontSize: 11.2,
           id: `${slide.id}-theme-editorial-resource-1`,
           title: "Theme brief"
@@ -3222,7 +3222,7 @@ function createLocalDeckStructureCandidates(context) {
               eyebrow: "Handoff",
               resources: [
                 {
-                  body: "studio/state/deck-context.json",
+                  body: "presentations/<id>/state/deck-context.json",
                   title: "Saved context"
                 },
                 {

@@ -182,6 +182,52 @@ function withVisiblePlanFields(slide, fields: any = {}) {
   };
 }
 
+function createGeneratedPlan(title, slideCount, options: any = {}) {
+  const slides = Array.from({ length: slideCount }, (_unused, index) => {
+    const isFirst = index === 0;
+    const isLast = index === slideCount - 1 && slideCount > 1;
+    const role = isFirst ? "opening" : isLast ? "handoff" : ["context", "concept", "mechanics", "example", "tradeoff"][(index - 1) % 5];
+    const label = `${title} ${index + 1}`;
+    const sourceBody = options.sourceText && index === 1 ? options.sourceText : `${label} carries generated draft content.`;
+    const mediaMaterialId = options.mediaMaterialId && index === (options.mediaSlideIndex || 1) ? options.mediaMaterialId : "";
+
+    return withVisiblePlanFields({
+      keyPoints: [
+        { body: sourceBody, title: `${label} point A` },
+        { body: `${label} adds a second distinct idea.`, title: `${label} point B` },
+        { body: `${label} adds a third distinct idea.`, title: `${label} point C` },
+        { body: `${label} adds a fourth distinct idea.`, title: `${label} point D` }
+      ],
+      mediaMaterialId,
+      role,
+      summary: `${label} summarizes one useful generated idea.`,
+      title: label
+    }, {
+      eyebrow: isFirst ? "Opening" : isLast ? "Close" : `Section ${index + 1}`,
+      guardrails: [
+        { body: `${label} guardrail one is specific.`, title: `${label} check A` },
+        { body: `${label} guardrail two is specific.`, title: `${label} check B` },
+        { body: `${label} guardrail three is specific.`, title: `${label} check C` }
+      ],
+      guardrailsTitle: `${label} checks`,
+      note: `${label} has a speaker note.`,
+      resources: [
+        { body: `${label} resource one.`, title: `${label} resource A` },
+        { body: `${label} resource two.`, title: `${label} resource B` }
+      ],
+      resourcesTitle: `${label} resources`,
+      signalsTitle: `${label} points`
+    });
+  });
+
+  return {
+    outline: slides.map((slide, index) => `${index + 1}. ${slide.title}`).join("\n"),
+    references: [],
+    slides,
+    summary: `${title} generated plan`
+  };
+}
+
 test.after(() => {
   cleanupCoveragePresentations();
   global.fetch = originalFetch;
@@ -410,11 +456,10 @@ test("semantic deck length planning can use LLM slide-ranking for shrink decisio
   }
 });
 
-test("initial presentation generation repairs weak LLM plan labels and avoids fake references", async () => {
+test("initial presentation generation requires complete LLM-visible plans", async () => {
   const fields = {
     ...htmxDeckContextFixture.deck,
     description: htmxPresentationFixture.description,
-    generationMode: "local",
     targetSlideCount: htmxDeckContextFixture.deck.lengthProfile.targetCount
   };
   const weakPlan = {
@@ -463,69 +508,39 @@ test("initial presentation generation repairs weak LLM plan labels and avoids fa
     ],
     summary: "Weak model response shaped like the HTMX trial deck."
   };
-  const slideSpecs = materializePlan(fields, weakPlan);
-  const visibleText = slideSpecs.flatMap((slideSpec) => [
-    slideSpec.eyebrow,
-    slideSpec.title,
-    slideSpec.summary,
-    slideSpec.note,
-    slideSpec.signalsTitle,
-    slideSpec.guardrailsTitle,
-    slideSpec.resourcesTitle,
-    ...(slideSpec.cards || []).flatMap((item) => [item.title, item.body]),
-    ...(slideSpec.signals || []).flatMap((item) => [item.title, item.body]),
-    ...(slideSpec.guardrails || []).flatMap((item) => [item.title, item.body]),
-    ...(slideSpec.bullets || []).flatMap((item) => [item.title, item.body]),
-    ...(slideSpec.resources || []).flatMap((item) => [item.title, item.body])
-  ].filter(Boolean));
-
-  assert.equal(slideSpecs.length, 3, "materializer should keep the requested plan length");
-  assert.ok(!visibleText.some((value) => /^(summary|title:?)$/i.test(String(value))), "materialized slides should not expose schema labels as slide text");
-  assert.ok(!visibleText.some((value) => /\.{3,}|…/.test(String(value))), "materialized slides should not expose ellipsis-truncated text");
-  assert.ok(!visibleText.some((value) => /\b(a|an|and|as|at|before|by|for|from|in|into|of|on|or|the|through|to|when|where|while|with|within|without)$/i.test(String(value).trim())), "materialized slides should not end visible text on dangling connector words");
-  assert.ok(!visibleText.some((value) => /Refine constraints before expanding the deck|^Guardrails$|^Sources to verify$/i.test(String(value))), "materialized slides should not expose authoring scaffold labels");
-  assert.ok(!visibleText.some((value) => /Smith et al\.|Journal of Web Technologies/i.test(String(value))), "materialized slides should not preserve invented bibliographic references");
-  assert.ok(
-    slideSpecs[slideSpecs.length - 1].resources.some((resource) => /verified source URLs/.test(resource.body)),
-    "reference requests without supplied URLs should become source-verification prompts"
+  assert.throws(
+    () => materializePlan(fields, weakPlan),
+    /missing usable/,
+    "materializer should reject weak LLM plans instead of inventing visible fallback copy"
   );
 
   const duplicatePlan = {
     outline: "Workshop planning",
     references: [],
-    slides: Array.from({ length: 4 }, (_unused, index) => ({
-      keyPoints: [
-        { body: "A repeated weak model answer can make every slide say the same thing.", title: "Repeated plan" },
-        { body: "The materializer should keep the first copy and repair later copies.", title: "Repair path" },
-        { body: "Fallback content should stay useful without naming a specific topic.", title: "Neutral fallback" },
-        { body: "Each repaired slide should carry a distinct role and summary.", title: "Distinct output" }
-      ],
-      mediaMaterialId: "",
-      role: index === 3 ? "handoff" : "opening",
-      summary: "Concrete example slide that shows how to explain a repeated weak answer.",
-      title: "Repeated generated slide"
-    })),
+    slides: Array.from({ length: 4 }, () => createGeneratedPlan("Repeated generated slide", 1).slides[0]),
     summary: "Weak model repeated one plan slide."
   };
-  const dedupedSlides = materializePlan({
-    audience: "Workshop participants",
-    objective: "Explain a planning workflow clearly.",
-    title: "Workshop planning"
-  }, duplicatePlan);
-  const uniqueSlideSummaries = new Set(dedupedSlides.map((slideSpec) => `${slideSpec.title}|${slideSpec.summary}`));
-  assert.equal(uniqueSlideSummaries.size, dedupedSlides.length, "materializer should replace duplicate generated slide plans");
-  assert.ok(
-    dedupedSlides.slice(1, -1).every((slideSpec) => slideSpec.guardrailsTitle !== "Use it well"),
-    "middle slides with invalid roles should be normalized to concrete content roles"
+  assert.throws(
+    () => materializePlan({
+      audience: "Workshop participants",
+      objective: "Explain a planning workflow clearly.",
+      title: "Workshop planning"
+    }, duplicatePlan),
+    /repeats slide/,
+    "materializer should reject duplicate plans instead of replacing them with template copy"
   );
-  assert.ok(
-    !dedupedSlides.some((slideSpec) => /concrete example slide|opening frame/i.test(slideSpec.summary)),
-    "materializer should replace visible plan-scaffold summaries"
-  );
-  assert.ok(
-    !dedupedSlides.some((slideSpec) => /beer|tasting|German|HTMX/i.test(JSON.stringify(slideSpec))),
-    "generation fallbacks should stay domain-neutral and derive topic details from inputs"
-  );
+
+  llmEnvKeys.forEach((key) => {
+    delete process.env[key];
+  });
+  process.env.STUDIO_LLM_PROVIDER = "lmstudio";
+  process.env.LMSTUDIO_MODEL = "semantic-coverage-model";
+  global.fetch = async (url, init) => {
+    assert.match(String(url), /\/chat\/completions$/);
+    const requestBody = JSON.parse(init.body);
+    assert.equal(requestBody.response_format.json_schema.name, "initial_presentation_plan");
+    return createLmStudioStreamResponse(createGeneratedPlan("Intro to HTMX", fields.targetSlideCount));
+  };
 
   const generated = await generateInitialPresentation(fields);
   const generatedVisibleText = generated.slideSpecs.flatMap((slideSpec) => [
@@ -543,17 +558,21 @@ test("initial presentation generation repairs weak LLM plan labels and avoids fa
     ...(slideSpec.resources || []).flatMap((item) => [item.title, item.body])
   ].filter(Boolean));
 
-  assert.equal(generated.slideSpecs.length, 20, "local generation should respect the HTMX target length fixture");
-  assert.ok(
-    generated.slideSpecs.some((slideSpec) => /Example|Tradeoff|Mechanics/.test(slideSpec.eyebrow || "")),
-    "local generation should include teaching-oriented technical slide roles"
-  );
-  assert.ok(!generatedVisibleText.some((value) => /\.{3,}|…/.test(String(value))), "local generation should avoid ellipsis truncation");
-  assert.ok(!generatedVisibleText.some((value) => /\b(a|an|and|as|at|before|by|for|from|in|into|of|on|or|the|through|to|when|where|while|with|within|without)$/i.test(String(value).trim())), "local generation should avoid dangling sentence endings");
-  assert.ok(!generatedVisibleText.some((value) => /Refine constraints before expanding the deck|^Guardrails$|^Sources to verify$/i.test(String(value))), "local generation should avoid visible scaffolding labels");
+  assert.equal(generated.slideSpecs.length, 20, "LLM generation should respect the HTMX target length fixture");
+  assert.ok(!generatedVisibleText.some((value) => /\.{3,}|…/.test(String(value))), "LLM generation should avoid ellipsis truncation");
+  assert.ok(!generatedVisibleText.some((value) => /\b(a|an|and|as|at|before|by|for|from|in|into|of|on|or|the|through|to|when|where|while|with|within|without)$/i.test(String(value).trim())), "LLM generation should avoid dangling sentence endings");
+  assert.ok(!generatedVisibleText.some((value) => /Refine constraints before expanding the deck|^Guardrails$|^Sources to verify$/i.test(String(value))), "LLM generation should avoid visible scaffolding labels");
+  global.fetch = originalFetch;
+  llmEnvKeys.forEach((key) => {
+    if (originalLlmEnv[key] === undefined) {
+      delete process.env[key];
+    } else {
+      process.env[key] = originalLlmEnv[key];
+    }
+  });
 });
 
-test("presentation sources are presentation-scoped and retrieved during local generation", async () => {
+test("presentation sources are presentation-scoped and retrieved during LLM generation", async () => {
   const presentation = createCoveragePresentation("sources");
   const paths = getPresentationPaths(presentation.id);
 
@@ -603,8 +622,30 @@ test("presentation sources are presentation-scoped and retrieved during local ge
   );
   deleteSource(duplicateSource.id);
 
+  llmEnvKeys.forEach((key) => {
+    delete process.env[key];
+  });
+  process.env.STUDIO_LLM_PROVIDER = "lmstudio";
+  process.env.LMSTUDIO_MODEL = "semantic-coverage-model";
+  let generationRequestCount = 0;
+  global.fetch = async (url, init) => {
+    assert.match(String(url), /\/chat\/completions$/);
+    const requestBody = JSON.parse(init.body);
+    assert.equal(requestBody.response_format.json_schema.name, "initial_presentation_plan");
+    generationRequestCount += 1;
+
+    if (generationRequestCount === 1) {
+      assert.match(requestBody.messages[1].content, /HTML fragments/);
+      return createLmStudioStreamResponse(createGeneratedPlan("Intro to HTMX", 5, {
+        sourceText: "HTMX swaps HTML fragments into the page."
+      }));
+    }
+
+    assert.doesNotMatch(requestBody.messages[1].content, /HTML fragments/);
+    return createLmStudioStreamResponse(createGeneratedPlan("Intro to HTMX", 3));
+  };
+
   const generated = await generateInitialPresentation({
-    generationMode: "local",
     objective: "Explain how HTMX handles HTML fragment swaps.",
     targetSlideCount: 5,
     title: "Intro to HTMX"
@@ -620,11 +661,10 @@ test("presentation sources are presentation-scoped and retrieved during local ge
   assert.equal(generated.retrieval.snippets[0].sourceId, source.id, "generation should report the retrieved source metadata");
   assert.ok(
     visibleText.some((value) => /HTML fragments/i.test(String(value))),
-    "local generation should use retrieved source snippets as candidate content"
+    "LLM generation should receive retrieved source snippets as candidate content"
   );
 
   const generatedWithoutActiveSources = await generateInitialPresentation({
-    generationMode: "local",
     includeActiveSources: false,
     objective: "Explain how HTMX handles HTML fragment swaps.",
     targetSlideCount: 3,
@@ -635,6 +675,15 @@ test("presentation sources are presentation-scoped and retrieved during local ge
     0,
     "new presentation generation can opt out of previously active presentation sources"
   );
+
+  global.fetch = originalFetch;
+  llmEnvKeys.forEach((key) => {
+    if (originalLlmEnv[key] === undefined) {
+      delete process.env[key];
+    } else {
+      process.env[key] = originalLlmEnv[key];
+    }
+  });
 
   await assert.rejects(
     () => createSource({ url: "http://localhost/source.html" }),
@@ -922,8 +971,25 @@ test("presentation generation can attach semantically matching image materials",
     title: "HTMX request flow"
   });
 
+  llmEnvKeys.forEach((key) => {
+    delete process.env[key];
+  });
+  process.env.STUDIO_LLM_PROVIDER = "lmstudio";
+  process.env.LMSTUDIO_MODEL = "semantic-coverage-model";
+  let materialGenerationRequestCount = 0;
+  global.fetch = async (url, init) => {
+    assert.match(String(url), /\/chat\/completions$/);
+    const requestBody = JSON.parse(init.body);
+    assert.equal(requestBody.response_format.json_schema.name, "initial_presentation_plan");
+    materialGenerationRequestCount += 1;
+
+    return createLmStudioStreamResponse(createGeneratedPlan("HTMX request flow", 4, {
+      mediaMaterialId: materialGenerationRequestCount === 1 ? material.id : "",
+      mediaSlideIndex: 1
+    }));
+  };
+
   const generated = await generateInitialPresentation({
-    generationMode: "local",
     includeActiveSources: false,
     objective: "Explain the HTMX request flow.",
     targetSlideCount: 4,
@@ -951,7 +1017,7 @@ test("presentation generation can attach semantically matching image materials",
     outline: "Coverage beer",
     references: [],
     slides: [
-      {
+      withVisiblePlanFields({
         keyPoints: [
           { body: "Show the beer image with one clean attribution line.", title: "Image" },
           { body: "Keep the source close to the visual.", title: "Source" },
@@ -962,7 +1028,12 @@ test("presentation generation can attach semantically matching image materials",
         role: "opening",
         summary: "Show sourced image metadata.",
         title: "Coverage beer"
-      }
+      }, {
+        eyebrow: "Opening",
+        note: "Show the image attribution once.",
+        resourcesTitle: "Resources",
+        signalsTitle: "Image points"
+      })
     ],
     summary: "Coverage attribution"
   });
@@ -972,7 +1043,6 @@ test("presentation generation can attach semantically matching image materials",
   assert.equal((caption.match(/https:\/\/example.com\/beer/g) || []).length, 1, "media captions should not repeat source URLs");
 
   const withoutMaterials = await generateInitialPresentation({
-    generationMode: "local",
     includeActiveMaterials: false,
     includeActiveSources: false,
     objective: "Explain the HTMX request flow.",
@@ -980,6 +1050,15 @@ test("presentation generation can attach semantically matching image materials",
     title: "HTMX request flow"
   });
   assert.equal(withoutMaterials.slideSpecs.some((slideSpec) => slideSpec.media), false, "generation can opt out of active material attachments");
+
+  global.fetch = originalFetch;
+  llmEnvKeys.forEach((key) => {
+    if (originalLlmEnv[key] === undefined) {
+      delete process.env[key];
+    } else {
+      process.env[key] = originalLlmEnv[key];
+    }
+  });
 });
 
 test("image search imports bounded remote results as presentation materials", async () => {

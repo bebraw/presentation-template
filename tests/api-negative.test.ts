@@ -11,6 +11,13 @@ const {
 
 const createdPresentationIds = new Set();
 const originalActivePresentationId = listPresentations().activePresentationId;
+const originalFetch = global.fetch;
+const llmEnvKeys = [
+  "LMSTUDIO_MODEL",
+  "STUDIO_LLM_MODEL",
+  "STUDIO_LLM_PROVIDER"
+];
+const originalLlmEnv = Object.fromEntries(llmEnvKeys.map((key) => [key, process.env[key]]));
 
 async function startTestServer() {
   const server = startServer({ port: 0 });
@@ -40,6 +47,104 @@ async function postJson(baseUrl, pathname, payload) {
     body: await response.json(),
     status: response.status
   };
+}
+
+function createLmStudioStreamResponse(data) {
+  const content = JSON.stringify(data);
+  const stream = new ReadableStream({
+    start(controller) {
+      const encoder = new TextEncoder();
+      controller.enqueue(encoder.encode(`data: ${JSON.stringify({
+        choices: [{ delta: { content }, finish_reason: null }],
+        id: "chatcmpl-api-coverage",
+        model: "api-coverage-model"
+      })}\n\n`));
+      controller.enqueue(encoder.encode("data: {\"choices\":[{\"delta\":{},\"finish_reason\":\"stop\"}]}\n\n"));
+      controller.enqueue(encoder.encode("data: [DONE]\n\n"));
+      controller.close();
+    }
+  });
+
+  return new Response(stream, {
+    headers: { "Content-Type": "text/event-stream" },
+    status: 200
+  });
+}
+
+function createGeneratedPlan(title, slideCount) {
+  const slides = Array.from({ length: slideCount }, (_unused, index) => {
+    const isFirst = index === 0;
+    const isLast = index === slideCount - 1 && slideCount > 1;
+    const role = isFirst ? "opening" : isLast ? "handoff" : ["context", "concept", "mechanics", "example", "tradeoff"][(index - 1) % 5];
+    const label = `${title} ${index + 1}`;
+
+    return {
+      eyebrow: isFirst ? "Opening" : isLast ? "Close" : `Section ${index + 1}`,
+      guardrails: [
+        { body: `${label} guardrail one is specific.`, title: `${label} check A` },
+        { body: `${label} guardrail two is specific.`, title: `${label} check B` },
+        { body: `${label} guardrail three is specific.`, title: `${label} check C` }
+      ],
+      guardrailsTitle: `${label} checks`,
+      keyPoints: [
+        { body: `${label} carries generated draft content.`, title: `${label} point A` },
+        { body: `${label} adds a second distinct idea.`, title: `${label} point B` },
+        { body: `${label} adds a third distinct idea.`, title: `${label} point C` },
+        { body: `${label} adds a fourth distinct idea.`, title: `${label} point D` }
+      ],
+      mediaMaterialId: "",
+      note: `${label} has a speaker note.`,
+      resources: [
+        { body: `${label} resource one.`, title: `${label} resource A` },
+        { body: `${label} resource two.`, title: `${label} resource B` }
+      ],
+      resourcesTitle: `${label} resources`,
+      role,
+      signalsTitle: `${label} points`,
+      summary: `${label} summarizes one useful generated idea.`,
+      title: label
+    };
+  });
+
+  return {
+    outline: slides.map((slide, index) => `${index + 1}. ${slide.title}`).join("\n"),
+    references: [],
+    slides,
+    summary: `${title} generated plan`
+  };
+}
+
+function configureMockLlm(baseUrl) {
+  llmEnvKeys.forEach((key) => {
+    delete process.env[key];
+  });
+  process.env.STUDIO_LLM_PROVIDER = "lmstudio";
+  process.env.LMSTUDIO_MODEL = "api-coverage-model";
+  global.fetch = async (url, init) => {
+    const urlText = String(url);
+    if (urlText.startsWith(baseUrl)) {
+      return originalFetch(url, init);
+    }
+
+    if (/\/chat\/completions$/.test(urlText)) {
+      const requestBody = JSON.parse(init.body);
+      assert.equal(requestBody.response_format.json_schema.name, "initial_presentation_plan");
+      return createLmStudioStreamResponse(createGeneratedPlan("API Negative", 5));
+    }
+
+    return originalFetch(url, init);
+  };
+}
+
+function restoreMockLlm() {
+  global.fetch = originalFetch;
+  llmEnvKeys.forEach((key) => {
+    if (originalLlmEnv[key] === undefined) {
+      delete process.env[key];
+    } else {
+      process.env[key] = originalLlmEnv[key];
+    }
+  });
 }
 
 async function postRaw(baseUrl, pathname, body) {
@@ -78,6 +183,7 @@ function cleanupPresentations() {
 
 test.after(() => {
   cleanupPresentations();
+  restoreMockLlm();
 });
 
 test("API reports malformed JSON and missing required identifiers", async () => {
@@ -114,12 +220,12 @@ test("API reports malformed JSON and missing required identifiers", async () => 
 
 test("API rejects unknown ids and invalid payload shapes without mutating active presentation", async () => {
   const { baseUrl, server } = await startTestServer();
+  configureMockLlm(baseUrl);
 
   try {
     const created = await postJson(baseUrl, "/api/presentations", {
       audience: "API coverage",
       constraints: "Temporary deck created by API negative tests.",
-      generationMode: "local",
       objective: "Verify API error handling.",
       targetSlideCount: 5,
       title: `API Negative ${Date.now()}`
@@ -131,7 +237,6 @@ test("API rejects unknown ids and invalid payload shapes without mutating active
     createdPresentationIds.add(created.body.presentation.id);
 
     const regenerated = await postJson(baseUrl, "/api/presentations/regenerate", {
-      generationMode: "local",
       presentationId: created.body.presentation.id
     });
     assert.equal(regenerated.status, 200);
@@ -182,6 +287,7 @@ test("API rejects unknown ids and invalid payload shapes without mutating active
     const presentations = await afterErrors.json();
     assert.equal(presentations.activePresentationId, created.body.presentation.id);
   } finally {
+    restoreMockLlm();
     server.close();
   }
 });

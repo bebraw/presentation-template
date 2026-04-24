@@ -112,7 +112,7 @@ Docker is only needed if you want to run the GitHub Actions workflow locally thr
 npm run ci:local
 ```
 
-LLM providers are optional. Without provider credentials, the studio uses local deterministic generation rules. See [DEVELOPMENT.md](../DEVELOPMENT.md) for OpenAI, LM Studio, and OpenRouter setup.
+An LLM provider is required for creating or regenerating presentations. Configure OpenAI, LM Studio, or OpenRouter before using those actions. See [DEVELOPMENT.md](../DEVELOPMENT.md) for provider setup.
 
 Image search during new presentation setup is optional and uses public provider APIs. The built-in presets are Openverse for open-licensed images and Wikimedia Commons for commons-hosted media. Use the restrictions field for provider hints such as `license:cc0` or `source:flickr`; imported images are copied into the active presentation material library before generation uses them.
 

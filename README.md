@@ -32,7 +32,7 @@ Then open `http://127.0.0.1:4173`.
 - Preview the active deck while you work.
 - Attach image materials to slides, provide a starter image, or import sourced open-license images through Openverse or Wikimedia Commons.
 - Ground generation with presentation-scoped notes, excerpts, URLs, and image material metadata.
-- Generate local or LLM-assisted candidates with OpenAI, LM Studio, or OpenRouter.
+- Generate first drafts with OpenAI, LM Studio, or OpenRouter, then review candidates before applying changes.
 - Compare candidate slides and deck plans before applying them.
 - Validate layout, text, media references, workflow behavior, and rendered output.
 - Build a PDF and refresh an archive copy when you are ready to publish.

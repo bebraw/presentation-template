@@ -130,7 +130,6 @@ const elements: Record<string, any> = {
   presentationAudience: document.getElementById("presentation-audience"),
   presentationConstraints: document.getElementById("presentation-constraints"),
   presentationFontFamily: document.getElementById("presentation-font-family"),
-  presentationGenerationMode: document.getElementById("presentation-generation-mode"),
   presentationImageSearchProvider: document.getElementById("presentation-image-search-provider"),
   presentationImageSearchQuery: document.getElementById("presentation-image-search-query"),
   presentationImageSearchRestrictions: document.getElementById("presentation-image-search-restrictions"),
@@ -2980,7 +2979,6 @@ function clearPresentationForm() {
   elements.presentationAudience.value = "";
   elements.presentationTone.value = "";
   elements.presentationTargetSlides.value = "5";
-  elements.presentationGenerationMode.value = "auto";
   elements.presentationObjective.value = "";
   elements.presentationConstraints.value = "";
   elements.presentationThemeBrief.value = "";
@@ -3059,7 +3057,6 @@ async function createPresentationFromForm() {
       body: JSON.stringify({
         audience: elements.presentationAudience.value.trim(),
         constraints: elements.presentationConstraints.value.trim(),
-        generationMode: elements.presentationGenerationMode.value,
         imageSearch: {
           count: 3,
           provider: elements.presentationImageSearchProvider.value,
@@ -3126,7 +3123,6 @@ async function regeneratePresentation(presentation, button = null) {
   try {
     await request("/api/presentations/regenerate", {
       body: JSON.stringify({
-        generationMode: "auto",
         presentationId: presentation.id
       }),
       method: "POST"

@@ -1,9 +1,8 @@
-const { createStructuredResponse, getLlmConfig, getLlmStatus } = require("./llm/client.ts");
+const { createStructuredResponse, getLlmStatus } = require("./llm/client.ts");
 const { validateSlideSpec } = require("./slide-specs/index.ts");
 const { getGenerationSourceContext } = require("./sources.ts");
 const { getGenerationMaterialContext } = require("./materials.ts");
 
-const allowedGenerationModes = new Set(["auto", "local", "llm"]);
 const contentRoles = ["context", "concept", "mechanics", "example", "tradeoff"];
 const defaultSlideCount = 5;
 const maximumSlideCount = 30;
@@ -32,11 +31,6 @@ const danglingTailWords = new Set([
   "within",
   "without"
 ]);
-
-function normalizeGenerationMode(value) {
-  const mode = String(value || "").trim().toLowerCase();
-  return allowedGenerationModes.has(mode) ? mode : "auto";
-}
 
 function normalizeSlideCount(value) {
   const parsed = Number.parseInt(value, 10);
@@ -75,13 +69,6 @@ function slugPart(value, fallback = "item") {
     .slice(0, 28);
 
   return slug || fallback;
-}
-
-function splitList(value) {
-  return String(value || "")
-    .split(/\n|;|\./)
-    .map((entry) => entry.trim())
-    .filter(Boolean);
 }
 
 function extractUrls(value) {
@@ -245,16 +232,6 @@ function uniqueBy(values, getKey) {
   return result;
 }
 
-function fillToLength(items, length, fallbackFactory) {
-  const result = items.filter(Boolean).slice(0, length);
-
-  for (let index = result.length; index < length; index += 1) {
-    result.push(fallbackFactory(index));
-  }
-
-  return result;
-}
-
 function isWeakLabel(value) {
   return /^(summary|title:?|key point|point|item|slide|section|role|body|n\/a|none)$/i.test(String(value || "").trim());
 }
@@ -294,69 +271,30 @@ function cleanText(value) {
   return isUnsupportedBibliographicClaim(normalized) ? "" : normalized;
 }
 
-function normalizePoint(point, fallbackTitle, fallbackBody) {
-  if (typeof point === "string") {
-    return {
-      body: cleanText(point) || fallbackBody,
-      title: fallbackTitle
-    };
-  }
-
-  const title = cleanText(point && point.title);
-  const body = cleanText(point && point.body);
-
-  return {
-    body: body || title || fallbackBody,
-    title: title && !isWeakLabel(title) ? title : fallbackTitle
-  };
-}
-
-function normalizePoints(points, options: any = {}) {
-  const fallbackTitle = options.fallbackTitle || "Point";
-  const fallbackBody = options.fallbackBody || "Explain the idea with one concrete sentence.";
-  const normalized = Array.isArray(points)
-    ? points.map((point, index) => normalizePoint(point, `${fallbackTitle} ${index + 1}`, fallbackBody))
-    : [];
-
-  return uniqueBy(normalized, (point) => `${point.title.toLowerCase()}|${point.body.toLowerCase()}`);
-}
-
-function shouldUseLanguageFallbacks(options: any = {}) {
-  return options.allowLanguageFallbacks !== false;
-}
-
-function requireVisibleText(value, fieldName, options: any = {}) {
+function requireVisibleText(value, fieldName) {
   const text = cleanText(value);
   if (text && !isWeakLabel(text)) {
     return text;
   }
 
-  if (!shouldUseLanguageFallbacks(options)) {
-    throw new Error(`Generated presentation plan is missing usable ${fieldName}.`);
-  }
-
-  return "";
+  throw new Error(`Generated presentation plan is missing usable ${fieldName}.`);
 }
 
-function normalizeGeneratedPoints(points, count, fieldName, options: any = {}) {
-  if (!shouldUseLanguageFallbacks(options)) {
-    const normalized = Array.isArray(points)
-      ? points.map((point, index) => {
-        const title = requireVisibleText(point && point.title, `${fieldName}[${index}].title`, options);
-        const body = requireVisibleText(point && point.body, `${fieldName}[${index}].body`, options);
-        return { body, title };
-      })
-      : [];
-    const unique = uniqueBy(normalized, (point) => `${point.title.toLowerCase()}|${point.body.toLowerCase()}`);
+function normalizeGeneratedPoints(points, count, fieldName) {
+  const normalized = Array.isArray(points)
+    ? points.map((point, index) => {
+      const title = requireVisibleText(point && point.title, `${fieldName}[${index}].title`);
+      const body = requireVisibleText(point && point.body, `${fieldName}[${index}].body`);
+      return { body, title };
+    })
+    : [];
+  const unique = uniqueBy(normalized, (point) => `${point.title.toLowerCase()}|${point.body.toLowerCase()}`);
 
-    if (unique.length < count) {
-      throw new Error(`Generated presentation plan needs ${count} distinct ${fieldName} items in the deck language.`);
-    }
-
-    return unique.slice(0, count);
+  if (unique.length < count) {
+    throw new Error(`Generated presentation plan needs ${count} distinct ${fieldName} items in the deck language.`);
   }
 
-  return null;
+  return unique.slice(0, count);
 }
 
 function createPlanSchema(slideCount) {
@@ -624,139 +562,19 @@ async function semanticallyRepairPlanText(plan, options: any = {}) {
 }
 
 function resolveGeneration(options: any = {}) {
-  const requestedMode = normalizeGenerationMode(options.generationMode || getLlmConfig().defaultGenerationMode);
   const llmStatus = getLlmStatus();
 
-  if (requestedMode === "local") {
-    return {
-      available: llmStatus.available,
-      fallbackReason: null,
-      mode: "local",
-      model: null,
-      provider: "local",
-      requestedMode
-    };
-  }
-
-  if (requestedMode === "llm") {
-    if (!llmStatus.available) {
-      throw new Error(`LLM presentation generation is not configured. ${llmStatus.configuredReason || "Configure a provider or choose local generation."}`);
-    }
-
-    return {
-      available: true,
-      fallbackReason: null,
-      mode: "llm",
-      model: llmStatus.model,
-      provider: llmStatus.provider,
-      requestedMode
-    };
-  }
-
-  if (llmStatus.available) {
-    return {
-      available: true,
-      fallbackReason: null,
-      mode: "llm",
-      model: llmStatus.model,
-      provider: llmStatus.provider,
-      requestedMode
-    };
+  if (!llmStatus.available) {
+    throw new Error(`LLM presentation generation is required. ${llmStatus.configuredReason || "Configure OpenAI, LM Studio, or OpenRouter before generating a presentation."}`);
   }
 
   return {
-    available: false,
-    fallbackReason: llmStatus.configuredReason
-      ? `LLM unavailable, used local presentation generation. ${llmStatus.configuredReason}`
-      : "LLM unavailable, used local presentation generation.",
-    mode: "local",
-    model: null,
-    provider: "local",
-    requestedMode
-  };
-}
-
-function createLocalPlan(fields, slideCount) {
-  const title = sentence(fields.title, "Untitled presentation", 8);
-  const audience = sentence(fields.audience, "the intended audience", 10);
-  const objective = sentence(fields.objective, `Help ${audience} understand ${title}.`, 18);
-  const constraints = splitList(fields.constraints);
-  const themeBrief = sentence(fields.themeBrief, "Keep the deck readable and deliberate.", 14);
-  const slides = [];
-
-  for (let index = 0; index < slideCount; index += 1) {
-    const isFirst = index === 0;
-    const isLast = index === slideCount - 1 && slideCount > 1;
-    const role = isFirst ? "opening" : isLast ? "handoff" : contentRoles[(index - 1) % contentRoles.length];
-    const roleTitle = ({
-      concept: "Core concept",
-      context: "Context and audience",
-      example: "Worked example",
-      handoff: "Next steps",
-      mechanics: "How it works",
-      opening: title,
-      reference: "References to verify",
-      tradeoff: "Tradeoffs and limits"
-    })[role];
-    const pointSeeds = [
-      { title: "Objective", body: objective },
-      { title: "Audience", body: audience },
-      ...(Array.isArray(fields.sourceSnippets) ? fields.sourceSnippets.slice(0, 3).map((snippet, snippetIndex) => ({
-        title: `Source ${snippetIndex + 1}`,
-        body: snippet.text
-      })) : []),
-      ...constraints.map((constraint, constraintIndex) => ({
-        title: `Constraint ${constraintIndex + 1}`,
-        body: constraint
-      })),
-      { title: "Theme", body: themeBrief }
-    ];
-
-    const draftSlide = {
-      keyPoints: fillToLength(pointSeeds, 4, (itemIndex) => ({
-        body: `${roleTitle} should make ${title} easier to understand.`,
-        title: `${roleTitle} ${itemIndex + 1}`
-      })),
-      mediaMaterialId: "",
-      role,
-      summary: role === "opening"
-        ? objective
-        : role === "handoff"
-          ? `Close with the action ${audience} should take after reviewing ${title}.`
-          : `Explain ${roleTitle.toLowerCase()} for ${title}.`,
-      title: roleTitle
-    };
-
-    slides.push({
-      ...draftSlide,
-      eyebrow: roleLabel(role),
-      guardrails: buildSecondaryPoints(draftSlide, fields, index + 1),
-      guardrailsTitle: secondaryPanelTitle(role),
-      note: role === "opening" ? buildCoverNote(fields) : "",
-      resources: [
-        {
-          body: "Keep the next action concrete and visible.",
-          title: "Action"
-        },
-        {
-          body: "Use one memorable example when answering questions.",
-          title: "Example"
-        }
-      ],
-      resourcesTitle: "Useful cues",
-      signalsTitle: "Key points"
-    });
-  }
-
-  return {
-    outline: slides.map((slide, index) => `${index + 1}. ${slide.title}`).join("\n"),
-    references: collectProvidedUrls(fields).map((url, index) => ({
-      note: "Source URL supplied in the presentation brief.",
-      title: `Provided source ${index + 1}`,
-      url
-    })),
-    slides,
-    summary: `Generated a ${slideCount}-slide starting deck from the saved brief.`
+    available: true,
+    fallbackReason: null,
+    mode: "llm",
+    model: llmStatus.model,
+    provider: llmStatus.provider,
+    requestedMode: "llm"
   };
 }
 
@@ -798,48 +616,20 @@ function isGenericPlanSummary(value) {
     || /\bslide that shows how\b/i.test(String(value || ""));
 }
 
-function cleanPlanSummary(planSlide, fields, fallback = "") {
-  const summary = cleanText(planSlide && planSlide.summary);
-  if (summary && !isGenericPlanSummary(summary)) {
-    return summary;
-  }
-
-  return cleanText(fields.objective)
-    || cleanText(planSlide && planSlide.title)
-    || cleanText(fields.title)
-    || fallback;
-}
-
-function repairDuplicateLocalPlanSlide(fields, slide, index, role) {
-  const section = roleLabel(role);
-  const topic = sentence(fields.title, "the presentation", 6);
-  const summary = `${section} ${index + 1} should add a distinct useful point for ${topic}.`;
-
-  return {
-    ...slide,
-    summary,
-    title: `${section} ${index + 1}`
-  };
-}
-
-function normalizePlanForMaterialization(fields, plan, options: any = {}) {
+function normalizePlanForMaterialization(_fields, plan) {
   const rawSlides = Array.isArray(plan && plan.slides) ? plan.slides : [];
   const total = rawSlides.length;
   const seenSignatures = new Set();
   const slides = rawSlides.map((slide, index) => {
     const role = normalizePlanRole(slide && slide.role, index, total);
-    let nextSlide = {
+    const nextSlide = {
       ...slide,
       role
     };
     const signature = planSlideSignature(nextSlide);
 
     if (signature && seenSignatures.has(signature)) {
-      if (!shouldUseLanguageFallbacks(options)) {
-        throw new Error(`Generated presentation plan repeats slide ${index + 1}; retry generation instead of injecting fallback copy.`);
-      }
-
-      nextSlide = repairDuplicateLocalPlanSlide(fields, nextSlide, index, role);
+      throw new Error(`Generated presentation plan repeats slide ${index + 1}; retry generation instead of injecting fallback copy.`);
     }
 
     if (signature) {
@@ -855,145 +645,54 @@ function normalizePlanForMaterialization(fields, plan, options: any = {}) {
   };
 }
 
-function toCards(planSlide, prefix, count, options: any = {}) {
-  const generatedPoints = normalizeGeneratedPoints(planSlide.keyPoints, count, "keyPoints", options);
-  const points = generatedPoints || normalizePoints(planSlide.keyPoints, {
-    fallbackBody: sentence(planSlide.summary, "Explain this point clearly.", 16),
-    fallbackTitle: sentence(planSlide.title, "Point", 3)
-  });
-
-  const filledPoints = generatedPoints || fillToLength(points, count, (index) => ({
-    body: `${sentence(planSlide.title, "This slide", 6)} needs a concrete supporting point.`,
-    title: `Point ${index + 1}`
-  }));
-
-  return filledPoints
+function toCards(planSlide, prefix, count, fieldName = "keyPoints") {
+  return normalizeGeneratedPoints(planSlide[fieldName], count, fieldName)
     .map((point, index) => ({
-      body: sentence(point.body, `Point ${index + 1}`, 13),
+      body: sentence(point.body, point.body, 13),
       id: `${prefix}-${index + 1}`,
-      title: sentence(point.title, `Point ${index + 1}`, 4)
+      title: sentence(point.title, point.title, 4)
     }));
 }
 
-function roleLabel(role) {
-  return ({
-    concept: "Concept",
-    context: "Context",
-    example: "Example",
-    handoff: "Handoff",
-    mechanics: "Mechanics",
-    opening: "Opening",
-    reference: "Reference",
-    tradeoff: "Tradeoff"
-  })[role] || "Section";
+function planFieldText(planSlide, fieldName, limit) {
+  const text = requireVisibleText(planSlide && planSlide[fieldName], fieldName);
+  return sentence(text, text, limit);
 }
 
-function buildCoverNote(fields) {
-  if (String(fields.constraints || "").trim()) {
-    return sentence(fields.constraints, "Draft the deck around the saved constraints.", 18);
-  }
-
-  const audience = sentence(fields.audience, "the intended audience", 8);
-  const tone = sentence(fields.tone, "clear", 4);
-  return sentence(`Drafted for ${audience} with a ${tone} tone.`, "Drafted from the saved presentation brief.", 18);
-}
-
-function secondaryPanelTitle(role) {
-  return ({
-    concept: "Make it clear",
-    context: "Set the scene",
-    example: "Try it live",
-    mechanics: "Watch the flow",
-    tradeoff: "Use with care"
-  })[role] || "Useful checks";
-}
-
-function buildSecondaryPoints(planSlide, fields, slideIndex) {
-  const audience = sentence(fields.audience, "the audience", 8);
-  const tone = sentence(fields.tone, "clear", 4);
-  const role = planSlide.role;
-  const defaults = ({
-    concept: [
-      { title: "Plain language", body: `Define the idea before adding detail for ${audience}.` },
-      { title: "One contrast", body: "Show what changes compared to the familiar approach." },
-      { title: "Concrete cue", body: "Tie the concept to one visible example." }
-    ],
-    context: [
-      { title: "Audience need", body: `Start from what ${audience} already knows.` },
-      { title: "Problem frame", body: "Name the practical situation this slide explains." },
-      { title: "Outcome", body: "Make the next useful takeaway explicit." }
-    ],
-    example: [
-      { title: "Setup", body: "Introduce the smallest example before expanding it." },
-      { title: "Action", body: "Show the interaction or decision in one step." },
-      { title: "Result", body: "Close the example with the observable outcome." }
-    ],
-    mechanics: [
-      { title: "Trigger", body: "Name what starts the flow." },
-      { title: "Exchange", body: "Show what moves between the parts." },
-      { title: "Result", body: "Explain what changes after the flow completes." }
-    ],
-    tradeoff: [
-      { title: "Fit", body: "Name the situation where this advice works best." },
-      { title: "Risk", body: "Call out where the approach can mislead." },
-      { title: "Recovery", body: "Give one practical way to adjust when it fails." }
-    ]
-  })[role] || [
-    { title: "Audience", body: `Keep examples appropriate for ${audience}.` },
-    { title: "Tone", body: `Keep the wording ${tone}.` },
-    { title: "Focus", body: `Keep slide ${slideIndex} tied to its main idea.` }
-  ];
-
-  return defaults;
-}
-
-function planFieldText(planSlide, fieldName, fallback, limit, options: any = {}) {
-  const text = requireVisibleText(planSlide && planSlide[fieldName], fieldName, options);
-  return sentence(text || fallback, fallback, limit);
-}
-
-function planSummaryText(planSlide, fields, fallback, limit, options: any = {}) {
+function planSummaryText(planSlide, limit) {
   const summary = cleanText(planSlide && planSlide.summary);
   if (summary && !isGenericPlanSummary(summary)) {
-    return sentence(summary, fallback, limit);
+    return sentence(summary, summary, limit);
   }
 
-  if (!shouldUseLanguageFallbacks(options)) {
-    throw new Error("Generated presentation plan is missing a usable slide summary in the deck language.");
-  }
-
-  return sentence(cleanPlanSummary(planSlide, fields, fallback), fallback, limit);
+  throw new Error("Generated presentation plan is missing a usable slide summary in the deck language.");
 }
 
-function toContentSlide(planSlide, index, fields, options: any = {}) {
+function toContentSlide(planSlide, index) {
   const prefix = slugPart(planSlide.title, `slide-${index}`);
-  const generatedGuardrails = normalizeGeneratedPoints(planSlide.guardrails, 3, "guardrails", options);
-  const secondaryPoints = generatedGuardrails || fillToLength(buildSecondaryPoints(planSlide, fields, index), 3, (secondaryIndex) => ({
-    body: `${sentence(planSlide.title, "This slide", 6)} should stay focused on one useful idea.`,
-    title: `Check ${secondaryIndex + 1}`
-  }));
+  const secondaryPoints = normalizeGeneratedPoints(planSlide.guardrails, 3, "guardrails");
 
   return validateSlideSpec({
-    eyebrow: planFieldText(planSlide, "eyebrow", roleLabel(planSlide.role), 4, options),
+    eyebrow: planFieldText(planSlide, "eyebrow", 4),
     guardrails: secondaryPoints.map((point, guardrailIndex) => ({
-      body: sentence(point.body, "Keep the argument focused.", 13),
+      body: sentence(point.body, point.body, 13),
       id: `${prefix}-guardrail-${guardrailIndex + 1}`,
-      title: sentence(point.title, `Check ${guardrailIndex + 1}`, 4)
+      title: sentence(point.title, point.title, 4)
     })),
-    guardrailsTitle: planFieldText(planSlide, "guardrailsTitle", secondaryPanelTitle(planSlide.role), 5, options),
+    guardrailsTitle: planFieldText(planSlide, "guardrailsTitle", 5),
     layout: planSlide.role === "mechanics" || planSlide.role === "example" ? "steps" : planSlide.role === "tradeoff" ? "checklist" : "standard",
-    signals: toCards(planSlide, `${prefix}-signal`, 4, options),
-    signalsTitle: planFieldText(planSlide, "signalsTitle", "Key points", 4, options),
-    summary: planSummaryText(planSlide, fields, "Explain this section clearly.", 18, options),
-    title: sentence(planSlide.title, `Slide ${index}`, 8),
+    signals: toCards(planSlide, `${prefix}-signal`, 4),
+    signalsTitle: planFieldText(planSlide, "signalsTitle", 4),
+    summary: planSummaryText(planSlide, 18),
+    title: sentence(planSlide.title, planSlide.title, 8),
     type: "content"
   });
 }
 
-function materializePlan(fields, plan, options: any = {}) {
-  const normalizedPlan = normalizePlanForMaterialization(fields, plan, options);
+function materializePlan(fields, plan) {
+  const normalizedPlan = normalizePlanForMaterialization(fields, plan);
   const slides = Array.isArray(normalizedPlan.slides) ? normalizedPlan.slides : [];
-  const title = sentence(fields.title, "Untitled presentation", 8);
+  const title = sentence(requireVisibleText(fields.title || (slides[0] && slides[0].title), "presentation title"), fields.title || (slides[0] && slides[0].title), 8);
   const total = slides.length;
   const materialCandidates = Array.isArray(fields.materialCandidates) ? fields.materialCandidates : [];
   const usedMaterialIds = new Set();
@@ -1013,12 +712,12 @@ function materializePlan(fields, plan, options: any = {}) {
     if (isFirst) {
       const media = materialToMedia(resolveSlideMaterial(planSlide, materialCandidates, usedMaterialIds));
       return validateSlideSpec({
-        cards: toCards(planSlide, `${prefix}-card`, 3, options),
-        eyebrow: planFieldText(planSlide, "eyebrow", "Opening", 4, options),
+        cards: toCards(planSlide, `${prefix}-card`, 3),
+        eyebrow: planFieldText(planSlide, "eyebrow", 4),
         layout: "focus",
         ...(media ? { media } : {}),
-        note: planFieldText(planSlide, "note", buildCoverNote(fields), 18, options),
-        summary: planSummaryText(planSlide, fields, fields.objective || `Explain ${title}.`, 18, options),
+        note: planFieldText(planSlide, "note", 18),
+        summary: planSummaryText(planSlide, 18),
         title,
         type: "cover"
       });
@@ -1026,56 +725,38 @@ function materializePlan(fields, plan, options: any = {}) {
 
     if (isLast) {
       const media = materialToMedia(resolveSlideMaterial(planSlide, materialCandidates, usedMaterialIds));
-      const generatedResources = normalizeGeneratedPoints(planSlide.resources, 2, "resources", options);
-      const fallbackResources = generatedResources || fillToLength(references.map((reference, referenceIndex) => ({
-        body: reference.url,
-        id: `${prefix}-resource-${referenceIndex + 1}`,
-        title: sentence(reference.title, `Source ${referenceIndex + 1}`, 5)
-      })), 2, (resourceIndex) => ({
-        body: /reference|citation|source/i.test(fields.constraints || "")
-          ? "Add verified source URLs before publishing."
-          : resourceIndex === 0
-            ? "Rehearse the flow once with the intended audience in mind."
-            : "Keep one concrete example ready for questions.",
-        id: `${prefix}-resource-${resourceIndex + 1}`,
-        title: /reference|citation|source/i.test(fields.constraints || "")
-          ? `Reference lead ${resourceIndex + 1}`
-          : resourceIndex === 0 ? "Rehearsal" : "Example"
-      }));
-      const referenceResources = references.map((reference, referenceIndex) => ({
-        body: reference.url,
-        id: `${prefix}-resource-${referenceIndex + 1}`,
-        title: sentence(reference.title, `Source ${referenceIndex + 1}`, 5)
-      })).slice(0, 2);
-      const resourceItems = fillToLength(
-        references.length ? referenceResources : [],
-        2,
-        (resourceIndex) => fallbackResources[resourceIndex] || {
-          body: `Resource ${resourceIndex + 1}`,
-          title: `Resource ${resourceIndex + 1}`
-        }
-      ).map((resource, resourceIndex) => ({
-        body: sentence(resource.body, `Resource ${resourceIndex + 1}`, 18),
-        id: `${prefix}-resource-${resourceIndex + 1}`,
-        title: sentence(resource.title, `Resource ${resourceIndex + 1}`, 5)
-      }));
+      const generatedResources = normalizeGeneratedPoints(planSlide.resources, 2, "resources");
+      const referenceByUrl: Map<string, any> = new Map(references.map((reference: any) => [String(reference.url || "").trim(), reference]));
+      const resourceItems = generatedResources.map((resource, resourceIndex) => {
+        const matchingReference = referenceByUrl.get(String(resource.body || "").trim());
+
+        return {
+          body: matchingReference ? matchingReference.url : sentence(resource.body, resource.body, 18),
+          id: `${prefix}-resource-${resourceIndex + 1}`,
+          title: sentence(resource.title, matchingReference && matchingReference.title || resource.title, 5)
+        };
+      });
 
       return validateSlideSpec({
-        bullets: toCards(planSlide, `${prefix}-bullet`, 3, options),
-        eyebrow: planFieldText(planSlide, "eyebrow", "Close", 4, options),
+        bullets: toCards(planSlide, `${prefix}-bullet`, 3),
+        eyebrow: planFieldText(planSlide, "eyebrow", 4),
         layout: "checklist",
         ...(media ? { media } : {}),
-        resources: resourceItems,
-        resourcesTitle: planFieldText(planSlide, "resourcesTitle", references.length ? "References" : "Useful cues", 5, options),
-        summary: planSummaryText(planSlide, fields, "Close with the next useful action.", 18, options),
-        title: sentence(planSlide.title, "Next steps", 8),
+        resources: resourceItems.map((resource, resourceIndex) => ({
+          body: sentence(resource.body, resource.body, 18),
+          id: `${prefix}-resource-${resourceIndex + 1}`,
+          title: sentence(resource.title, resource.title, 5)
+        })),
+        resourcesTitle: planFieldText(planSlide, "resourcesTitle", 5),
+        summary: planSummaryText(planSlide, 18),
+        title: sentence(planSlide.title, planSlide.title, 8),
         type: "summary"
       });
     }
 
     const media = materialToMedia(resolveSlideMaterial(planSlide, materialCandidates, usedMaterialIds));
     return validateSlideSpec({
-      ...toContentSlide(planSlide, slideNumber, fields, options),
+      ...toContentSlide(planSlide, slideNumber),
       ...(media ? { media } : {})
     });
   });
@@ -1209,7 +890,6 @@ async function createLlmPlan(fields, slideCount, options: any = {}) {
       materialContext.promptText || "None",
       "",
       "Use the first slide as the opening frame and the last slide as the closing handoff when there is more than one slide.",
-      "For a technical teaching deck, include at least one concrete example slide and one tradeoff/limitations slide when the requested length allows it.",
       "Keep all visible slide text in the same language as the requested deck unless the user asks for a mixed-language result."
     ].join("\n")
   });
@@ -1237,23 +917,13 @@ async function generateInitialPresentation(fields: any = {}) {
     sourceContext,
     sourceSnippets: sourceContext.snippets
   };
-  let plan = null;
-  let response = null;
-
-  if (generation.mode === "llm") {
-    response = await createLlmPlan(generationFields, slideCount, {
-      onProgress: fields.onProgress
-    });
-    plan = await semanticallyRepairPlanText(response.plan, {
-      onProgress: fields.onProgress
-    });
-  } else {
-    plan = createLocalPlan(generationFields, slideCount);
-  }
-
-  const slideSpecs = assertGeneratedSlideQuality(materializePlan(generationFields, plan, {
-    allowLanguageFallbacks: generation.mode !== "llm"
-  }));
+  const response = await createLlmPlan(generationFields, slideCount, {
+    onProgress: fields.onProgress
+  });
+  const plan = await semanticallyRepairPlanText(response.plan, {
+    onProgress: fields.onProgress
+  });
+  const slideSpecs = assertGeneratedSlideQuality(materializePlan(generationFields, plan));
 
   return {
     generation: {
@@ -1283,9 +953,7 @@ async function generateInitialPresentation(fields: any = {}) {
     },
     outline: plan.outline || slideSpecs.map((slide, index) => `${index + 1}. ${slide.title}`).join("\n"),
     slideSpecs,
-    summary: generation.mode === "llm"
-      ? `Generated ${slideSpecs.length} initial slide${slideSpecs.length === 1 ? "" : "s"} with ${response.provider} ${response.model}.`
-      : `Generated ${slideSpecs.length} initial slide${slideSpecs.length === 1 ? "" : "s"} with local rules${generation.fallbackReason ? `; ${generation.fallbackReason.toLowerCase()}` : ""}.`,
+    summary: `Generated ${slideSpecs.length} initial slide${slideSpecs.length === 1 ? "" : "s"} with ${response.provider} ${response.model}.`,
     targetSlideCount: slideCount
   };
 }

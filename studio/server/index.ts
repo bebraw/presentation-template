@@ -535,7 +535,6 @@ async function handlePresentationRegenerate(req, res) {
   });
   const generated = await generateInitialPresentation({
     ...deck,
-    generationMode: body.generationMode || "auto",
     onProgress: reportProgress,
     targetSlideCount
   });

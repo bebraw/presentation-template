@@ -484,7 +484,6 @@ html[data-app-theme="dark"] .theme-toggle-knob {
   gap: 0.85rem;
   min-width: 0;
   padding: 0 0 2rem;
-  border-bottom: 1px solid var(--app-line);
 }
 
 .workspace-section {
@@ -495,7 +494,6 @@ html[data-app-theme="dark"] .theme-toggle-knob {
 
 .editorial-block {
   padding-top: 1rem;
-  border-top: 1px solid var(--app-line);
 }
 
 .editorial-block-wide {
@@ -648,19 +646,19 @@ html[data-app-theme="dark"] .theme-toggle-knob {
   display: grid;
   gap: 0.85rem;
   min-width: 0;
-  padding-top: 0.7rem;
-  border-top: 2px solid var(--app-line);
+  padding-top: 0.2rem;
   cursor: pointer;
-}
-
-.presentation-card.active {
-  border-top-color: var(--app-accent);
 }
 
 .presentation-card-preview {
   border: 1px solid var(--app-line);
   background: #ffffff;
   overflow: hidden;
+}
+
+.presentation-card.active .presentation-card-preview {
+  border-color: var(--app-accent);
+  box-shadow: 0 0 0 3px var(--app-accent-soft);
 }
 
 .presentation-card-title-row {
@@ -742,8 +740,7 @@ html[data-app-theme="dark"] .theme-toggle-knob {
 
 .presentation-create-details {
   margin-top: 1.5rem;
-  padding-top: 1rem;
-  border-top: 1px solid var(--app-line);
+  padding-top: 0.4rem;
 }
 
 .presentation-create-details summary {
@@ -791,15 +788,13 @@ html[data-app-theme="dark"] .theme-toggle-knob {
 
 .manual-system-details {
   margin-top: 1rem;
-  padding-top: 1rem;
-  border-top: 1px solid var(--app-line);
+  padding-top: 0.35rem;
 }
 
 .manual-delete-details,
 .material-details {
   margin-top: 0.7rem;
-  padding-top: 0.7rem;
-  border-top: 1px solid var(--app-line);
+  padding-top: 0.25rem;
 }
 
 .manual-system-details summary,
@@ -863,16 +858,11 @@ html[data-app-theme="dark"] .theme-toggle-knob {
   display: grid;
   align-items: center;
   gap: 0.75rem;
-  padding: 0.72rem 0;
-  border-top: 1px solid var(--app-line);
+  padding: 0.62rem 0;
 }
 
 .material-card {
   grid-template-columns: 5.4rem minmax(0, 1fr) max-content;
-}
-
-.material-card.active {
-  border-top-color: var(--app-accent);
 }
 
 .material-card img {
@@ -922,8 +912,7 @@ html[data-app-theme="dark"] .theme-toggle-knob {
 .planning-palette-details,
 .planning-guardrails-details {
   margin-top: 0.4rem;
-  padding-top: 0.8rem;
-  border-top: 1px solid var(--app-line);
+  padding-top: 0.35rem;
 }
 
 .planning-palette-details {
@@ -1125,8 +1114,7 @@ html[data-app-theme="dark"] .theme-toggle-knob {
 
 .workflow-variants {
   margin-top: 1rem;
-  padding-top: 0.9rem;
-  border-top: 1px solid var(--app-line);
+  padding-top: 0.35rem;
 }
 
 .variant-review-workspace {
@@ -1174,7 +1162,6 @@ html[data-app-theme="dark"] .theme-toggle-knob {
 
 .workflow-debug-details {
   margin-top: 0.9rem;
-  border-top: 1px solid var(--app-line);
 }
 
 .workflow-debug-details summary {
@@ -1305,16 +1292,13 @@ html[data-app-theme="dark"] .theme-toggle-knob {
 
 .structured-draft-panel > .section-note {
   margin: 0;
-  padding: 0.72rem 0;
-  border-top: 1px solid var(--app-line);
-  border-bottom: 1px solid var(--app-line);
+  padding: 0.45rem 0;
 }
 
 .structured-draft-footer {
   display: grid;
   gap: 0.7rem;
-  padding-top: 0.7rem;
-  border-top: 1px solid var(--app-line);
+  padding-top: 0.35rem;
 }
 
 .structured-draft-footer > button {
@@ -1437,8 +1421,7 @@ html[data-app-theme="dark"] .theme-toggle-knob {
   display: grid;
   gap: 0.65rem;
   margin-top: 0.8rem;
-  padding: 0.8rem 0 0;
-  border-top: 1px solid var(--app-line);
+  padding: 0.35rem 0 0;
   max-height: 15rem;
   overflow: auto;
 }
@@ -1468,7 +1451,6 @@ html[data-app-theme="dark"] .theme-toggle-knob {
 
 .assistant-message-selection,
 .assistant-selection {
-  border-top: 1px solid var(--app-line);
   color: var(--app-soft-text);
   font-size: 0.78rem;
   line-height: 1.35;
@@ -1586,8 +1568,7 @@ html[data-app-theme="dark"] .theme-toggle-knob {
 
 .compare-summary {
   margin-top: 1rem;
-  padding-top: 1rem;
-  border-top: 1px solid var(--app-line);
+  padding-top: 0.4rem;
 }
 
 .variant-review-workspace .compare-summary {
@@ -1614,9 +1595,7 @@ html[data-app-theme="dark"] .theme-toggle-knob {
 .compare-decision-panel {
   display: grid;
   gap: 0.85rem;
-  padding: 0.95rem 0;
-  border-top: 1px solid var(--app-line);
-  border-bottom: 1px solid var(--app-line);
+  padding: 0.75rem 0;
 }
 
 .compare-decision-head {
@@ -1694,8 +1673,7 @@ html[data-app-theme="dark"] .theme-toggle-knob {
 .compare-group {
   display: grid;
   gap: 0.75rem;
-  padding-top: 0.75rem;
-  border-top: 1px solid var(--app-line);
+  padding-top: 0.35rem;
 }
 
 .compare-group-head {
@@ -1775,8 +1753,7 @@ html[data-app-theme="dark"] .theme-toggle-knob {
 .compare-highlight {
   display: grid;
   gap: 0.24rem;
-  padding-top: 0.6rem;
-  border-top: 1px solid var(--app-line);
+  padding-top: 0.35rem;
 }
 
 .compare-highlight strong {
@@ -1808,8 +1785,7 @@ html[data-app-theme="dark"] .theme-toggle-knob {
 .workflow-history-item {
   display: grid;
   gap: 0.14rem;
-  padding-top: 0.55rem;
-  border-top: 1px solid var(--app-line);
+  padding-top: 0.25rem;
 }
 
 .workflow-history-item strong {
@@ -1967,17 +1943,20 @@ html[data-app-theme="dark"] .json-token-literal {
   flex: 0 0 8.35rem;
   scroll-snap-align: start;
   border: 0;
-  border-top: 2px solid var(--app-line);
-  border-radius: 0;
-  padding: 0.45rem 0 0;
+  border-radius: 0.35rem;
+  padding: 0.25rem;
   background: transparent;
   cursor: pointer;
   text-align: left;
 }
 
 .thumb.active {
-  border-top-color: var(--app-accent);
   box-shadow: none;
+}
+
+.thumb.active .thumb-preview {
+  border-color: var(--app-accent);
+  box-shadow: 0 0 0 3px var(--app-accent-soft);
 }
 
 .thumb strong,
@@ -2011,8 +1990,8 @@ html[data-app-theme="dark"] .json-token-literal {
 
 .thumb .thumb-index {
   position: absolute;
-  top: 0.68rem;
-  left: 0.35rem;
+  top: 0.48rem;
+  left: 0.48rem;
   z-index: 2;
   display: inline-grid;
   width: 1.15rem;
@@ -2046,8 +2025,7 @@ html[data-app-theme="dark"] .json-token-literal {
   display: grid;
   align-content: start;
   gap: 0.55rem;
-  border-top: 1px solid var(--app-line);
-  padding: 0.9rem 0 0;
+  padding: 0.55rem 0 0;
   background: transparent;
 }
 
@@ -2076,10 +2054,6 @@ html[data-app-theme="dark"] .json-token-literal {
   padding-left: 0;
   border-left: 0;
   cursor: default;
-}
-
-.variant-card.active {
-  border-top-color: var(--app-accent);
 }
 
 .workflow-variant-list .variant-card:hover,
@@ -2246,7 +2220,6 @@ html[data-app-theme="dark"] .json-token-literal {
 
 .workflow-variant-list .deck-plan-card.active {
   background: transparent;
-  border-top-color: var(--app-accent);
 }
 
 .thumb-preview,
@@ -2945,9 +2918,7 @@ html[data-app-theme="dark"] .json-token-literal {
 .deck-diff-panel {
   display: grid;
   gap: 0.85rem;
-  padding: 0.95rem 0;
-  border-top: 1px solid var(--app-line);
-  border-bottom: 1px solid var(--app-line);
+  padding: 0.75rem 0;
 }
 
 .deck-diff-map {
@@ -3006,14 +2977,12 @@ html[data-app-theme="dark"] .json-token-literal {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(9rem, 1fr));
   gap: 0.7rem;
-  padding-top: 0.25rem;
-  border-top: 1px solid var(--app-line);
+  padding-top: 0.1rem;
 }
 
 .deck-structure-strip,
 .deck-structure-strip-card {
-  padding-top: 0.25rem;
-  border-top: 1px solid var(--app-line);
+  padding-top: 0.1rem;
 }
 
 .deck-structure-strip img,
@@ -3096,8 +3065,7 @@ html[data-app-theme="dark"] .json-token-literal {
 }
 
 .deck-structure-outline {
-  padding-top: 0.25rem;
-  border-top: 1px solid var(--app-line);
+  padding-top: 0.1rem;
 }
 
 .deck-structure-outline-line,
@@ -3109,8 +3077,7 @@ html[data-app-theme="dark"] .json-token-literal {
 .deck-structure-group {
   display: grid;
   gap: 0.55rem;
-  padding-top: 0.25rem;
-  border-top: 1px solid var(--app-line);
+  padding-top: 0.1rem;
 }
 
 .deck-structure-group-head {
@@ -3141,8 +3108,7 @@ html[data-app-theme="dark"] .json-token-literal {
   display: flex;
   align-items: center;
   gap: 0.55rem;
-  padding-top: 0.25rem;
-  border-top: 1px solid var(--app-line);
+  padding-top: 0.1rem;
   color: var(--app-soft-text);
   font-size: 0.82rem;
   line-height: 1.45;
@@ -3160,8 +3126,7 @@ html[data-app-theme="dark"] .json-token-literal {
 .deck-plan-details {
   display: grid;
   gap: 0.75rem;
-  padding-top: 0.35rem;
-  border-top: 1px solid var(--app-line);
+  padding-top: 0.2rem;
 }
 
 .deck-plan-details summary {
@@ -3209,11 +3174,9 @@ html[data-app-theme="dark"] .json-token-literal {
 
 .deck-structure-step {
   padding-top: 0.55rem;
-  border-top: 1px solid var(--app-line);
 }
 
 .deck-structure-step:first-child {
-  border-top: 0;
   padding-top: 0;
 }
 
@@ -3230,8 +3193,7 @@ html[data-app-theme="dark"] .json-token-literal {
 
 .validation-result-panel {
   margin-top: 1rem;
-  padding-top: 0.85rem;
-  border-top: 1px solid var(--app-line);
+  padding-top: 0.35rem;
 }
 
 .validation-summary-card {
@@ -3311,8 +3273,7 @@ html[data-app-theme="dark"] .json-token-literal {
 
 .validation-rule-details {
   margin-top: 1rem;
-  padding-top: 1rem;
-  border-top: 1px solid var(--app-line);
+  padding-top: 0.35rem;
 }
 
 .validation-settings-details summary,
@@ -3428,10 +3389,9 @@ html[data-app-theme="dark"] .json-token-literal {
   max-height: 20rem;
   overflow: auto;
   border: 0;
-  border-top: 1px solid var(--app-line);
   background: transparent;
   color: var(--app-text);
-  padding: 1rem 0 0;
+  padding: 0.35rem 0 0;
   line-height: 1.45;
 }
 

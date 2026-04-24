@@ -1,38 +1,38 @@
 {
   "bullets": [
     {
-      "body": "You now have the tools to make your presentations funny without losing professionalism...",
-      "id": "wrapping-up-next-steps-bullet-1",
-      "title": "Recap"
+      "body": "Start with a joke that fits the audience.",
+      "id": "welcome-to-funny-presentatio-bullet-1",
+      "title": "Open With a Real Joke"
     },
     {
-      "body": "Practice makes perfect: rehearse your presentation with humor in mind and adjust based...",
-      "id": "wrapping-up-next-steps-bullet-2",
-      "title": "Next Steps"
+      "body": "Say what they will learn and why it matters.",
+      "id": "welcome-to-funny-presentatio-bullet-2",
+      "title": "State Your Mission Early"
     },
     {
-      "body": "Remember, the goal is to make people laugh while still delivering valuable content—balance...",
-      "id": "wrapping-up-next-steps-bullet-3",
-      "title": "Final Thought"
+      "body": "Show your name, role, and reason to listen.",
+      "id": "welcome-to-funny-presentatio-bullet-3",
+      "title": "Introduce Yourself Properly"
     }
   ],
   "eyebrow": "Close",
   "layout": "checklist",
   "resources": [
     {
-      "body": "Use the saved deck context and slide notes as the next editing source.",
-      "id": "wrapping-up-next-steps-resource-1",
-      "title": "Working note 1"
+      "body": "Rehearse once with the audience in mind.",
+      "id": "welcome-to-funny-presentatio-resource-1",
+      "title": "Rehearsal"
     },
     {
-      "body": "Use the saved deck context and slide notes as the next editing source.",
-      "id": "wrapping-up-next-steps-resource-2",
-      "title": "Working note 2"
+      "body": "Keep one example ready for questions.",
+      "id": "welcome-to-funny-presentatio-resource-2",
+      "title": "Example"
     }
   ],
-  "resourcesTitle": "Sources to verify",
-  "summary": "You now have the tools to make your presentations funny without losing professionalism. Practice makes perfect, so rehearse...",
-  "title": "Wrapping Up & Next Steps",
+  "resourcesTitle": "Keep nearby",
+  "summary": "Set the tone with humor and clarity from the very first moment.",
+  "title": "Welcome to Funny Presentations",
   "type": "summary",
   "index": 5
 }

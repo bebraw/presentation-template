@@ -1,49 +1,49 @@
 {
-  "eyebrow": "Concept",
+  "eyebrow": "Example",
   "guardrails": [
     {
-      "body": "Keep examples appropriate for Newbies.",
-      "id": "understanding-humor-in-prese-guardrail-1",
-      "title": "Audience"
+      "body": "Introduce the smallest example before expanding it.",
+      "id": "design-that-does-not-suck-guardrail-1",
+      "title": "Setup"
     },
     {
-      "body": "Separate factual claims from implementation advice.",
-      "id": "understanding-humor-in-prese-guardrail-2",
-      "title": "Scope"
+      "body": "Show the interaction or decision in one step.",
+      "id": "design-that-does-not-suck-guardrail-2",
+      "title": "Action"
     },
     {
-      "body": "Keep the tone Funny.",
-      "id": "understanding-humor-in-prese-guardrail-3",
-      "title": "Evidence"
+      "body": "Close the example with the observable outcome.",
+      "id": "design-that-does-not-suck-guardrail-3",
+      "title": "Result"
     }
   ],
-  "guardrailsTitle": "Guardrails",
-  "layout": "standard",
+  "guardrailsTitle": "Try it live",
+  "layout": "steps",
   "signals": [
     {
-      "body": "Humor is not about telling jokes; it's about finding the absurdity in everyday...",
-      "id": "understanding-humor-in-prese-signal-1",
-      "title": "What Is Humor?"
+      "body": "Write one idea per slide so your audience can actually read it before",
+      "id": "design-that-does-not-suck-signal-1",
+      "title": "One Idea Per Slide"
     },
     {
-      "body": "Think of humor as a spice: too little and your presentation is bland,...",
-      "id": "understanding-humor-in-prese-signal-2",
-      "title": "The Spice Analogy"
+      "body": "Use big fonts and high contrast colors because tiny text kills comedy faster",
+      "id": "design-that-does-not-suck-signal-2",
+      "title": "Design for Visibility"
     },
     {
-      "body": "Start by identifying the pain points in your topic—those are usually where the...",
-      "id": "understanding-humor-in-prese-signal-3",
-      "title": "Finding the Funny"
+      "body": "Add images that support your point instead of decorative clip art from the",
+      "id": "design-that-does-not-suck-signal-3",
+      "title": "Choose Relevant Visuals"
     },
     {
-      "body": "Use relatable scenarios that everyone can connect with, like waiting for a slow-loading...",
-      "id": "understanding-humor-in-prese-signal-4",
-      "title": "Relatable Scenarios"
+      "body": "Leave white space on every slide to give your eyes and jokes room",
+      "id": "design-that-does-not-suck-signal-4",
+      "title": "Embrace White Space"
     }
   ],
   "signalsTitle": "Key points",
-  "summary": "Humor is about finding the absurdity in everyday situations. Think of it as a spice: too little and...",
-  "title": "Understanding Humor in Presentations",
+  "summary": "Show how clean design supports humor instead of fighting it.",
+  "title": "Design That Does Not Suck",
   "type": "content",
   "index": 2
 }

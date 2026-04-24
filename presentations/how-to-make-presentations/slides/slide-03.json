@@ -1,49 +1,49 @@
 {
-  "eyebrow": "Example",
+  "eyebrow": "Tradeoff",
   "guardrails": [
     {
-      "body": "Keep examples appropriate for Newbies.",
-      "id": "concrete-examples-of-humor-t-guardrail-1",
-      "title": "Audience"
+      "body": "Name where the advice works best.",
+      "id": "practice-without-losing-your-guardrail-1",
+      "title": "Fit"
     },
     {
-      "body": "Separate factual claims from implementation advice.",
-      "id": "concrete-examples-of-humor-t-guardrail-2",
-      "title": "Scope"
+      "body": "Call out where it can mislead.",
+      "id": "practice-without-losing-your-guardrail-2",
+      "title": "Risk"
     },
     {
-      "body": "Keep the tone Funny.",
-      "id": "concrete-examples-of-humor-t-guardrail-3",
-      "title": "Evidence"
+      "body": "Keep one fallback ready.",
+      "id": "practice-without-losing-your-guardrail-3",
+      "title": "Recovery"
     }
   ],
-  "guardrailsTitle": "Guardrails",
-  "layout": "steps",
+  "guardrailsTitle": "Use with care",
+  "layout": "checklist",
   "signals": [
     {
-      "body": "Use visual gags like unexpected images or funny charts that make people laugh...",
-      "id": "concrete-examples-of-humor-t-signal-1",
-      "title": "Visual Gags"
+      "body": "Read the talk out loud to catch awkward timing.",
+      "id": "practice-without-losing-your-signal-1",
+      "title": "Rehearse Aloud"
     },
     {
-      "body": "Incorporate wordplay and puns related to your topic, but don't overdo it—nobody wants...",
-      "id": "concrete-examples-of-humor-t-signal-2",
-      "title": "Wordplay & Puns"
+      "body": "Record once to find rambling and weak transitions.",
+      "id": "practice-without-losing-your-signal-2",
+      "title": "Review Your Recording"
     },
     {
-      "body": "Add short anecdotes or personal stories that highlight the absurdity of common workplace...",
-      "id": "concrete-examples-of-humor-t-signal-3",
-      "title": "Anecdotes & Stories"
+      "body": "Slow down when people look confused.",
+      "id": "practice-without-losing-your-signal-3",
+      "title": "Read the Room"
     },
     {
-      "body": "Use timing to your advantage: pause after a punchline to let the laughter...",
-      "id": "concrete-examples-of-humor-t-signal-4",
-      "title": "Timing Is Everything"
+      "body": "Prepare one backup example or joke.",
+      "id": "practice-without-losing-your-signal-4",
+      "title": "Backup Bit"
     }
   ],
   "signalsTitle": "Key points",
-  "summary": "Use visual gags, wordplay, and anecdotes to add humor. Timing is crucial—pause after a punchline to let the...",
-  "title": "Concrete Examples of Humor Techniques",
+  "summary": "Balance preparation with flexibility to handle live audience dynamics.",
+  "title": "Practice Without Losing Your Mind",
   "type": "content",
   "index": 3
 }

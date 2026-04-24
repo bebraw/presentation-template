@@ -1,49 +1,49 @@
 {
-  "eyebrow": "Tradeoff",
+  "eyebrow": "Handoff",
   "guardrails": [
     {
       "body": "Keep examples appropriate for Newbies.",
-      "id": "tradeoffs-limitations-of-hum-guardrail-1",
+      "id": "finish-strong-and-smile-guardrail-1",
       "title": "Audience"
     },
     {
-      "body": "Separate factual claims from implementation advice.",
-      "id": "tradeoffs-limitations-of-hum-guardrail-2",
-      "title": "Scope"
+      "body": "Keep the wording Funny.",
+      "id": "finish-strong-and-smile-guardrail-2",
+      "title": "Tone"
     },
     {
-      "body": "Keep the tone Funny.",
-      "id": "tradeoffs-limitations-of-hum-guardrail-3",
-      "title": "Evidence"
+      "body": "Keep slide 4 tied to its main idea.",
+      "id": "finish-strong-and-smile-guardrail-3",
+      "title": "Focus"
     }
   ],
-  "guardrailsTitle": "Guardrails",
-  "layout": "checklist",
+  "guardrailsTitle": "Use it well",
+  "layout": "standard",
   "signals": [
     {
-      "body": "Humor can backfire if it's too niche or offensive, so always test your...",
-      "id": "tradeoffs-limitations-of-hum-signal-1",
-      "title": "Testing Your Jokes"
+      "body": "End with a clear call to action so people know what to do",
+      "id": "finish-strong-and-smile-signal-1",
+      "title": "Close With Purpose"
     },
     {
-      "body": "Avoid sarcasm and irony—they often get lost in presentations and can come across...",
-      "id": "tradeoffs-limitations-of-hum-signal-2",
-      "title": "What to Avoid"
+      "body": "Thank the audience for their attention and invite questions before you disappear into",
+      "id": "finish-strong-and-smile-signal-2",
+      "title": "Invite Engagement"
     },
     {
-      "body": "Keep the humor light and inclusive; not everyone has the same sense of...",
-      "id": "tradeoffs-limitations-of-hum-signal-3",
-      "title": "Inclusive Humor"
+      "body": "Share your contact information in a way that does not look like spam",
+      "id": "finish-strong-and-smile-signal-3",
+      "title": "Provide Contact Details"
     },
     {
-      "body": "If a joke doesn't land, move on quickly—don't dwell on it or try...",
-      "id": "tradeoffs-limitations-of-hum-signal-4",
-      "title": "Handling Flops"
+      "body": "Leave them with one memorable line they will repeat to their friends later",
+      "id": "finish-strong-and-smile-signal-4",
+      "title": "Deliver a Final Punchline"
     }
   ],
   "signalsTitle": "Key points",
-  "summary": "Humor can backfire if it's too niche or offensive. Test your jokes with a small audience first, avoid...",
-  "title": "Tradeoffs & Limitations of Humor",
+  "summary": "Wrap up with clarity and leave the audience wanting more.",
+  "title": "Finish Strong and Smile",
   "type": "content",
   "index": 4
 }

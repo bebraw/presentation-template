@@ -118,6 +118,7 @@ async function main() {
         await page.selectOption("#presentation-generation-mode", "local");
         await page.fill("#presentation-objective", "Verify presentation management through the browser UI.");
         await page.fill("#presentation-constraints", "Clean up all smoke decks after the run.");
+        await page.fill("#presentation-source-text", "Workflow validation source: browser UI management should cover presentation creation, source persistence, and grounded generation diagnostics.");
         await page.click("#create-presentation-button");
         await waitForPage(page, "#studio-page");
         await page.waitForFunction(async () => {
@@ -127,7 +128,14 @@ async function main() {
             && payload.context.deck
             && payload.context.deck.lengthProfile
             && payload.context.deck.lengthProfile.targetCount === 7
-            && payload.slides.length === 7;
+            && payload.slides.length === 7
+            && payload.sources.length === 1
+            && payload.runtime
+            && payload.runtime.sourceRetrieval
+            && payload.runtime.sourceRetrieval.snippets.some((snippet) => /browser UI management/i.test(snippet.text || ""));
+        });
+        await page.waitForFunction(() => {
+          return document.querySelector("#source-retrieval-list")?.textContent?.includes("browser UI management");
         });
         await page.locator(".material-details summary").click();
         await page.setInputFiles("#material-file", {
@@ -215,6 +223,19 @@ async function main() {
 
         await page.click("#show-planning-page");
         await waitForPage(page, "#planning-page");
+        await page.locator(".source-details summary").click();
+        await page.fill("#source-title", "Workflow follow-up source");
+        await page.fill("#source-text", "Follow-up source material verifies that Deck Planning can add grounded notes after presentation creation.");
+        const addSourceResponse = waitForJsonResponse(page, "/api/sources", 60_000);
+        await page.click("#add-source-button");
+        await addSourceResponse;
+        await page.waitForFunction(async () => {
+          const response = await fetch("/api/state");
+          const payload = await response.json();
+          return payload.sources.length === 2
+            && payload.sources.some((source) => source.title === "Workflow follow-up source");
+        });
+        await page.waitForSelector("#source-list .source-card");
 
         await page.fill("#deck-length-target", "2");
         const lengthPlanResponse = waitForJsonResponse(page, "/api/deck/scale-length/plan", 60_000);

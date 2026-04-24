@@ -31,8 +31,9 @@ This document tracks the next practical steps for combining Slideotter's determi
    - Starter sources are saved into the new presentation after creation.
 
 3. **Workflow Coverage**
-   - Extend browser workflow validation to add a source through the UI and verify it persists.
-   - Keep service/API coverage for source create, delete, retrieval, and write-boundary behavior.
+   - Status: implemented for the current source flow.
+   - Browser workflow validation creates a deck with starter sources, verifies retrieval diagnostics, adds a source from Deck Planning, and confirms persistence.
+   - Service/API coverage covers source create, delete, retrieval, and write-boundary behavior.
 
 4. **Retrieval Quality**
    - Improve keyword retrieval before introducing embeddings.

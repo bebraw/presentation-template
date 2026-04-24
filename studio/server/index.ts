@@ -412,6 +412,10 @@ async function handlePresentationCreate(req, res) {
   const starterSourceText = typeof fields.presentationSourceText === "string"
     ? fields.presentationSourceText.trim()
     : "";
+  const starterMaterials = Array.isArray(fields.presentationMaterials)
+    ? fields.presentationMaterials
+    : [];
+  let presentation = null;
   resetPresentationRuntime();
   const reportProgress = createWorkflowProgressReporter({
     operation: "create-presentation"
@@ -420,38 +424,67 @@ async function handlePresentationCreate(req, res) {
     message: "Generating initial presentation slides...",
     stage: "generating-slides"
   });
-  const generated = await generateInitialPresentation({
-    ...fields,
-    includeActiveSources: false,
-    onProgress: reportProgress,
-    presentationSourceText: starterSourceText
-  });
-  const presentation = createPresentation({
-    ...fields,
-    initialSlideSpecs: generated.slideSpecs,
-    outline: generated.outline,
-    targetSlideCount: generated.targetSlideCount
-  });
-  if (starterSourceText) {
-    await createSource({
-      text: starterSourceText,
-      title: "Starter sources"
+  try {
+    presentation = createPresentation({
+      ...fields,
+      targetSlideCount: fields.targetSlideCount || fields.targetCount
     });
+
+    if (starterSourceText) {
+      await createSource({
+        text: starterSourceText,
+        title: "Starter sources"
+      });
+    }
+
+    starterMaterials.forEach((material) => {
+      createMaterialFromDataUrl({
+        alt: material.alt || material.title || material.fileName,
+        caption: material.caption || "",
+        dataUrl: material.dataUrl,
+        fileName: material.fileName || material.title || "starter-image",
+        title: material.title || material.fileName || "Starter image"
+      });
+    });
+
+    const generated = await generateInitialPresentation({
+      ...fields,
+      includeActiveMaterials: true,
+      includeActiveSources: true,
+      onProgress: reportProgress,
+      presentationSourceText: starterSourceText
+    });
+    presentation = regeneratePresentationSlides(presentation.id, generated.slideSpecs, {
+      outline: generated.outline,
+      targetSlideCount: generated.targetSlideCount
+    });
+    updateWorkflowState({
+      generation: generated.generation,
+      message: [
+        generated.summary,
+        starterSourceText ? "Starter sources were saved with the new presentation." : "",
+        starterMaterials.length ? `${starterMaterials.length} starter image${starterMaterials.length === 1 ? "" : "s"} were saved with the new presentation.` : ""
+      ].filter(Boolean).join(" "),
+      ok: true,
+      operation: "create-presentation",
+      stage: "completed",
+      status: "completed"
+    });
+    runtimeState.lastError = null;
+    runtimeState.sourceRetrieval = generated.retrieval || null;
+    publishRuntimeState();
+    createJsonResponse(res, 200, createPresentationPayload({ presentation }));
+  } catch (error) {
+    if (presentation && presentation.id) {
+      try {
+        deletePresentation(presentation.id);
+      } catch (_cleanupError) {
+        // Leave the original generation failure visible.
+      }
+    }
+
+    throw error;
   }
-  updateWorkflowState({
-    generation: generated.generation,
-    message: starterSourceText
-      ? `${generated.summary} Starter sources were saved with the new presentation.`
-      : generated.summary,
-    ok: true,
-    operation: "create-presentation",
-    stage: "completed",
-    status: "completed"
-  });
-  runtimeState.lastError = null;
-  runtimeState.sourceRetrieval = generated.retrieval || null;
-  publishRuntimeState();
-  createJsonResponse(res, 200, createPresentationPayload({ presentation }));
 }
 
 async function handlePresentationDuplicate(req, res) {

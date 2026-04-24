@@ -132,6 +132,7 @@ const elements: Record<string, any> = {
   presentationFontFamily: document.getElementById("presentation-font-family"),
   presentationGenerationMode: document.getElementById("presentation-generation-mode"),
   presentationList: document.getElementById("presentation-list"),
+  presentationMaterialFile: document.getElementById("presentation-material-file"),
   presentationObjective: document.getElementById("presentation-objective"),
   presentationResultCount: document.getElementById("presentation-result-count"),
   presentationSearch: document.getElementById("presentation-search"),
@@ -2976,6 +2977,7 @@ function clearPresentationForm() {
   elements.presentationConstraints.value = "";
   elements.presentationThemeBrief.value = "";
   elements.presentationSourceText.value = "";
+  elements.presentationMaterialFile.value = "";
   elements.presentationFontFamily.value = "avenir";
   elements.presentationThemePrimary.value = "#183153";
   elements.presentationThemeSecondary.value = "#275d8c";
@@ -3033,12 +3035,22 @@ async function createPresentationFromForm() {
 
   const done = setBusy(elements.createPresentationButton, "Creating...");
   try {
+    const starterMaterialFile = elements.presentationMaterialFile.files && elements.presentationMaterialFile.files[0];
+    const presentationMaterials = starterMaterialFile
+      ? [{
+          alt: starterMaterialFile.name,
+          dataUrl: await readFileAsDataUrl(starterMaterialFile),
+          fileName: starterMaterialFile.name,
+          title: starterMaterialFile.name
+        }]
+      : [];
     await request("/api/presentations", {
       body: JSON.stringify({
         audience: elements.presentationAudience.value.trim(),
         constraints: elements.presentationConstraints.value.trim(),
         generationMode: elements.presentationGenerationMode.value,
         objective: elements.presentationObjective.value.trim(),
+        presentationMaterials,
         presentationSourceText: elements.presentationSourceText.value.trim(),
         targetSlideCount: Number.isFinite(targetSlideCount) ? targetSlideCount : null,
         themeBrief: elements.presentationThemeBrief.value.trim(),

@@ -737,6 +737,39 @@ test("materials accept only bounded image data and keep paths presentation-scope
   );
 });
 
+test("presentation generation can attach semantically matching image materials", async () => {
+  createCoveragePresentation("material-generation");
+  const material = createMaterialFromDataUrl({
+    alt: "HTMX request flow diagram",
+    caption: "Request flow diagram",
+    dataUrl: tinyPngDataUrl,
+    fileName: "htmx-request-flow.png",
+    title: "HTMX request flow"
+  });
+
+  const generated = await generateInitialPresentation({
+    generationMode: "local",
+    includeActiveSources: false,
+    objective: "Explain the HTMX request flow.",
+    targetSlideCount: 4,
+    title: "HTMX request flow"
+  });
+  const attachedMedia = generated.slideSpecs.map((slideSpec) => slideSpec.media).filter(Boolean);
+
+  assert.ok(attachedMedia.some((media) => media.id === material.id), "generation should attach a semantically matching material");
+  assert.equal(generated.retrieval.materials[0].id, material.id, "generation diagnostics should report available material metadata");
+
+  const withoutMaterials = await generateInitialPresentation({
+    generationMode: "local",
+    includeActiveMaterials: false,
+    includeActiveSources: false,
+    objective: "Explain the HTMX request flow.",
+    targetSlideCount: 4,
+    title: "HTMX request flow"
+  });
+  assert.equal(withoutMaterials.slideSpecs.some((slideSpec) => slideSpec.media), false, "generation can opt out of active material attachments");
+});
+
 test("structured variants validate source before capture and apply only known variants", () => {
   createCoveragePresentation("variants");
   const currentSpec = readSlideSpec("slide-01");

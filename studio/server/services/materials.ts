@@ -118,6 +118,58 @@ function getMaterial(materialId) {
   return material;
 }
 
+function normalizeGenerationMaterial(value) {
+  if (!value || typeof value !== "object") {
+    return null;
+  }
+
+  const id = String(value.id || "").trim();
+  const title = String(value.title || value.fileName || "").replace(/\s+/g, " ").trim();
+  const url = String(value.url || "").trim();
+  if (!id || !title || !url) {
+    return null;
+  }
+
+  return {
+    alt: String(value.alt || title).replace(/\s+/g, " ").trim() || title,
+    caption: String(value.caption || "").replace(/\s+/g, " ").trim(),
+    id,
+    title,
+    url
+  };
+}
+
+function getGenerationMaterialContext(options: any = {}) {
+  const activeMaterials = options.includeActiveMaterials === false
+    ? []
+    : listMaterials().map(normalizeGenerationMaterial).filter(Boolean);
+  const inlineMaterials = Array.isArray(options.materials)
+    ? options.materials.map(normalizeGenerationMaterial).filter(Boolean)
+    : [];
+  const materialMap = new Map();
+
+  [
+    ...inlineMaterials,
+    ...activeMaterials
+  ].forEach((material) => {
+    if (!materialMap.has(material.id)) {
+      materialMap.set(material.id, material);
+    }
+  });
+
+  const materials = Array.from(materialMap.values()).slice(0, 12);
+
+  return {
+    materials,
+    promptText: materials.map((material, index) => [
+      `[${index + 1}] ${material.id}`,
+      `Title: ${material.title}`,
+      `Alt: ${material.alt}`,
+      material.caption ? `Caption: ${material.caption}` : ""
+    ].filter(Boolean).join("\n")).join("\n\n")
+  };
+}
+
 function createMaterialFromDataUrl(input: any = {}) {
   const parsed = parseDataUrl(input.dataUrl);
   const paths = getActivePresentationPaths();
@@ -174,6 +226,7 @@ function getMaterialFilePath(presentationId, fileName) {
 
 module.exports = {
   createMaterialFromDataUrl,
+  getGenerationMaterialContext,
   getMaterial,
   getMaterialFilePath,
   listMaterials

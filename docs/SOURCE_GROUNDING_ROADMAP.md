@@ -9,6 +9,7 @@ This document tracks the next practical steps for combining Slideotter's determi
 - Generation builds a lightweight retrieval query from deck fields and retrieves matching source chunks through keyword scoring.
 - Retrieved chunks are injected into initial or regenerated deck generation. Local generation can use them directly, and LLM generation receives them as grounded context.
 - Retrieved source metadata is returned by generation and surfaced in the collapsed generation diagnostics panel.
+- Starter images and presentation material metadata can be included in generation. The generator may attach a semantically matching existing material to a slide, but it does not perform web image search.
 
 ## Product Goals
 
@@ -57,6 +58,12 @@ This document tracks the next practical steps for combining Slideotter's determi
    - Cap retrieved snippets and excerpt sizes deliberately.
    - Report how many snippets and sources were used by a generation.
    - Prefer transparent truncation over hidden prompt bloat.
+
+8. **Material-Aware Generation**
+   - Status: implemented for existing/starter presentation materials.
+   - New presentation setup can save a starter image before the initial deck is generated.
+   - Generation receives bounded material metadata and may attach matching image material by id.
+   - Server-side materialization validates that attached media refers to known presentation material metadata.
 
 ## Non-Goals For Now
 

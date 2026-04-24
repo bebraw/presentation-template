@@ -1,6 +1,7 @@
 const { createStructuredResponse, getLlmConfig, getLlmStatus } = require("./llm/client.ts");
 const { validateSlideSpec } = require("./slide-specs/index.ts");
 const { getGenerationSourceContext } = require("./sources.ts");
+const { getGenerationMaterialContext } = require("./materials.ts");
 
 const allowedGenerationModes = new Set(["auto", "local", "llm"]);
 const defaultSlideCount = 5;
@@ -100,6 +101,84 @@ function collectProvidedUrls(fields: any = {}) {
     fields.outline,
     ...sourceUrls
   ].flatMap(extractUrls);
+}
+
+function tokenizeMaterialText(value) {
+  return String(value || "")
+    .toLowerCase()
+    .match(/[a-z0-9][a-z0-9-]{2,}/g) || [];
+}
+
+function scoreMaterialForSlide(material, planSlide) {
+  const materialTokens = new Set(tokenizeMaterialText([
+    material.title,
+    material.alt,
+    material.caption
+  ].filter(Boolean).join(" ")));
+  const slideTokens = tokenizeMaterialText([
+    planSlide && planSlide.title,
+    planSlide && planSlide.summary,
+    ...(Array.isArray(planSlide && planSlide.keyPoints)
+      ? planSlide.keyPoints.flatMap((point) => [point && point.title, point && point.body])
+      : [])
+  ].filter(Boolean).join(" "));
+
+  return slideTokens.reduce((score, token) => score + (materialTokens.has(token) ? 1 : 0), 0);
+}
+
+function resolveSlideMaterial(planSlide, materialCandidates, usedMaterialIds) {
+  const materials = Array.isArray(materialCandidates) ? materialCandidates : [];
+  if (!materials.length) {
+    return null;
+  }
+
+  const requestedId = String(planSlide && planSlide.mediaMaterialId || "").trim();
+  if (requestedId) {
+    const requested = materials.find((material) => material.id === requestedId && !usedMaterialIds.has(material.id));
+    if (requested) {
+      usedMaterialIds.add(requested.id);
+      return requested;
+    }
+  }
+
+  let bestMaterial = null;
+  let bestScore = 0;
+  materials.forEach((material) => {
+    if (usedMaterialIds.has(material.id)) {
+      return;
+    }
+
+    const score = scoreMaterialForSlide(material, planSlide);
+    if (score > bestScore) {
+      bestMaterial = material;
+      bestScore = score;
+    }
+  });
+
+  if (bestMaterial && bestScore > 0) {
+    usedMaterialIds.add(bestMaterial.id);
+    return bestMaterial;
+  }
+
+  return null;
+}
+
+function materialToMedia(material) {
+  if (!material) {
+    return undefined;
+  }
+
+  const media: any = {
+    alt: sentence(material.alt || material.title, material.title, 16),
+    id: material.id,
+    src: material.url
+  };
+
+  if (material.caption) {
+    media.caption = sentence(material.caption, material.title, 16);
+  }
+
+  return media;
 }
 
 function uniqueBy(values, getKey) {
@@ -234,6 +313,7 @@ function createPlanSchema(slideCount) {
               minItems: 4,
               type: "array"
             },
+            mediaMaterialId: { type: "string" },
             role: {
               enum: ["opening", "context", "concept", "mechanics", "example", "tradeoff", "reference", "handoff"],
               type: "string"
@@ -241,7 +321,7 @@ function createPlanSchema(slideCount) {
             summary: { type: "string" },
             title: { type: "string" }
           },
-          required: ["title", "role", "summary", "keyPoints"],
+          required: ["title", "role", "summary", "keyPoints", "mediaMaterialId"],
           type: "object"
         },
         maxItems: slideCount,
@@ -517,6 +597,7 @@ function createLocalPlan(fields, slideCount) {
         body: `${roleTitle} should make ${title} easier to understand.`,
         title: `${roleTitle} ${itemIndex + 1}`
       })),
+      mediaMaterialId: "",
       role,
       summary: role === "opening"
         ? objective
@@ -656,6 +737,8 @@ function materializePlan(fields, plan) {
   const slides = Array.isArray(plan.slides) ? plan.slides : [];
   const title = sentence(fields.title, "Untitled presentation", 8);
   const total = slides.length;
+  const materialCandidates = Array.isArray(fields.materialCandidates) ? fields.materialCandidates : [];
+  const usedMaterialIds = new Set();
   const suppliedUrls = new Set(collectProvidedUrls(fields));
   const references = Array.isArray(plan.references)
     ? plan.references
@@ -670,10 +753,12 @@ function materializePlan(fields, plan) {
     const prefix = slugPart(planSlide.title, `slide-${slideNumber}`);
 
     if (isFirst) {
+      const media = materialToMedia(resolveSlideMaterial(planSlide, materialCandidates, usedMaterialIds));
       return validateSlideSpec({
         cards: toCards(planSlide, `${prefix}-card`, 3),
         eyebrow: "Opening",
         layout: "focus",
+        ...(media ? { media } : {}),
         note: buildCoverNote(fields),
         summary: sentence(planSlide.summary, fields.objective || `Explain ${title}.`, 18),
         title,
@@ -682,6 +767,7 @@ function materializePlan(fields, plan) {
     }
 
     if (isLast) {
+      const media = materialToMedia(resolveSlideMaterial(planSlide, materialCandidates, usedMaterialIds));
       const resourceItems = fillToLength(references.map((reference, referenceIndex) => ({
         body: reference.url,
         id: `${prefix}-resource-${referenceIndex + 1}`,
@@ -702,6 +788,7 @@ function materializePlan(fields, plan) {
         bullets: toCards(planSlide, `${prefix}-bullet`, 3),
         eyebrow: "Close",
         layout: "checklist",
+        ...(media ? { media } : {}),
         resources: resourceItems,
         resourcesTitle: references.length ? "References" : "Keep nearby",
         summary: sentence(planSlide.summary, "Close with the next useful action.", 18),
@@ -710,7 +797,11 @@ function materializePlan(fields, plan) {
       });
     }
 
-    return toContentSlide(planSlide, slideNumber, fields);
+    const media = materialToMedia(resolveSlideMaterial(planSlide, materialCandidates, usedMaterialIds));
+    return validateSlideSpec({
+      ...toContentSlide(planSlide, slideNumber, fields),
+      ...(media ? { media } : {})
+    });
   });
 }
 
@@ -723,6 +814,8 @@ function collectVisibleText(slideSpec) {
     slideSpec.signalsTitle,
     slideSpec.guardrailsTitle,
     slideSpec.resourcesTitle,
+    slideSpec.media && slideSpec.media.alt,
+    slideSpec.media && slideSpec.media.caption,
     ...(slideSpec.cards || []).flatMap((item) => [item.title, item.body]),
     ...(slideSpec.signals || []).flatMap((item) => [item.title, item.body]),
     ...(slideSpec.guardrails || []).flatMap((item) => [item.title, item.body]),
@@ -774,6 +867,7 @@ function assertGeneratedSlideQuality(slideSpecs) {
 async function createLlmPlan(fields, slideCount, options: any = {}) {
   const suppliedUrls = collectProvidedUrls(fields);
   const sourceContext = fields.sourceContext || { promptText: "", snippets: [] };
+  const materialContext = fields.materialContext || { promptText: "", materials: [] };
   const result = await createStructuredResponse({
     developerPrompt: [
       "You generate first-draft presentation plans for a local structured-deck studio.",
@@ -784,6 +878,8 @@ async function createLlmPlan(fields, slideCount, options: any = {}) {
       "Do not use field labels such as title, summary, body, key point, or role as visible slide text.",
       "Do not invent academic papers, authors, journals, publication years, citations, or source URLs.",
       "Use retrieved source snippets as grounded material when they are provided.",
+      "Use available image materials only when they clearly fit the slide topic.",
+      "Set mediaMaterialId to the chosen material id for a slide, or to an empty string when no image should be attached.",
       "Only include references whose URLs were supplied by the user or retrieved source snippets. If none were supplied, return an empty references array.",
       "Make the deck useful as a first real draft for someone who gave the brief.",
       "Keep each slide concise enough for projected presentation content."
@@ -806,6 +902,9 @@ async function createLlmPlan(fields, slideCount, options: any = {}) {
       "Retrieved source snippets:",
       sourceContext.promptText || "None",
       "",
+      "Available image materials:",
+      materialContext.promptText || "None",
+      "",
       "Use the first slide as the opening frame and the last slide as the closing handoff when there is more than one slide.",
       "For a technical teaching deck, include at least one concrete example slide and one tradeoff/limitations slide when the requested length allows it."
     ].join("\n")
@@ -823,8 +922,14 @@ async function generateInitialPresentation(fields: any = {}) {
   const slideCount = normalizeSlideCount(fields.targetSlideCount || fields.targetCount);
   const generation = resolveGeneration(fields);
   const sourceContext = getGenerationSourceContext(fields);
+  const materialContext = getGenerationMaterialContext({
+    includeActiveMaterials: fields.includeActiveMaterials !== false,
+    materials: fields.presentationMaterials
+  });
   const generationFields = {
     ...fields,
+    materialCandidates: materialContext.materials,
+    materialContext,
     sourceContext,
     sourceSnippets: sourceContext.snippets
   };
@@ -853,6 +958,13 @@ async function generateInitialPresentation(fields: any = {}) {
     },
     retrieval: {
       budget: sourceContext.budget || null,
+      materials: materialContext.materials.map((material) => ({
+        alt: material.alt,
+        caption: material.caption,
+        id: material.id,
+        title: material.title,
+        url: material.url
+      })),
       snippets: sourceContext.snippets.map((snippet) => ({
         chunkIndex: snippet.chunkIndex,
         sourceId: snippet.sourceId,

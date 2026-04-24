@@ -299,10 +299,10 @@ test("initial presentation generation repairs weak LLM plan labels and avoids fa
           { body: "Review official documentation before citing specific behavior.", title: "Verify docs" },
           { body: "Try a small form submission before adopting HTMX broadly.", title: "Practice" },
           { body: "Compare server-rendered fragments with JSON API client rendering.", title: "Compare" },
-          { body: "Academic References: Smith et al., Journal of Web Technologies, 2023.", title: "Academic References" }
+          { body: "Academic References: Smith et al., Journal of Web Technologies, 2023...", title: "Academic References" }
         ],
         role: "handoff",
-        summary: "Close by showing what students should verify and try next.",
+        summary: "Close by showing what students should verify and try next...",
         title: "References and next steps"
       }
     ],
@@ -313,6 +313,10 @@ test("initial presentation generation repairs weak LLM plan labels and avoids fa
     slideSpec.eyebrow,
     slideSpec.title,
     slideSpec.summary,
+    slideSpec.note,
+    slideSpec.signalsTitle,
+    slideSpec.guardrailsTitle,
+    slideSpec.resourcesTitle,
     ...(slideSpec.cards || []).flatMap((item) => [item.title, item.body]),
     ...(slideSpec.signals || []).flatMap((item) => [item.title, item.body]),
     ...(slideSpec.guardrails || []).flatMap((item) => [item.title, item.body]),
@@ -322,18 +326,37 @@ test("initial presentation generation repairs weak LLM plan labels and avoids fa
 
   assert.equal(slideSpecs.length, 3, "materializer should keep the requested plan length");
   assert.ok(!visibleText.some((value) => /^(summary|title:?)$/i.test(String(value))), "materialized slides should not expose schema labels as slide text");
+  assert.ok(!visibleText.some((value) => /\.{3,}|…/.test(String(value))), "materialized slides should not expose ellipsis-truncated text");
+  assert.ok(!visibleText.some((value) => /Refine constraints before expanding the deck|^Guardrails$|^Sources to verify$/i.test(String(value))), "materialized slides should not expose authoring scaffold labels");
   assert.ok(!visibleText.some((value) => /Smith et al\.|Journal of Web Technologies/i.test(String(value))), "materialized slides should not preserve invented bibliographic references");
   assert.ok(
-    slideSpecs[slideSpecs.length - 1].resources.some((resource) => /verified source URL/.test(resource.body)),
+    slideSpecs[slideSpecs.length - 1].resources.some((resource) => /verified source URLs/.test(resource.body)),
     "reference requests without supplied URLs should become source-verification prompts"
   );
 
   const generated = await generateInitialPresentation(fields);
+  const generatedVisibleText = generated.slideSpecs.flatMap((slideSpec) => [
+    slideSpec.eyebrow,
+    slideSpec.title,
+    slideSpec.summary,
+    slideSpec.note,
+    slideSpec.signalsTitle,
+    slideSpec.guardrailsTitle,
+    slideSpec.resourcesTitle,
+    ...(slideSpec.cards || []).flatMap((item) => [item.title, item.body]),
+    ...(slideSpec.signals || []).flatMap((item) => [item.title, item.body]),
+    ...(slideSpec.guardrails || []).flatMap((item) => [item.title, item.body]),
+    ...(slideSpec.bullets || []).flatMap((item) => [item.title, item.body]),
+    ...(slideSpec.resources || []).flatMap((item) => [item.title, item.body])
+  ].filter(Boolean));
+
   assert.equal(generated.slideSpecs.length, 20, "local generation should respect the HTMX target length fixture");
   assert.ok(
     generated.slideSpecs.some((slideSpec) => /Example|Tradeoff|Mechanics/.test(slideSpec.eyebrow || "")),
     "local generation should include teaching-oriented technical slide roles"
   );
+  assert.ok(!generatedVisibleText.some((value) => /\.{3,}|…/.test(String(value))), "local generation should avoid ellipsis truncation");
+  assert.ok(!generatedVisibleText.some((value) => /Refine constraints before expanding the deck|^Guardrails$|^Sources to verify$/i.test(String(value))), "local generation should avoid visible scaffolding labels");
 });
 
 test("materials accept only bounded image data and keep paths presentation-scoped", () => {

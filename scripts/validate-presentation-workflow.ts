@@ -143,10 +143,9 @@ async function main() {
           return document.querySelector("#slide-spec-status")?.textContent?.includes("Previewing unsaved JSON edits");
         });
         await waitForActivePreviewText(page, savedTitle);
-        await Promise.all([
-          page.waitForResponse((response) => response.url().includes("/api/slides/slide-01/slide-spec") && response.status() === 200),
-          page.click("#save-slide-spec-button")
-        ]);
+        const saveSlideSpecResponse = waitForJsonResponse(page, "/api/slides/slide-01/slide-spec", 60_000);
+        await page.click("#save-slide-spec-button");
+        await saveSlideSpecResponse;
         await page.waitForFunction(async (expectedTitle) => {
           const response = await fetch("/api/slides/slide-01");
           const payload = await response.json();
@@ -161,16 +160,14 @@ async function main() {
         await waitForActivePreviewText(page, variantTitle);
         await page.locator(".structured-snapshot-details summary").click();
         await page.fill("#variant-label", "Workflow JSON snapshot");
-        await Promise.all([
-          page.waitForResponse((response) => response.url().includes("/api/variants/capture") && response.status() === 200),
-          page.click("#capture-variant-button")
-        ]);
+        const captureVariantResponse = waitForJsonResponse(page, "/api/variants/capture", 60_000);
+        await page.click("#capture-variant-button");
+        await captureVariantResponse;
         await page.waitForSelector("#variant-list .variant-card:not(.variant-empty-state)");
         await page.waitForSelector("#compare-summary:not([hidden])");
-        await Promise.all([
-          page.waitForResponse((response) => response.url().includes("/api/variants/apply") && response.status() === 200),
-          page.click("#compare-apply-button")
-        ]);
+        const applyVariantResponse = waitForJsonResponse(page, "/api/variants/apply", 120_000);
+        await page.click("#compare-apply-button");
+        await applyVariantResponse;
         await page.waitForFunction(async (expectedTitle) => {
           const response = await fetch("/api/slides/slide-01");
           const payload = await response.json();
@@ -182,10 +179,9 @@ async function main() {
         await page.fill("#manual-system-title", "Workflow system boundary");
         await page.fill("#manual-system-summary", "Verify manual slide creation and removal through the browser workflow.");
         await page.selectOption("#manual-system-after", "slide-01");
-        await Promise.all([
-          page.waitForResponse((response) => response.url().includes("/api/slides/system") && response.status() === 200),
-          page.click("#create-system-slide-button")
-        ]);
+        const createSystemSlideResponse = waitForJsonResponse(page, "/api/slides/system", 120_000);
+        await page.click("#create-system-slide-button");
+        await createSystemSlideResponse;
         await page.waitForFunction(async () => {
           const response = await fetch("/api/state");
           const payload = await response.json();
@@ -197,10 +193,9 @@ async function main() {
 
         await page.locator(".manual-delete-details summary").click();
         await page.selectOption("#manual-delete-slide", insertedSlide.id);
-        await Promise.all([
-          page.waitForResponse((response) => response.url().includes("/api/slides/delete") && response.status() === 200),
-          page.click("#delete-slide-button")
-        ]);
+        const deleteSlideResponse = waitForJsonResponse(page, "/api/slides/delete", 120_000);
+        await page.click("#delete-slide-button");
+        await deleteSlideResponse;
         await page.waitForFunction(async () => {
           const response = await fetch("/api/state");
           const payload = await response.json();

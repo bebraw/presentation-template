@@ -349,6 +349,16 @@ async function main() {
             return {
               drawer: rectFor("#structured-draft-drawer"),
               editor: rectFor("#slide-spec-editor"),
+              highlightedKeyColor: (() => {
+                const token = document.querySelector("#slide-spec-highlight .json-token-key");
+                return token ? window.getComputedStyle(token).color : "";
+              })(),
+              highlightedKeyWeight: (() => {
+                const token = document.querySelector("#slide-spec-highlight .json-token-key");
+                return token ? window.getComputedStyle(token).fontWeight : "";
+              })(),
+              highlightSoftTextColor: window.getComputedStyle(document.documentElement).getPropertyValue("--app-soft-text").trim(),
+              highlightTokenCount: document.querySelectorAll("#slide-spec-highlight .json-token-key, #slide-spec-highlight .json-token-string, #slide-spec-highlight .json-token-number, #slide-spec-highlight .json-token-literal").length,
               saveButton: rectFor("#save-slide-spec-button"),
               toggle: rectFor("#structured-draft-toggle"),
               toggleLabel: document.querySelector("#structured-draft-toggle")?.textContent?.replace(/\s+/g, " ").trim() || "",
@@ -359,6 +369,16 @@ async function main() {
 
           assert.ok(structuredMetrics.drawer, "Structured draft drawer should open");
           assert.ok(structuredMetrics.editor, "Structured draft drawer should expose the JSON editor");
+          assert.ok(structuredMetrics.highlightTokenCount > 4, "Structured draft JSON editor should render syntax tokens");
+          assert.notEqual(
+            structuredMetrics.highlightedKeyColor,
+            structuredMetrics.highlightSoftTextColor,
+            "Structured draft JSON token colors should not be overridden by generic field label styling"
+          );
+          assert.ok(
+            Number(structuredMetrics.highlightedKeyWeight) < 600,
+            "Structured draft JSON tokens should not inherit field label font weight"
+          );
           assert.ok(structuredMetrics.saveButton, "Structured draft drawer should expose the save action");
           assert.ok(structuredMetrics.toggle, "Structured draft drawer should keep its drawer tab visible");
           assert.equal(structuredMetrics.toggleLabel, "Spec", "Structured draft drawer should keep the Spec tab label when open");

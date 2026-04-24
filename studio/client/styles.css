@@ -2059,35 +2059,40 @@ html[data-app-theme="dark"] .theme-toggle-knob {
   background: var(--app-ring);
 }
 
-.json-token-key {
+.json-editor-highlight span {
+  font-size: inherit;
+  font-weight: 400;
+}
+
+.json-editor-highlight .json-token-key {
   color: #875400;
 }
 
-.json-token-string {
+.json-editor-highlight .json-token-string {
   color: #1f6f43;
 }
 
-.json-token-number {
+.json-editor-highlight .json-token-number {
   color: #315fc4;
 }
 
-.json-token-literal {
+.json-editor-highlight .json-token-literal {
   color: #8d3f8f;
 }
 
-html[data-app-theme="dark"] .json-token-key {
+html[data-app-theme="dark"] .json-editor-highlight .json-token-key {
   color: #f1bd72;
 }
 
-html[data-app-theme="dark"] .json-token-string {
+html[data-app-theme="dark"] .json-editor-highlight .json-token-string {
   color: #88d49d;
 }
 
-html[data-app-theme="dark"] .json-token-number {
+html[data-app-theme="dark"] .json-editor-highlight .json-token-number {
   color: #91bdff;
 }
 
-html[data-app-theme="dark"] .json-token-literal {
+html[data-app-theme="dark"] .json-editor-highlight .json-token-literal {
   color: #dda1df;
 }
 

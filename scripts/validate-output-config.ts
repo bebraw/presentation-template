@@ -9,8 +9,10 @@ function main() {
   const expectedArchive = path.join(path.dirname(outputConfig.archiveFile), `${presentationsState.activePresentationId}.pdf`);
   const expectedBaseline = path.join(path.dirname(outputConfig.baselineDir), presentationsState.activePresentationId);
   const expectedContactSheet = path.join(outputConfig.outputDir, presentationsState.activePresentationId, "contact-sheet.png");
+  const expectedDeckStructurePreviewDir = path.join(outputConfig.outputDir, presentationsState.activePresentationId, "deck-structure-previews");
   const expectedPdf = path.join(outputConfig.outputDir, `${presentationsState.activePresentationId}.pdf`);
   const expectedPreviewDir = path.join(outputConfig.outputDir, presentationsState.activePresentationId, "rendered-pages");
+  const expectedVariantPreviewDir = path.join(outputConfig.outputDir, presentationsState.activePresentationId, "variant-previews");
 
   assert.equal(
     outputConfig.outputBaseName,
@@ -41,6 +43,16 @@ function main() {
     outputConfig.previewDir,
     expectedPreviewDir,
     "Preview image path should be derived from the active presentation id"
+  );
+  assert.equal(
+    outputConfig.deckStructurePreviewDir,
+    expectedDeckStructurePreviewDir,
+    "Deck-plan preview path should be derived from the active presentation id"
+  );
+  assert.equal(
+    outputConfig.variantPreviewDir,
+    expectedVariantPreviewDir,
+    "Variant preview path should be derived from the active presentation id"
   );
 
   process.stdout.write("Output config validation passed.\n");

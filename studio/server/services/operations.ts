@@ -8,7 +8,7 @@ const { getIdeateSlideResponseSchema } = require("./llm/schemas.ts");
 const { createStandaloneSlideHtml, withBrowser } = require("./dom-export.ts");
 const { getDomPreviewState } = require("./dom-preview.ts");
 const { getOutputConfig } = require("./output-config.ts");
-const { deckStructurePreviewDir, outputDir, variantPreviewDir } = require("./paths.ts");
+const { outputDir } = require("./paths.ts");
 const { applyDeckStructurePlan, getDeckContext, saveDeckContext } = require("./state.ts");
 const { createStructuredSlide, getSlide, getSlides, peekNextStructuredSlideFileName, readSlideSpec, writeSlideSpec } = require("./slides.ts");
 const { validateSlideSpec } = require("./slide-specs/index.ts");
@@ -301,7 +301,7 @@ function createIdeaThemes(slide, context) {
           title: "Candidate flow"
         },
         {
-          body: "studio/output/variant-previews/",
+          body: "studio/output/<presentation-id>/variant-previews/",
           bodyFontSize: 10.6,
           id: `${slide.id}-structure-resource-2`,
           title: "Preview images"
@@ -666,7 +666,7 @@ function createThemeDirections(slide, currentSpec, context) {
           title: "Theme brief"
         },
         {
-          body: "studio/output/variant-previews/",
+          body: "studio/output/<presentation-id>/variant-previews/",
           bodyFontSize: 10.6,
           id: `${slide.id}-theme-editorial-resource-2`,
           title: "Preview pass"
@@ -2492,8 +2492,8 @@ async function renderDeckStructureCandidatePreview(candidate) {
   const originalSlides = getSlides({ includeArchived: true });
   const originalSpecs = new Map(originalSlides.map((slide) => [slide.id, readSlideSpec(slide.id)]));
   const originalContext = getDeckContext();
+  const { deckStructurePreviewDir, previewDir } = getOutputConfig();
   const candidateDir = path.join(deckStructurePreviewDir, candidate.id);
-  const { previewDir } = getOutputConfig();
   const currentRenderedPages = listPages(previewDir);
 
   ensureAllowedDir(deckStructurePreviewDir);
@@ -3328,6 +3328,7 @@ function createTransientVariant(options) {
 
 async function renderVariantPreview(slideId, slideSpec, variantId, visualTheme = null) {
   const slide = getSlide(slideId);
+  const { variantPreviewDir } = getOutputConfig();
   ensureAllowedDir(variantPreviewDir);
   const previewState = getDomPreviewState();
   const theme = visualTheme && typeof visualTheme === "object" && !Array.isArray(visualTheme)

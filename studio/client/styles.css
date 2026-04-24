@@ -225,6 +225,27 @@ input[type="color"]::-moz-color-swatch {
   white-space: nowrap;
 }
 
+.nav-checks-button {
+  display: inline-flex;
+  align-items: center;
+  max-width: 12rem;
+  border: 0;
+  border-radius: 999px;
+  padding: 0.34rem 0.52rem;
+  background: transparent;
+  color: var(--app-soft-text);
+  font-size: 0.78rem;
+  line-height: 1;
+  transform: none;
+}
+
+.nav-checks-button:hover,
+.nav-checks-button.active {
+  background: rgba(18, 22, 28, 0.04);
+  color: var(--app-text);
+  transform: none;
+}
+
 .nav-current-slide {
   max-width: min(28vw, 22rem);
   color: var(--app-text);
@@ -232,8 +253,8 @@ input[type="color"]::-moz-color-swatch {
 }
 
 .nav-validation {
-  flex: 0 0 auto;
-  color: var(--app-soft-text);
+  display: inline-block;
+  color: inherit;
 }
 
 .nav-validation::before {
@@ -314,6 +335,50 @@ input[type="color"]::-moz-color-swatch {
 
 .validation-page {
   gap: 1.5rem;
+}
+
+.checks-panel {
+  position: fixed;
+  z-index: 30;
+  top: 4.85rem;
+  right: max(1rem, calc((100vw - 82rem) / 2 + 1.5rem));
+  display: grid;
+  width: min(31rem, calc(100vw - 2rem));
+  max-height: min(42rem, calc(100vh - 6rem));
+  overflow: auto;
+  padding: 1rem;
+  border: 1px solid var(--app-line);
+  background: rgba(255, 255, 255, 0.98);
+  box-shadow: 0 1rem 2.4rem rgba(18, 22, 28, 0.11);
+  backdrop-filter: blur(18px);
+}
+
+.checks-panel[hidden] {
+  display: none;
+}
+
+.checks-panel .editorial-block {
+  padding-top: 0;
+}
+
+.checks-panel .editorial-block + .editorial-block {
+  margin-top: 1rem;
+  padding-top: 1rem;
+}
+
+.checks-panel .section-heading {
+  align-items: start;
+  margin-bottom: 0.65rem;
+}
+
+.checks-panel .section-heading h2 {
+  font-size: 1.25rem;
+}
+
+.checks-panel .section-note {
+  margin-top: 0.45rem;
+  font-size: 0.9rem;
+  line-height: 1.48;
 }
 
 /* Studio rule: separate regions with spacing and dividers, not card containers. */
@@ -2466,12 +2531,12 @@ input[type="color"]::-moz-color-swatch {
 }
 
 .validation-actions {
-  margin-top: 1.1rem;
+  margin-top: 0.9rem;
 }
 
 .validation-result-panel {
-  margin-top: 1.35rem;
-  padding-top: 1.1rem;
+  margin-top: 1rem;
+  padding-top: 0.85rem;
   border-top: 1px solid var(--app-line);
 }
 
@@ -2513,6 +2578,33 @@ input[type="color"]::-moz-color-swatch {
   gap: 0.75rem;
   align-items: end;
   margin-top: 0.95rem;
+}
+
+.checks-panel .validation-summary-grid {
+  grid-template-columns: 1fr;
+  gap: 0.45rem;
+  margin-bottom: 0.75rem;
+}
+
+.checks-panel .validation-summary-card {
+  grid-template-columns: minmax(0, 1fr) max-content max-content;
+  align-items: center;
+  padding: 0.55rem 0.65rem;
+}
+
+.checks-panel .validation-settings-row {
+  grid-template-columns: 1fr;
+}
+
+.checks-panel .validation-rule-details {
+  margin-top: 0.75rem;
+  padding-top: 0.75rem;
+}
+
+.checks-panel .report {
+  min-height: 4.5rem;
+  max-height: 9.5rem;
+  font-size: 0.8rem;
 }
 
 .validation-rule-details {
@@ -2622,6 +2714,11 @@ input[type="color"]::-moz-color-swatch {
 .validation-report-page {
   min-height: 10rem;
   max-height: 26rem;
+}
+
+.checks-panel .validation-report-page {
+  min-height: 4.5rem;
+  max-height: 9.5rem;
 }
 
 @media (max-width: 1180px) {

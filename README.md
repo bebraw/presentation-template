@@ -48,7 +48,7 @@ The UI currently includes:
 - workflow chat with optional selected-text context from the current slide
 - slide candidate generation, review, visual comparison, and apply controls
 - deck planning with manual system-slide insertion and removal, compact plan summaries, palette controls, and apply previews
-- validation console with compact settings and discoverable rule severity overrides
+- masthead checks panel with compact settings and discoverable rule severity overrides
 
 The same DOM renderer is also exposed as a standalone deck preview at `/deck-preview` while the studio server is running.
 

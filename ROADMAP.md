@@ -292,8 +292,8 @@ Current implementation uses a centered white-canvas workspace with page-level se
 
 - `Studio` page for preview, slide context, workflow generation, and compare/apply
 - `Deck Planning` page for deck brief, manual system-slide insertion/removal, and deck-plan ideation
-- `Validation` page for deck checks and reports
-- sticky top navigation that keeps the current slide and validation state visible with minimal status text
+- compact masthead `Checks` control for deck checks, reports, and check settings
+- sticky top navigation that keeps the current slide and check state visible with minimal status text
 - fold-out side rails for the assistant and structured draft editor
 - compact workflow chat for command-style assistant actions
 - selected active-slide text can be attached to workflow chat turns as local context
@@ -302,8 +302,8 @@ Current implementation uses a centered white-canvas workspace with page-level se
 - TypeScript checking now runs as a no-emit quality gate across the TypeScript runtime; keep new code type-check clean and tighten declarations opportunistically.
 - a compact slide-candidate workbench that keeps generation modes, workflow progress, candidate counts, and review state close together while hiding provider diagnostics and workflow event output behind an inspectable debug panel
 - an integrated slide-candidate review and compare workspace for fast visual inspection of alternatives
-- a consolidated validation console that keeps run actions, summary status, actionable report details, and compact settings on one focused page
-- an explicit validation override disclosure control for rule-severity settings
+- a compact checks panel that keeps run actions, summary status, actionable report details, and settings available from the masthead
+- an explicit check override disclosure control for rule-severity settings
 - a compact deck-planning console that keeps brief, outline, palette swatches, guardrails, and deck-plan results close without expanding every plan detail by default
 
 Visual rules for the current studio UI:

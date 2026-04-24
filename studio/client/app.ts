@@ -25,6 +25,7 @@ const state: any = {
   transientVariants: [],
   ui: {
     assistantOpen: false,
+    checksOpen: false,
     deckPlanApplySharedSettings: {},
     currentPage: "studio",
     structuredDraftOpen: false,
@@ -46,6 +47,7 @@ const elements: Record<string, any> = {
   assistantToggle: document.getElementById("assistant-toggle"),
   captureVariantButton: document.getElementById("capture-variant-button"),
   checkLlmButton: document.getElementById("check-llm-button"),
+  closeValidationPageButton: document.getElementById("close-validation-page"),
   compareApplyButton: document.getElementById("compare-apply-button"),
   compareApplyValidateButton: document.getElementById("compare-apply-validate-button"),
   compareChangeSummary: document.getElementById("compare-change-summary"),
@@ -581,8 +583,8 @@ function renderStatus() {
   const selected = state.slides.find((slide) => slide.id === state.selectedSlideId);
 
   elements.validationStatus.textContent = validation && validation.updatedAt
-    ? `Validation ${validation.ok ? "passed" : "failed"}`
-    : "Validation idle";
+    ? `Checks ${validation.ok ? "passed" : "need review"}`
+    : "Checks idle";
   elements.validationStatus.dataset.state = validation && validation.updatedAt
     ? (validation.ok ? "ok" : "warn")
     : "idle";
@@ -662,16 +664,13 @@ function loadCurrentPagePreference() {
   if (hash === "planning") {
     return "planning";
   }
-  if (hash === "validation") {
-    return "validation";
-  }
   if (hash === "studio") {
     return "studio";
   }
 
   try {
     const value = window.localStorage.getItem("studio.currentPage");
-    return ["planning", "validation"].includes(value) ? value : "studio";
+    return value === "planning" ? value : "studio";
   } catch (error) {
     return "studio";
   }
@@ -689,24 +688,29 @@ function renderPages() {
   const current = state.ui.currentPage;
   elements.studioPage.hidden = current !== "studio";
   elements.planningPage.hidden = current !== "planning";
-  elements.validationPage.hidden = current !== "validation";
+  elements.validationPage.hidden = !state.ui.checksOpen;
   elements.structuredDraftDrawer.hidden = current !== "studio";
   elements.showStudioPageButton.classList.toggle("active", current === "studio");
   elements.showPlanningPageButton.classList.toggle("active", current === "planning");
-  elements.showValidationPageButton.classList.toggle("active", current === "validation");
+  elements.showValidationPageButton.classList.toggle("active", state.ui.checksOpen);
   elements.showStudioPageButton.setAttribute("aria-pressed", current === "studio" ? "true" : "false");
   elements.showPlanningPageButton.setAttribute("aria-pressed", current === "planning" ? "true" : "false");
-  elements.showValidationPageButton.setAttribute("aria-pressed", current === "validation" ? "true" : "false");
+  elements.showValidationPageButton.setAttribute("aria-expanded", state.ui.checksOpen ? "true" : "false");
   renderStructuredDraftDrawer();
 }
 
 function setCurrentPage(page) {
-  state.ui.currentPage = ["planning", "validation"].includes(page) ? page : "studio";
+  state.ui.currentPage = page === "planning" ? page : "studio";
   const nextHash = `#${state.ui.currentPage}`;
   if (window.location.hash !== nextHash) {
     window.history.replaceState(null, "", nextHash);
   }
   persistCurrentPagePreference();
+  renderPages();
+}
+
+function setChecksPanelOpen(open) {
+  state.ui.checksOpen = Boolean(open);
   renderPages();
 }
 
@@ -949,7 +953,7 @@ function buildDeckDiffSupport(details) {
   }
 
   if (diffFiles.length >= 4) {
-    cues.push("Multiple slide files change; run validation after applying.");
+    cues.push("Multiple slide files change; run checks after applying.");
   }
 
   const changedPlanSteps = plan.filter((slide) => slide && slide.action && slide.action !== "keep");
@@ -1284,8 +1288,8 @@ function describeWorkflowProgress(workflow) {
     "generating-variants": "Generating variants...",
     "rendering-variants": "Rendering previews...",
     "rebuilding-previews": "Rebuilding previews...",
-    "validating-geometry-text": "Running validation...",
-    "validating-render": "Running full render validation...",
+    "validating-geometry-text": "Running checks...",
+    "validating-render": "Running full gate...",
     completed: "Workflow completed."
   })[workflow.stage];
 
@@ -2205,7 +2209,7 @@ function renderVariantComparison() {
 function renderValidation() {
   if (!state.validation) {
     elements.validationSummary.innerHTML = "";
-    elements.reportBox.textContent = "No validation run yet.";
+    elements.reportBox.textContent = "No checks run yet.";
     return;
   }
 
@@ -2237,7 +2241,7 @@ function renderValidation() {
     issues.forEach((issue) => {
       const slideLabel = issue.slide ? `slide ${issue.slide}` : label;
       const ruleLabel = issue.rule ? `${issue.rule}: ` : "";
-      issueLines.push(`${slideLabel}: ${ruleLabel}${issue.message || "Validation issue"}`);
+      issueLines.push(`${slideLabel}: ${ruleLabel}${issue.message || "Check issue"}`);
     });
   });
 
@@ -2253,7 +2257,6 @@ function renderValidation() {
     : skippedChecks.length
       ? `No issues found. Skipped ${skippedChecks.join(", ")}.`
       : "No issues found.";
-  setCurrentPage("validation");
 }
 
 function syncSelectedSlideToActiveList() {
@@ -2529,7 +2532,7 @@ async function saveValidationSettings() {
     state.context = payload.context;
     renderDeckFields();
     await buildDeck();
-    elements.operationStatus.textContent = "Saved validation settings and rebuilt the live deck.";
+    elements.operationStatus.textContent = "Saved check settings and rebuilt the live deck.";
   } finally {
     done();
   }
@@ -2790,7 +2793,7 @@ async function applyVariantById(variantId, options: any = {}) {
 
   if (options.validateAfter) {
     await validate(false);
-    elements.operationStatus.textContent = `Applied ${options.label || "variant"} and ran validation.`;
+    elements.operationStatus.textContent = `Applied ${options.label || "variant"} and ran checks.`;
   }
 }
 
@@ -2982,7 +2985,7 @@ async function sendAssistantMessage() {
     state.runtime = payload.runtime;
     if (payload.validation) {
       state.validation = payload.validation;
-      setCurrentPage("validation");
+      setChecksPanelOpen(true);
     }
     if (payload.action && payload.action.type === "ideate-deck-structure") {
       state.deckStructureCandidates = payload.deckStructureCandidates || [];
@@ -3066,7 +3069,8 @@ elements.assistantToggle.addEventListener("click", () => {
 });
 elements.showStudioPageButton.addEventListener("click", () => setCurrentPage("studio"));
 elements.showPlanningPageButton.addEventListener("click", () => setCurrentPage("planning"));
-elements.showValidationPageButton.addEventListener("click", () => setCurrentPage("validation"));
+elements.showValidationPageButton.addEventListener("click", () => setChecksPanelOpen(!state.ui.checksOpen));
+elements.closeValidationPageButton.addEventListener("click", () => setChecksPanelOpen(false));
 elements.structuredDraftToggle.addEventListener("click", () => {
   setStructuredDraftDrawerOpen(!state.ui.structuredDraftOpen);
 });
@@ -3076,6 +3080,9 @@ elements.saveSlideContextButton.addEventListener("click", () => saveSlideContext
 
 document.addEventListener("keydown", (event) => {
   if (event.key === "Escape") {
+    if (state.ui.checksOpen) {
+      setChecksPanelOpen(false);
+    }
     if (state.ui.assistantOpen) {
       setAssistantDrawerOpen(false);
     }
@@ -3087,10 +3094,17 @@ document.addEventListener("keydown", (event) => {
 
 window.addEventListener("hashchange", () => {
   const page = window.location.hash.replace(/^#/, "");
-  setCurrentPage(page === "planning" || page === "validation" ? page : "studio");
+  if (page === "validation") {
+    setCurrentPage("studio");
+    setChecksPanelOpen(true);
+    return;
+  }
+
+  setCurrentPage(page === "planning" ? page : "studio");
 });
 
 state.ui.currentPage = loadCurrentPagePreference();
+state.ui.checksOpen = window.location.hash.replace(/^#/, "") === "validation";
 state.ui.assistantOpen = loadAssistantDrawerPreference();
 state.ui.structuredDraftOpen = loadStructuredDraftDrawerPreference();
 renderPages();

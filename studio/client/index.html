@@ -15,12 +15,19 @@
         <nav class="page-nav" aria-label="Studio pages">
           <button class="secondary page-nav-button" id="show-studio-page" type="button">Slide Studio</button>
           <button class="secondary page-nav-button" id="show-planning-page" type="button">Deck Planning</button>
-          <button class="secondary page-nav-button" id="show-validation-page" type="button">Validation</button>
         </nav>
 
         <div class="masthead-meta" aria-label="Current deck status">
           <span class="nav-current-slide" id="selected-slide-label">Slide not selected</span>
-          <span class="nav-validation" id="validation-status">Validation idle</span>
+          <button
+            class="nav-checks-button"
+            id="show-validation-page"
+            type="button"
+            aria-controls="validation-page"
+            aria-expanded="false"
+          >
+            <span class="nav-validation" id="validation-status">Checks idle</span>
+          </button>
         </div>
       </header>
 
@@ -480,13 +487,14 @@
           </article>
         </section>
 
-        <section class="workspace-page validation-page" id="validation-page" hidden>
+        <section class="checks-panel validation-page" id="validation-page" hidden aria-label="Deck checks">
           <article class="editorial-block editorial-block-wide validation-console">
             <div class="section-heading">
               <div>
-                <p class="eyebrow">Validation</p>
-                <h2>Deck Checks</h2>
+                <p class="eyebrow">Checks</p>
+                <h2>Deck Gate</h2>
               </div>
+              <button id="close-validation-page" class="secondary utility-button" type="button">Close</button>
             </div>
 
             <p class="section-note">
@@ -494,13 +502,13 @@
             </p>
 
             <div class="button-row compact validation-actions">
-              <button id="validate-button">Validate geometry + text</button>
-              <button id="validate-render-button" class="secondary">Validate full render</button>
+              <button id="validate-button">Run fast checks</button>
+              <button id="validate-render-button" class="secondary">Run full gate</button>
             </div>
 
             <div class="validation-result-panel">
               <div class="validation-summary-grid" id="validation-summary"></div>
-              <pre class="report validation-report-page" id="report-box">No validation run yet.</pre>
+              <pre class="report validation-report-page" id="report-box">No checks run yet.</pre>
             </div>
           </article>
 
@@ -508,7 +516,7 @@
             <div class="section-heading">
               <div>
                 <p class="eyebrow">Settings</p>
-                <h2>Validation Settings</h2>
+                <h2>Check Settings</h2>
               </div>
             </div>
 
@@ -520,14 +528,14 @@
                   <option value="complete">Complete pass</option>
                 </select>
               </label>
-              <button id="save-validation-settings-button" class="secondary">Save validation settings</button>
+              <button id="save-validation-settings-button" class="secondary">Save check settings</button>
             </div>
 
             <details class="validation-rule-details">
               <summary>
                 <span class="disclosure-copy">
                   <strong>Rule severity overrides</strong>
-                  <small>Change which validation findings warn instead of block.</small>
+                  <small>Change which check findings warn instead of block.</small>
                 </span>
                 <span class="disclosure-action" aria-hidden="true">
                   <span class="disclosure-action-closed">Show overrides</span>

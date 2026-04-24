@@ -124,8 +124,8 @@
                       </select>
                     </label>
                     <label class="toggle-option">
-                      <input id="ideate-dry-run" type="checkbox">
-                      <span>Dry run</span>
+                      <span>Count</span>
+                      <input id="ideate-candidate-count" type="number" min="1" max="8" step="1" value="5">
                     </label>
                     <button id="check-llm-button" class="secondary utility-button">Check LLM</button>
                   </div>
@@ -174,7 +174,7 @@
                   <span class="variant-count-pill" id="variant-count-pill">0 variants</span>
                 </div>
                 <p class="section-note" id="variant-storage-note">
-                  Structured-slide variants are stored with each slide document.
+                  Generated candidates stay in the current session until one is applied.
                 </p>
 
                 <div class="variant-review-workspace">
@@ -387,7 +387,7 @@
             </div>
 
             <p class="section-note" id="deck-structure-note">
-              Generate dry-run structure or batch-authoring plans from the saved deck brief and outline, then apply one back to the outline and live slide files when it reads right.
+              Generate structure or batch-authoring plans from the saved deck brief and outline, then apply one back to the outline and live slide files when it reads right.
             </p>
 
             <div class="workflow-variants">
@@ -593,7 +593,7 @@
 
         <div class="button-row compact">
           <button id="save-slide-spec-button">Save spec + rebuild</button>
-          <button id="capture-variant-button" class="secondary">Capture current as variant</button>
+          <button id="capture-variant-button" class="secondary">Capture current as snapshot</button>
         </div>
 
         <label class="field field-grow structured-draft-field-grow">

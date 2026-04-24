@@ -7,25 +7,25 @@ function buildSlideTypeGuidance(slideType) {
     case "cover":
       return [
         "The slide family is cover.",
-        "Return three variants that keep the cover structure intact.",
+        "Return the requested number of variants and keep the cover structure intact.",
         "Each slideSpec must include: title, eyebrow, summary, note, and exactly three cards."
       ].join("\n");
     case "toc":
       return [
         "The slide family is toc.",
-        "Return three variants that preserve the outline-slide structure.",
+        "Return the requested number of variants and preserve the outline-slide structure.",
         "Each slideSpec must include: title, eyebrow, summary, note, and exactly three cards."
       ].join("\n");
     case "content":
       return [
         "The slide family is content.",
-        "Return three variants that preserve the left-signals and right-guardrails structure.",
+        "Return the requested number of variants and preserve the left-signals and right-guardrails structure.",
         "Each slideSpec must include: title, eyebrow, summary, signalsTitle, guardrailsTitle, exactly four signals, and exactly three guardrails."
       ].join("\n");
     case "summary":
       return [
         "The slide family is summary.",
-        "Return three variants that preserve the checklist-plus-resources structure.",
+        "Return the requested number of variants and preserve the checklist-plus-resources structure.",
         "Each slideSpec must include: title, eyebrow, summary, resourcesTitle, exactly three bullets, and exactly two resources."
       ].join("\n");
     default:
@@ -44,7 +44,7 @@ function buildIdeateSlidePrompts(options) {
   ].join("\n\n");
 
   const userPrompt = [
-    "Generate three slide variants from the current presentation context.",
+    `Generate ${options.candidateCount} slide variants from the current presentation context.`,
     "",
     `Slide id: ${options.slide.id}`,
     `Slide title: ${options.slide.title}`,
@@ -59,7 +59,7 @@ function buildIdeateSlidePrompts(options) {
     "Current slide spec:",
     options.source,
     "",
-    "Produce three variants that keep the slide family structure intact, differ meaningfully in framing, and stay readable at presentation scale."
+    `Produce ${options.candidateCount} variants that keep the slide family structure intact, differ meaningfully in framing, and stay readable at presentation scale.`
   ].join("\n");
 
   return {

@@ -175,14 +175,14 @@ function getSlideSpecSchema(slideType) {
   }
 }
 
-function getIdeateSlideResponseSchema(slideType) {
+function getIdeateSlideResponseSchema(slideType, candidateCount = 3) {
   return {
     additionalProperties: false,
     properties: {
       variants: {
         items: createBaseVariantSchema(getSlideSpecSchema(slideType)),
-        maxItems: 3,
-        minItems: 3,
+        maxItems: candidateCount,
+        minItems: candidateCount,
         type: "array"
       }
     },

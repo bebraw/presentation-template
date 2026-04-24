@@ -535,13 +535,14 @@ async function handleIdeateSlide(req, res) {
   }
 
   const reportProgress = createWorkflowProgressReporter({
-    dryRun: body.dryRun === true,
+    dryRun: true,
     operation: "ideate-slide",
     slideId: body.slideId
   });
   const result = await ideateSlide(body.slideId, {
+    candidateCount: body.candidateCount,
     generationMode: body.generationMode,
-    dryRun: body.dryRun === true,
+    dryRun: true,
     onProgress: reportProgress
   });
   runtimeState.build = {
@@ -549,7 +550,7 @@ async function handleIdeateSlide(req, res) {
     updatedAt: new Date().toISOString()
   };
   updateWorkflowState({
-    dryRun: body.dryRun === true,
+    dryRun: true,
     generation: result.generation,
     message: result.summary,
     ok: true,
@@ -571,7 +572,7 @@ async function handleIdeateSlide(req, res) {
     runtime: serializeRuntimeState(),
     slideId: result.slideId,
     summary: result.summary,
-    transientVariants: result.dryRun ? result.variants : [],
+    transientVariants: result.variants,
     variants: listAllVariants()
   });
 }
@@ -583,13 +584,14 @@ async function handleDrillWording(req, res) {
   }
 
   const reportProgress = createWorkflowProgressReporter({
-    dryRun: body.dryRun !== false,
+    dryRun: true,
     operation: "drill-wording",
     slideId: body.slideId
   });
   const result = await drillWordingSlide(body.slideId, {
+    candidateCount: body.candidateCount,
     generationMode: body.generationMode,
-    dryRun: body.dryRun !== false,
+    dryRun: true,
     onProgress: reportProgress
   });
   runtimeState.build = {
@@ -597,7 +599,7 @@ async function handleDrillWording(req, res) {
     updatedAt: new Date().toISOString()
   };
   updateWorkflowState({
-    dryRun: body.dryRun !== false,
+    dryRun: true,
     generation: result.generation,
     message: result.summary,
     ok: true,
@@ -619,7 +621,7 @@ async function handleDrillWording(req, res) {
     runtime: serializeRuntimeState(),
     slideId: result.slideId,
     summary: result.summary,
-    transientVariants: result.dryRun ? result.variants : [],
+    transientVariants: result.variants,
     variants: listAllVariants()
   });
 }
@@ -631,13 +633,14 @@ async function handleIdeateTheme(req, res) {
   }
 
   const reportProgress = createWorkflowProgressReporter({
-    dryRun: body.dryRun !== false,
+    dryRun: true,
     operation: "ideate-theme",
     slideId: body.slideId
   });
   const result = await ideateThemeSlide(body.slideId, {
+    candidateCount: body.candidateCount,
     generationMode: body.generationMode,
-    dryRun: body.dryRun !== false,
+    dryRun: true,
     onProgress: reportProgress
   });
   runtimeState.build = {
@@ -645,7 +648,7 @@ async function handleIdeateTheme(req, res) {
     updatedAt: new Date().toISOString()
   };
   updateWorkflowState({
-    dryRun: body.dryRun !== false,
+    dryRun: true,
     generation: result.generation,
     message: result.summary,
     ok: true,
@@ -667,7 +670,7 @@ async function handleIdeateTheme(req, res) {
     runtime: serializeRuntimeState(),
     slideId: result.slideId,
     summary: result.summary,
-    transientVariants: result.dryRun ? result.variants : [],
+    transientVariants: result.variants,
     variants: listAllVariants()
   });
 }
@@ -675,7 +678,7 @@ async function handleIdeateTheme(req, res) {
 async function handleIdeateDeckStructure(req, res) {
   const body = await readJsonBody(req);
   const reportProgress = createWorkflowProgressReporter({
-    dryRun: body.dryRun !== false,
+    dryRun: true,
     operation: "ideate-deck-structure"
   });
   const result = await ideateDeckStructure({
@@ -683,7 +686,7 @@ async function handleIdeateDeckStructure(req, res) {
     onProgress: reportProgress
   });
   updateWorkflowState({
-    dryRun: body.dryRun !== false,
+    dryRun: true,
     generation: result.generation,
     message: result.summary,
     ok: true,
@@ -708,13 +711,14 @@ async function handleIdeateStructure(req, res) {
   }
 
   const reportProgress = createWorkflowProgressReporter({
-    dryRun: body.dryRun !== false,
+    dryRun: true,
     operation: "ideate-structure",
     slideId: body.slideId
   });
   const result = await ideateStructureSlide(body.slideId, {
+    candidateCount: body.candidateCount,
     generationMode: body.generationMode,
-    dryRun: body.dryRun !== false,
+    dryRun: true,
     onProgress: reportProgress
   });
   runtimeState.build = {
@@ -722,7 +726,7 @@ async function handleIdeateStructure(req, res) {
     updatedAt: new Date().toISOString()
   };
   updateWorkflowState({
-    dryRun: body.dryRun !== false,
+    dryRun: true,
     generation: result.generation,
     message: result.summary,
     ok: true,
@@ -744,7 +748,7 @@ async function handleIdeateStructure(req, res) {
     runtime: serializeRuntimeState(),
     slideId: result.slideId,
     summary: result.summary,
-    transientVariants: result.dryRun ? result.variants : [],
+    transientVariants: result.variants,
     variants: listAllVariants()
   });
 }
@@ -761,8 +765,9 @@ async function handleRedoLayout(req, res) {
     slideId: body.slideId
   });
   const result = await redoLayoutSlide(body.slideId, {
+    candidateCount: body.candidateCount,
     generationMode: body.generationMode,
-    dryRun: body.dryRun !== false,
+    dryRun: true,
     onProgress: reportProgress
   });
   runtimeState.build = {
@@ -792,7 +797,7 @@ async function handleRedoLayout(req, res) {
     runtime: serializeRuntimeState(),
     slideId: result.slideId,
     summary: result.summary,
-    transientVariants: result.dryRun ? result.variants : [],
+    transientVariants: result.variants,
     variants: listAllVariants()
   });
 }
@@ -812,6 +817,7 @@ async function handleAssistantSend(req, res) {
   }
 
   const result = await handleAssistantMessage({
+    candidateCount: body.candidateCount,
     dryRun: body.dryRun !== false,
     generationMode: body.generationMode,
     message: body.message,

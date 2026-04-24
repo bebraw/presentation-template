@@ -14,7 +14,7 @@
     {
       "id": "summary-iterate",
       "title": "Iterate safely",
-      "body": "Generate variants, compare previews and diffs, then apply one candidate."
+      "body": "Generate session-only candidates, compare previews and diffs, then apply one."
     },
     {
       "id": "summary-ship",

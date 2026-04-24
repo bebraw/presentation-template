@@ -9,7 +9,6 @@ const { deckStructurePreviewDir, outputDir, previewDir, variantPreviewDir } = re
 const { applyDeckStructurePlan, getDeckContext, saveDeckContext } = require("./state");
 const { createStructuredSlide, getSlide, getSlides, peekNextStructuredSlideFileName, readSlideSpec, writeSlideSpec } = require("./slides");
 const { validateSlideSpec } = require("./slide-specs");
-const { captureVariant, updateVariant } = require("./variants");
 const {
   copyAllowedFile,
   ensureAllowedDir,
@@ -19,6 +18,9 @@ const { createContactSheet, listPages } = require("./page-artifacts");
 
 const ideateSlideLocks = new Set();
 const allowedGenerationModes = new Set(["auto", "local", "llm"]);
+const defaultCandidateCount = 5;
+const minimumCandidateCount = 1;
+const maximumCandidateCount = 8;
 
 function reportProgress(options, progress) {
   if (typeof options.onProgress === "function") {
@@ -67,6 +69,15 @@ function toBody(value, fallback) {
 function normalizeGenerationMode(value) {
   const mode = typeof value === "string" ? value.trim().toLowerCase() : "";
   return allowedGenerationModes.has(mode) ? mode : "auto";
+}
+
+function normalizeCandidateCount(value) {
+  const parsed = Number.parseInt(value, 10);
+  if (!Number.isFinite(parsed)) {
+    return defaultCandidateCount;
+  }
+
+  return Math.min(maximumCandidateCount, Math.max(minimumCandidateCount, parsed));
 }
 
 function resolveGeneration(options = {}) {
@@ -281,10 +292,10 @@ function createIdeaThemes(slide, context) {
       ],
       resources: [
         {
-          body: slide.structured ? `${slide.fileName} :: variants[]` : "studio/state/variants.json",
+          body: "session candidates + apply",
           bodyFontSize: 11.2,
           id: `${slide.id}-structure-resource-1`,
-          title: "Variant store"
+          title: "Candidate flow"
         },
         {
           body: "studio/output/variant-previews/",
@@ -422,13 +433,7 @@ function buildIdeaSlideSpec(slideType, theme) {
 }
 
 function describeVariantPersistence(options = {}) {
-  if (options.dryRun) {
-    return "Generated as a dry run without saving to the variant store.";
-  }
-
-  return options.persistToSlide
-    ? "Saved as a reusable variant in the slide JSON."
-    : "Saved as a reusable variant in studio state.";
+  return "Generated as a session-only candidate; apply one to update the slide.";
 }
 
 function buildChangeSummary(slideType, theme, options = {}) {
@@ -485,6 +490,92 @@ function createLocalIdeateCandidates(slide, slideType, context, options = {}) {
       slideSpec
     };
   });
+}
+
+function cloneJson(value) {
+  return JSON.parse(JSON.stringify(value));
+}
+
+function rotateCollectionForExtraCandidate(slideSpec, offset) {
+  const next = cloneJson(slideSpec);
+
+  if (Array.isArray(next.cards)) {
+    next.cards = rotateItems(next.cards, offset);
+  }
+
+  if (Array.isArray(next.bullets)) {
+    next.bullets = rotateItems(next.bullets, offset);
+  }
+
+  if (Array.isArray(next.resources)) {
+    next.resources = rotateItems(next.resources, offset);
+  }
+
+  if (Array.isArray(next.signals)) {
+    next.signals = rotateItems(next.signals, offset);
+  }
+
+  if (Array.isArray(next.guardrails)) {
+    next.guardrails = rotateItems(next.guardrails, offset);
+  }
+
+  return next;
+}
+
+function createAdditionalLocalCandidate(seed, index) {
+  const emphasis = [
+    { eyebrow: "Focus", label: "Focus pass" },
+    { eyebrow: "Operator", label: "Operator pass" },
+    { eyebrow: "Review", label: "Review pass" },
+    { eyebrow: "Handoff", label: "Handoff pass" },
+    { eyebrow: "Constraint", label: "Constraint pass" }
+  ][index % 5];
+  const slideSpec = rotateCollectionForExtraCandidate(seed.slideSpec, index + 1);
+
+  slideSpec.eyebrow = emphasis.eyebrow;
+  slideSpec.summary = sentence(
+    `${seed.promptSummary || seed.notes || slideSpec.summary}`,
+    slideSpec.summary,
+    16
+  );
+
+  if (slideSpec.note) {
+    slideSpec.note = sentence(
+      `${seed.notes || seed.promptSummary || slideSpec.note}`,
+      slideSpec.note,
+      14
+    );
+  }
+
+  return {
+    ...seed,
+    changeSummary: [
+      ...(Array.isArray(seed.changeSummary) ? seed.changeSummary.slice(0, 3) : []),
+      `Added a ${emphasis.label.toLowerCase()} by rotating the same slide family into a different reading order.`,
+      describeVariantPersistence()
+    ],
+    label: `${emphasis.label}: ${seed.label}`,
+    promptSummary: `${seed.promptSummary || seed.notes || "Local variant"} Additional ${emphasis.label.toLowerCase()} generated for a wider comparison set.`,
+    slideSpec: validateSlideSpec(slideSpec)
+  };
+}
+
+function fitCandidateCount(candidates, candidateCount) {
+  const count = normalizeCandidateCount(candidateCount);
+  const baseCandidates = candidates.slice(0, count);
+
+  if (baseCandidates.length >= count || !candidates.length) {
+    return baseCandidates;
+  }
+
+  const nextCandidates = [...baseCandidates];
+
+  while (nextCandidates.length < count) {
+    const seed = candidates[(nextCandidates.length - baseCandidates.length) % candidates.length];
+    nextCandidates.push(createAdditionalLocalCandidate(seed, nextCandidates.length));
+  }
+
+  return nextCandidates;
 }
 
 function collectThemeContext(slide, currentSpec, context) {
@@ -627,10 +718,10 @@ function createThemeDirections(slide, currentSpec, context) {
           title: "System root"
         },
         {
-          body: slide.structured ? `${slide.fileName} :: variants[]` : "studio/state/variants.json",
+          body: "session candidates + apply",
           bodyFontSize: 10.6,
           id: `${slide.id}-theme-systems-resource-2`,
-          title: "Theme variants"
+          title: "Theme candidates"
         }
       ],
       signals: [
@@ -801,8 +892,10 @@ function createLocalThemeCandidates(slide, currentSpec, context, options = {}) {
   }));
 }
 
-async function createLlmIdeateCandidates(slide, slideType, source, context) {
+async function createLlmIdeateCandidates(slide, slideType, source, context, candidateCount) {
+  const count = normalizeCandidateCount(candidateCount);
   const prompts = buildIdeateSlidePrompts({
+    candidateCount: count,
     context,
     slide,
     slideType,
@@ -810,13 +903,13 @@ async function createLlmIdeateCandidates(slide, slideType, source, context) {
   });
   const result = await createStructuredResponse({
     developerPrompt: prompts.developerPrompt,
-    schema: getIdeateSlideResponseSchema(slideType),
+    schema: getIdeateSlideResponseSchema(slideType, count),
     schemaName: `ideate_slide_${slideType}_variants`,
     userPrompt: prompts.userPrompt
   });
 
-  if (!result.data || !Array.isArray(result.data.variants) || result.data.variants.length !== 3) {
-    throw new Error("LLM ideation did not return three structured variants");
+  if (!result.data || !Array.isArray(result.data.variants) || result.data.variants.length !== count) {
+    throw new Error(`LLM ideation did not return ${count} structured variants`);
   }
 
   return result.data.variants.map((variant) => ({
@@ -2958,7 +3051,7 @@ function createLocalDeckStructureCandidates(context) {
             return rewriteTocSlideSpec(baseSpec, details.proposedIndex, details.proposedTitle, {
               cards: [
                 {
-                  body: "Start with the authoring boundary so slide-local and shared logic do not blur together.",
+                  body: "Start with the authoring boundary so slide-specific and shared logic do not blur together.",
                   title: "Authoring boundary"
                 },
                 {
@@ -3066,31 +3159,7 @@ async function materializeCandidatesToVariants(slideId, candidates, options = {}
   for (const candidate of candidates) {
     const slideSpec = validateSlideSpec(candidate.slideSpec);
     const source = serializeSlideSpec(slideSpec);
-
-    if (options.dryRun) {
-      const variant = createTransientVariant({
-        changeSummary: candidate.changeSummary,
-        generator: candidate.generator,
-        kind: "generated",
-        label: options.labelFormatter ? options.labelFormatter(candidate.label) : candidate.label,
-        model: candidate.model,
-        notes: candidate.notes,
-        operation: options.operation,
-        promptSummary: candidate.promptSummary,
-        provider: candidate.provider,
-        slideId,
-        slideSpec,
-        source
-      });
-      const previewImage = await renderVariantPreview(slideId, slideSpec, variant.id);
-      createdVariants.push({
-        ...variant,
-        previewImage
-      });
-      continue;
-    }
-
-    const variant = captureVariant({
+    const variant = createTransientVariant({
       changeSummary: candidate.changeSummary,
       generator: candidate.generator,
       kind: "generated",
@@ -3105,7 +3174,10 @@ async function materializeCandidatesToVariants(slideId, candidates, options = {}
       source
     });
     const previewImage = await renderVariantPreview(slideId, slideSpec, variant.id);
-    createdVariants.push(updateVariant(variant.id, { previewImage }));
+    createdVariants.push({
+      ...variant,
+      previewImage
+    });
   }
 
   return createdVariants;
@@ -3116,7 +3188,7 @@ function createTransientVariant(options) {
   return {
     changeSummary: Array.isArray(options.changeSummary) ? options.changeSummary : [],
     createdAt: timestamp,
-    id: `dry-run-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
+    id: `candidate-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
     kind: options.kind || "generated",
     label: options.label,
     notes: options.notes || "",
@@ -3172,7 +3244,8 @@ async function ideateSlide(slideId, options = {}) {
   const context = getDeckContext();
   const createdVariants = [];
   let previews = null;
-  const dryRun = options.dryRun === true;
+  const dryRun = true;
+  const candidateCount = normalizeCandidateCount(options.candidateCount);
   const slideType = originalSlideSpec.type;
   const generation = resolveGeneration(options);
 
@@ -3189,11 +3262,8 @@ async function ideateSlide(slideId, options = {}) {
       stage: "generating-variants"
     });
     const candidates = generation.mode === "llm"
-      ? await createLlmIdeateCandidates(slide, slideType, serializeSlideSpec(originalSlideSpec), context)
-      : createLocalIdeateCandidates(slide, slideType, context, {
-        dryRun,
-        persistToSlide: slide.structured
-      });
+      ? await createLlmIdeateCandidates(slide, slideType, serializeSlideSpec(originalSlideSpec), context, candidateCount)
+      : fitCandidateCount(createLocalIdeateCandidates(slide, slideType, context), candidateCount);
 
     reportProgress(options, {
       message: `Rendering ${candidates.length} candidate preview${candidates.length === 1 ? "" : "s"}...`,
@@ -3203,7 +3273,7 @@ async function ideateSlide(slideId, options = {}) {
       dryRun,
       labelFormatter: (label) => generation.mode === "llm"
         ? label
-        : `${label} ${dryRun ? "dry run" : "variant"}`,
+        : `${label} candidate`,
       operation: "ideate-slide"
     });
     createdVariants.push(...variants);
@@ -3225,9 +3295,7 @@ async function ideateSlide(slideId, options = {}) {
     generation,
     previews,
     slideId,
-    summary: dryRun
-      ? `Generated ${createdVariants.length} dry-run slide variants for ${slide.title} using ${generation.mode === "llm" ? `${generation.provider} ${generation.model}` : "local rules"}${generation.fallbackReason ? `; ${generation.fallbackReason.toLowerCase()}` : ""}.`
-      : `Generated ${createdVariants.length} slide variants for ${slide.title} using ${generation.mode === "llm" ? `${generation.provider} ${generation.model}` : "local rules"}${generation.fallbackReason ? `; ${generation.fallbackReason.toLowerCase()}` : ""}.`,
+    summary: `Generated ${createdVariants.length} session-only slide candidates for ${slide.title} using ${generation.mode === "llm" ? `${generation.provider} ${generation.model}` : "local rules"}${generation.fallbackReason ? `; ${generation.fallbackReason.toLowerCase()}` : ""}.`,
     variants: createdVariants
   };
 }
@@ -3242,7 +3310,8 @@ async function drillWordingSlide(slideId, options = {}) {
   const originalSlideSpec = readSlideSpec(slideId);
   const createdVariants = [];
   let previews = null;
-  const dryRun = options.dryRun !== false;
+  const dryRun = true;
+  const candidateCount = normalizeCandidateCount(options.candidateCount);
   const generation = {
     available: false,
     fallbackReason: null,
@@ -3261,17 +3330,14 @@ async function drillWordingSlide(slideId, options = {}) {
       message: "Generating wording variants...",
       stage: "generating-variants"
     });
-    const candidates = createLocalWordingCandidates(originalSlideSpec, {
-      dryRun,
-      persistToSlide: slide.structured
-    });
+    const candidates = fitCandidateCount(createLocalWordingCandidates(originalSlideSpec), candidateCount);
     reportProgress(options, {
       message: `Rendering ${candidates.length} wording preview${candidates.length === 1 ? "" : "s"}...`,
       stage: "rendering-variants"
     });
     const variants = await materializeCandidatesToVariants(slideId, candidates, {
       dryRun,
-      labelFormatter: (label) => `${label} ${dryRun ? "dry run" : "variant"}`,
+      labelFormatter: (label) => `${label} candidate`,
       operation: "drill-wording"
     });
     createdVariants.push(...variants);
@@ -3293,9 +3359,7 @@ async function drillWordingSlide(slideId, options = {}) {
     generation,
     previews,
     slideId,
-    summary: dryRun
-      ? `Generated ${createdVariants.length} dry-run wording variants for ${slide.title} using local wording rules.`
-      : `Generated ${createdVariants.length} wording variants for ${slide.title} using local wording rules.`,
+    summary: `Generated ${createdVariants.length} session-only wording candidates for ${slide.title} using local wording rules.`,
     variants: createdVariants
   };
 }
@@ -3311,7 +3375,8 @@ async function ideateThemeSlide(slideId, options = {}) {
   const context = getDeckContext();
   const createdVariants = [];
   let previews = null;
-  const dryRun = options.dryRun !== false;
+  const dryRun = true;
+  const candidateCount = normalizeCandidateCount(options.candidateCount);
   const generation = {
     available: false,
     fallbackReason: null,
@@ -3330,17 +3395,14 @@ async function ideateThemeSlide(slideId, options = {}) {
       message: "Generating theme variants from the saved deck brief...",
       stage: "generating-variants"
     });
-    const candidates = createLocalThemeCandidates(slide, originalSlideSpec, context, {
-      dryRun,
-      persistToSlide: slide.structured
-    });
+    const candidates = fitCandidateCount(createLocalThemeCandidates(slide, originalSlideSpec, context), candidateCount);
     reportProgress(options, {
       message: `Rendering ${candidates.length} theme preview${candidates.length === 1 ? "" : "s"}...`,
       stage: "rendering-variants"
     });
     const variants = await materializeCandidatesToVariants(slideId, candidates, {
       dryRun,
-      labelFormatter: (label) => `${label} ${dryRun ? "dry run" : "variant"}`,
+      labelFormatter: (label) => `${label} candidate`,
       operation: "ideate-theme"
     });
     createdVariants.push(...variants);
@@ -3362,9 +3424,7 @@ async function ideateThemeSlide(slideId, options = {}) {
     generation,
     previews,
     slideId,
-    summary: dryRun
-      ? `Generated ${createdVariants.length} dry-run theme variants for ${slide.title} using local theme rules.`
-      : `Generated ${createdVariants.length} theme variants for ${slide.title} using local theme rules.`,
+    summary: `Generated ${createdVariants.length} session-only theme candidates for ${slide.title} using local theme rules.`,
     variants: createdVariants
   };
 }
@@ -3380,7 +3440,8 @@ async function redoLayoutSlide(slideId, options = {}) {
   const context = getDeckContext();
   const createdVariants = [];
   let previews = null;
-  const dryRun = options.dryRun !== false;
+  const dryRun = true;
+  const candidateCount = normalizeCandidateCount(options.candidateCount);
   const generation = {
     available: false,
     fallbackReason: null,
@@ -3399,17 +3460,14 @@ async function redoLayoutSlide(slideId, options = {}) {
       message: "Generating layout variants...",
       stage: "generating-variants"
     });
-    const candidates = createLocalLayoutCandidates(slide, originalSlideSpec, context, {
-      dryRun,
-      persistToSlide: slide.structured
-    });
+    const candidates = fitCandidateCount(createLocalLayoutCandidates(slide, originalSlideSpec, context), candidateCount);
     reportProgress(options, {
       message: `Rendering ${candidates.length} layout preview${candidates.length === 1 ? "" : "s"}...`,
       stage: "rendering-variants"
     });
     const variants = await materializeCandidatesToVariants(slideId, candidates, {
       dryRun,
-      labelFormatter: (label) => `${label} ${dryRun ? "dry run" : "variant"}`,
+      labelFormatter: (label) => `${label} candidate`,
       operation: "redo-layout"
     });
     createdVariants.push(...variants);
@@ -3431,9 +3489,7 @@ async function redoLayoutSlide(slideId, options = {}) {
     generation,
     previews,
     slideId,
-    summary: dryRun
-      ? `Generated ${createdVariants.length} dry-run layout variants for ${slide.title} using local layout rules.`
-      : `Generated ${createdVariants.length} layout variants for ${slide.title} using local layout rules.`,
+    summary: `Generated ${createdVariants.length} session-only layout candidates for ${slide.title} using local layout rules.`,
     variants: createdVariants
   };
 }
@@ -3449,7 +3505,8 @@ async function ideateStructureSlide(slideId, options = {}) {
   const context = getDeckContext();
   const createdVariants = [];
   let previews = null;
-  const dryRun = options.dryRun !== false;
+  const dryRun = true;
+  const candidateCount = normalizeCandidateCount(options.candidateCount);
   const generation = {
     available: false,
     fallbackReason: null,
@@ -3468,17 +3525,14 @@ async function ideateStructureSlide(slideId, options = {}) {
       message: "Generating structure variants...",
       stage: "generating-variants"
     });
-    const candidates = createLocalStructureCandidates(slide, originalSlideSpec, context, {
-      dryRun,
-      persistToSlide: slide.structured
-    });
+    const candidates = fitCandidateCount(createLocalStructureCandidates(slide, originalSlideSpec, context), candidateCount);
     reportProgress(options, {
       message: `Rendering ${candidates.length} structure preview${candidates.length === 1 ? "" : "s"}...`,
       stage: "rendering-variants"
     });
     const variants = await materializeCandidatesToVariants(slideId, candidates, {
       dryRun,
-      labelFormatter: (label) => `${label} ${dryRun ? "dry run" : "variant"}`,
+      labelFormatter: (label) => `${label} candidate`,
       operation: "ideate-structure"
     });
     createdVariants.push(...variants);
@@ -3500,9 +3554,7 @@ async function ideateStructureSlide(slideId, options = {}) {
     generation,
     previews,
     slideId,
-    summary: dryRun
-      ? `Generated ${createdVariants.length} dry-run structure variants for ${slide.title} using local structure rules.`
-      : `Generated ${createdVariants.length} structure variants for ${slide.title} using local structure rules.`,
+    summary: `Generated ${createdVariants.length} session-only structure candidates for ${slide.title} using local structure rules.`,
     variants: createdVariants
   };
 }
@@ -3545,7 +3597,7 @@ async function ideateDeckStructure(options = {}) {
     dryRun,
     generation,
     summary: dryRun
-      ? `Generated ${candidates.length} dry-run deck-plan candidates from the saved deck context.`
+      ? `Generated ${candidates.length} deck-plan candidates from the saved deck context.`
       : `Generated ${candidates.length} deck-plan candidates from the saved deck context.`
   };
 }

@@ -15,11 +15,11 @@ The browser studio baseline is complete.
 - The local studio runs through `studio/server/` and `studio/client/`.
 - Slide-spec JSON is the source content model for supported `cover`, `toc`, `content`, and `summary` slides.
 - The shared DOM renderer powers browser preview, thumbnails, compare views, preview PNGs, PDF export, and CLI builds.
-- Deck and slide context, design constraints, validation settings, visual theme values, assistant sessions, and structured variants persist in repo-local studio state or slide JSON.
-- Slide-level workflows, deck-planning workflows, assistant-triggered actions, dry-run candidates, safe apply flows, and compare views are available from the browser.
+- Deck and slide context, design constraints, validation settings, visual theme values, assistant sessions, and manual snapshots persist in repo-local studio state; generated slide candidates stay session-only until applied.
+- Slide-level workflows, deck-planning workflows, assistant-triggered actions, session-only candidates, safe apply flows, and compare views are available from the browser.
 - Supported structured slides allow direct text edits from the active DOM preview while still saving through the server-controlled slide-spec path.
 - The browser UI uses a compact sticky top navigation with the project name first and page controls kept available without a large pitch header.
-- Slide variant generation now uses a compact workbench with explicit generation modes, dry-run/provider controls, progress steps, candidate counts, and selected-candidate review state.
+- Slide variant generation now uses a compact workbench with explicit generation modes, a candidate-count control defaulting to five, progress steps, and selected-candidate review state.
 - The validation page is consolidated into a check console plus compact settings section, with rule-severity overrides behind a disclosure and reports focused on actionable details.
 - Validation rule severity overrides use an explicit show/hide disclosure control so the advanced settings are discoverable without staying open.
 - Deck planning is consolidated into a compact planning console with visible palette swatches, tucked-away design guardrails, and deck-plan details hidden until inspection.

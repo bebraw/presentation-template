@@ -589,8 +589,14 @@ input[type="color"]::-moz-color-swatch {
   box-shadow: none;
 }
 
-.variant-settings input[type="checkbox"] {
-  width: auto;
+.variant-settings input[type="number"] {
+  width: 3.3rem;
+  min-height: 1.55rem;
+  padding: 0.2rem 0.35rem;
+  border: 0;
+  background: transparent;
+  box-shadow: none;
+  text-align: center;
 }
 
 .utility-button {
@@ -2459,6 +2465,10 @@ input[type="color"]::-moz-color-swatch {
 
   .variant-settings select {
     min-width: 0;
+  }
+
+  .variant-settings input[type="number"] {
+    width: 100%;
   }
 
   .variant-mode-grid {

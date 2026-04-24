@@ -80,7 +80,7 @@ function buildHelpReply(options = {}) {
 function buildIdeateReply(result, slide) {
   return [
     result.summary,
-    `${result.dryRun ? "Dry run" : "Saved"} for ${slide.index}. ${slide.title}. Compare before applying.`
+    `Session candidates for ${slide.index}. ${slide.title}. Compare before applying.`
   ].join(" ");
 }
 
@@ -115,7 +115,7 @@ function buildIdeateStructureReply(result, slide) {
 function buildIdeateDeckStructureReply(result) {
   return [
     result.summary,
-    "Dry-run deck plans. Inspect one candidate before applying."
+    "Inspect one deck-plan candidate before applying."
   ].join(" ");
 }
 
@@ -218,7 +218,8 @@ async function handleAssistantMessage(options = {}) {
 
   if (intent === "ideate-structure") {
     const result = await ideateStructureSlide(options.slideId, {
-      dryRun: options.dryRun !== false,
+      candidateCount: options.candidateCount,
+      dryRun: true,
       generationMode: options.generationMode,
       onProgress: options.onProgress
     });
@@ -242,14 +243,15 @@ async function handleAssistantMessage(options = {}) {
       session,
       slideId: result.slideId,
       summary: result.summary,
-      transientVariants: result.dryRun ? result.variants : [],
-      variants: result.dryRun ? [] : result.variants
+      transientVariants: result.variants,
+      variants: []
     };
   }
 
   if (intent === "ideate-theme") {
     const result = await ideateThemeSlide(options.slideId, {
-      dryRun: options.dryRun !== false,
+      candidateCount: options.candidateCount,
+      dryRun: true,
       generationMode: options.generationMode,
       onProgress: options.onProgress
     });
@@ -273,14 +275,15 @@ async function handleAssistantMessage(options = {}) {
       session,
       slideId: result.slideId,
       summary: result.summary,
-      transientVariants: result.dryRun ? result.variants : [],
-      variants: result.dryRun ? [] : result.variants
+      transientVariants: result.variants,
+      variants: []
     };
   }
 
   if (intent === "drill-wording") {
     const result = await drillWordingSlide(options.slideId, {
-      dryRun: options.dryRun !== false,
+      candidateCount: options.candidateCount,
+      dryRun: true,
       generationMode: options.generationMode,
       onProgress: options.onProgress
     });
@@ -304,14 +307,15 @@ async function handleAssistantMessage(options = {}) {
       session,
       slideId: result.slideId,
       summary: result.summary,
-      transientVariants: result.dryRun ? result.variants : [],
-      variants: result.dryRun ? [] : result.variants
+      transientVariants: result.variants,
+      variants: []
     };
   }
 
   if (intent === "redo-layout") {
     const result = await redoLayoutSlide(options.slideId, {
-      dryRun: options.dryRun !== false,
+      candidateCount: options.candidateCount,
+      dryRun: true,
       generationMode: options.generationMode,
       onProgress: options.onProgress
     });
@@ -335,13 +339,14 @@ async function handleAssistantMessage(options = {}) {
       session,
       slideId: result.slideId,
       summary: result.summary,
-      transientVariants: result.dryRun ? result.variants : [],
-      variants: result.dryRun ? [] : result.variants
+      transientVariants: result.variants,
+      variants: []
     };
   }
 
   const result = await ideateSlide(options.slideId, {
-    dryRun: options.dryRun !== false,
+    candidateCount: options.candidateCount,
+    dryRun: true,
     generationMode: options.generationMode,
     onProgress: options.onProgress
   });
@@ -365,8 +370,8 @@ async function handleAssistantMessage(options = {}) {
     session,
     slideId: result.slideId,
     summary: result.summary,
-    transientVariants: result.dryRun ? result.variants : [],
-    variants: result.dryRun ? [] : result.variants
+    transientVariants: result.variants,
+    variants: []
   };
 }
 
@@ -385,7 +390,7 @@ function getAssistantSuggestions() {
     {
       id: "suggestion-ideate",
       label: "Ideate this slide",
-      prompt: slides.length ? "Ideate three dry-run variants for the selected slide." : "Ideate three dry-run variants."
+      prompt: slides.length ? "Ideate five candidates for the selected slide." : "Ideate five candidates."
     },
     {
       id: "suggestion-wording",

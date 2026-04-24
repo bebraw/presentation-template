@@ -179,7 +179,7 @@ Each type should have a clear schema for fields such as:
 
 The server should own the materialization step from slide spec to source. That keeps layout rules and shared runtime constraints in one place instead of leaking them into the UI or prompts.
 
-For structured slides, named variants live alongside the main slide JSON payload. The current working slide spec remains explicit at the top level, while alternate slide-spec options stay preserved in the same slide-level document so users can swap between them later without losing work. `studio/state/variants.json` remains as a compatibility path for non-structured slides only.
+Generated slide candidates are session-only: the server renders compare-ready previews and returns candidate specs to the browser, but it does not write generated options into `slides/slide-*.json`. Applying one candidate writes only the chosen slide spec. Manual snapshots can still persist in `studio/state/variants.json`, keeping slide JSON focused on the active deck content.
 
 A custom DSL should be considered only later if JSON becomes too awkward for composition, references, or layout relationships.
 
@@ -201,7 +201,7 @@ The server must remain the gatekeeper:
 - allow edits only to approved workflow targets
 - validate syntax before previewing or storing
 - rebuild previews through the shared DOM runtime
-- keep dry-run and saved-variant behavior explicit
+- keep session-only candidate and saved-snapshot behavior explicit
 - require explicit apply for promotion into the working slide
 - reject overlapping operations that touch the same slide or file set
 
@@ -297,7 +297,7 @@ Current implementation uses a centered white-canvas workspace with page-level se
 - compact workflow chat for command-style assistant actions
 - selected active-slide text can be attached to workflow chat turns as local context
 - collapsed selected-slide context on the studio page so slide metadata is available without occupying persistent editing space
-- a compact slide-variant workbench that keeps generation modes, dry-run/provider controls, workflow progress, candidate counts, and review state close together
+- a compact slide-candidate workbench that keeps generation modes, provider controls, workflow progress, candidate counts, and review state close together
 - an integrated slide-candidate review and compare workspace for fast visual inspection of alternatives
 - a consolidated validation console that keeps run actions, summary status, actionable report details, and compact settings on one focused page
 - an explicit validation override disclosure control for rule-severity settings

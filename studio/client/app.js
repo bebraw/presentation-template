@@ -67,7 +67,7 @@ const elements = {
   designMinPanelPadding: document.getElementById("design-min-panel-padding"),
   deckStructureList: document.getElementById("deck-structure-list"),
   deckStructureNote: document.getElementById("deck-structure-note"),
-  ideateDryRun: document.getElementById("ideate-dry-run"),
+  ideateCandidateCount: document.getElementById("ideate-candidate-count"),
   ideateDeckStructureButton: document.getElementById("ideate-deck-structure-button"),
   ideateGenerationMode: document.getElementById("ideate-generation-mode"),
   ideateSlideButton: document.getElementById("ideate-slide-button"),
@@ -704,6 +704,18 @@ function getSelectedVariant() {
   }
 
   return variants.find((variant) => variant.id === state.selectedVariantId) || null;
+}
+
+function getRequestedCandidateCount() {
+  const parsed = Number.parseInt(elements.ideateCandidateCount.value, 10);
+  if (!Number.isFinite(parsed)) {
+    elements.ideateCandidateCount.value = "5";
+    return 5;
+  }
+
+  const normalized = Math.min(8, Math.max(1, parsed));
+  elements.ideateCandidateCount.value = String(normalized);
+  return normalized;
 }
 
 function summarizeDiff(currentSource, variantSource) {
@@ -1444,7 +1456,7 @@ function renderDeckFields() {
   elements.deckOutline.value = deck.outline || "";
   elements.deckStructureNote.textContent = deck.structureLabel
     ? `Applied plan: ${deck.structureLabel}. ${deck.structureSummary || "Deck structure metadata is stored with the saved context."}`
-    : "Generate dry-run deck plans from the saved brief and outline, then apply one back to the outline and live slide files when it reads right.";
+    : "Generate deck plans from the saved brief and outline, then apply one back to the outline and live slide files when it reads right.";
 }
 
 function renderDeckStructureCandidates() {
@@ -1826,23 +1838,18 @@ function renderPreviews() {
 
 function renderVariants() {
   const variants = getSlideVariants();
-  const storage = state.variantStorage || {};
   const savedCount = variants.filter((variant) => variant.persisted !== false).length;
-  const dryRunCount = variants.length - savedCount;
+  const sessionCount = variants.length - savedCount;
   elements.variantList.innerHTML = "";
   elements.variantCountPill.textContent = variants.length
-    ? `${variants.length} candidate${variants.length === 1 ? "" : "s"}${dryRunCount ? `, ${dryRunCount} dry run` : ""}`
+    ? `${variants.length} candidate${variants.length === 1 ? "" : "s"}${sessionCount ? `, ${sessionCount} session-only` : ""}`
     : "0 candidates";
-  elements.variantStorageNote.textContent = storage.legacyStructured > 0
-    ? `${storage.legacyStructured} structured legacy variant${storage.legacyStructured === 1 ? "" : "s"} still live in studio state; ${storage.blockedStructured > 0 ? `${storage.blockedStructured} need manual cleanup.` : "the rest are ready for slide-local storage."}`
-    : storage.legacyUnstructured > 0
-      ? `${storage.legacyUnstructured} legacy variant${storage.legacyUnstructured === 1 ? "" : "s"} remain in studio state for non-structured or unknown slides.`
-      : storage.slideLocalStructured > 0
-        ? `Structured-slide variants are stored with the slide JSON. ${storage.slideLocalStructured} saved variant${storage.slideLocalStructured === 1 ? "" : "s"} currently live in slide documents.`
-        : "Structured-slide variants are stored with each slide document.";
+  elements.variantStorageNote.textContent = savedCount > 0
+    ? `${sessionCount} session-only candidate${sessionCount === 1 ? "" : "s"} and ${savedCount} saved snapshot${savedCount === 1 ? "" : "s"} are available for this slide.`
+    : "Generated candidates stay in the current session until one is applied.";
 
   if (!variants.length) {
-    elements.variantList.innerHTML = "<div class=\"variant-card\"><strong>No variants yet</strong><span>Run Ideate Slide, Ideate Structure, Ideate Theme, or Redo Layout to generate comparable options, or capture the current structured draft as a manual snapshot.</span></div>";
+    elements.variantList.innerHTML = "<div class=\"variant-card\"><strong>No candidates yet</strong><span>Choose a count, then run Ideate Slide, Ideate Structure, Ideate Theme, or Redo Layout to generate session-only options.</span></div>";
     renderVariantFlow();
     renderVariantComparison();
     return;
@@ -1910,7 +1917,7 @@ function describeVariantKind(variant) {
     return "Snapshot";
   }
 
-  const prefix = variant.persisted === false ? "Dry-run " : "";
+  const prefix = variant.persisted === false ? "Session " : "";
 
   if (variant.operation === "drill-wording") {
     return `${prefix}wording pass`;
@@ -1999,7 +2006,7 @@ function renderVariantComparison() {
   }
 
   elements.compareStats.innerHTML = [
-    `<span class="compare-stat"><strong>${variant.persisted === false ? "dry run" : "saved"}</strong> variant mode</span>`,
+    `<span class="compare-stat"><strong>${variant.persisted === false ? "session-only" : "saved"}</strong> variant mode</span>`,
     `<span class="compare-stat"><strong>${escapeHtml(variant.generator || "manual")}</strong> generator</span>`,
     structuredComparison
       ? `<span class="compare-stat"><strong>${structuredComparison.totalChanges}</strong> structured changes</span>`
@@ -2523,7 +2530,7 @@ async function ideateSlide() {
   try {
     const payload = await request("/api/operations/ideate-slide", {
       body: JSON.stringify({
-        dryRun: elements.ideateDryRun.checked,
+        candidateCount: getRequestedCandidateCount(),
         generationMode: elements.ideateGenerationMode.value,
         slideId: state.selectedSlideId
       }),
@@ -2557,7 +2564,7 @@ async function ideateTheme() {
   try {
     const payload = await request("/api/operations/ideate-theme", {
       body: JSON.stringify({
-        dryRun: elements.ideateDryRun.checked,
+        candidateCount: getRequestedCandidateCount(),
         generationMode: elements.ideateGenerationMode.value,
         slideId: state.selectedSlideId
       }),
@@ -2611,7 +2618,7 @@ async function ideateStructure() {
   try {
     const payload = await request("/api/operations/ideate-structure", {
       body: JSON.stringify({
-        dryRun: elements.ideateDryRun.checked,
+        candidateCount: getRequestedCandidateCount(),
         generationMode: elements.ideateGenerationMode.value,
         slideId: state.selectedSlideId
       }),
@@ -2645,7 +2652,7 @@ async function redoLayout() {
   try {
     const payload = await request("/api/operations/redo-layout", {
       body: JSON.stringify({
-        dryRun: elements.ideateDryRun.checked,
+        candidateCount: getRequestedCandidateCount(),
         generationMode: elements.ideateGenerationMode.value,
         slideId: state.selectedSlideId
       }),
@@ -2684,7 +2691,7 @@ async function sendAssistantMessage() {
     setAssistantDrawerOpen(true);
     const payload = await request("/api/assistant/message", {
       body: JSON.stringify({
-        dryRun: elements.ideateDryRun.checked,
+        candidateCount: getRequestedCandidateCount(),
         generationMode: elements.ideateGenerationMode.value,
         message,
         selection,

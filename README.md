@@ -12,7 +12,7 @@ It is not a PowerPoint replacement and not a broad WYSIWYG editor. The project f
 - Renders the active deck through one shared DOM runtime for studio previews, thumbnails, comparison panes, preview PNGs, and PDF export.
 - Supports direct text edits from the rendered slide preview for structured slides.
 - Generates slide and deck-planning candidates through local rules or an optional LLM provider.
-- Keeps variants previewable, comparable, and safely applicable before they overwrite the working slide.
+- Keeps generated candidates previewable, comparable, and safely applicable before they overwrite the working slide.
 - Shows visual and structured comparisons for slide candidates and larger deck plans.
 - Runs geometry, text, media, deck-plan, and render-baseline validation through the same quality gate used by the CLI.
 
@@ -40,7 +40,7 @@ The UI currently includes:
 - collapsible selected-slide context
 - direct slide-text editing from the DOM preview
 - workflow chat with optional selected-text context from the current slide
-- slide variant generation, review, visual comparison, and apply controls
+- slide candidate generation, review, visual comparison, and apply controls
 - deck planning with compact plan summaries, palette controls, and apply previews
 - validation console with compact settings and discoverable rule severity overrides
 

@@ -7,8 +7,6 @@ const {
   writeAllowedText
 } = require("./write-boundary");
 
-const structuredVariantField = "variants";
-
 function compareNames(left, right) {
   return left.localeCompare(right, undefined, { numeric: true });
 }
@@ -49,26 +47,20 @@ function readStructuredSlideDocumentFile(fileName) {
 
 function splitStructuredSlideDocument(document) {
   const {
-    [structuredVariantField]: variants,
+    variants,
     ...slideSpec
   } = document || {};
 
   return {
     slideSpec,
-    variants: Array.isArray(variants) ? variants : []
+    variants: []
   };
 }
 
-function buildStructuredSlideDocument(slideSpec, variants) {
-  const document = {
+function buildStructuredSlideDocument(slideSpec) {
+  return {
     ...validateSlideSpec(slideSpec)
   };
-
-  if (Array.isArray(variants) && variants.length) {
-    document[structuredVariantField] = variants;
-  }
-
-  return document;
 }
 
 function extractTitle(source, fileName) {
@@ -187,9 +179,7 @@ function writeSlideSpec(slideId, slideSpec) {
   const validated = validateSlideSpec(slideSpec);
 
   if (slide.structured) {
-    const currentDocument = readStructuredSlideDocumentFile(slide.path);
-    const { variants } = splitStructuredSlideDocument(currentDocument);
-    writeJson(slide.path, buildStructuredSlideDocument(validated, variants));
+    writeJson(slide.path, buildStructuredSlideDocument(validated));
     return slide;
   }
 
@@ -202,7 +192,7 @@ function createStructuredSlide(slideSpec) {
   const validated = validateSlideSpec(slideSpec);
   const fileName = peekNextStructuredSlideFileName();
   const filePath = path.join(slidesDir, fileName);
-  writeJson(filePath, buildStructuredSlideDocument(validated, []));
+  writeJson(filePath, buildStructuredSlideDocument(validated));
 
   return {
     fileName,
@@ -212,28 +202,6 @@ function createStructuredSlide(slideSpec) {
   };
 }
 
-function readStructuredSlideVariants(slideId) {
-  const slide = getSlide(slideId, { includeArchived: true });
-  if (!slide.structured) {
-    return [];
-  }
-
-  const { variants } = splitStructuredSlideDocument(readStructuredSlideDocumentFile(slide.path));
-  return variants;
-}
-
-function writeStructuredSlideVariants(slideId, variants) {
-  const slide = getSlide(slideId, { includeArchived: true });
-  if (!slide.structured) {
-    throw new Error("Structured slide variants are only available for JSON slides.");
-  }
-
-  const currentDocument = readStructuredSlideDocumentFile(slide.path);
-  const { slideSpec } = splitStructuredSlideDocument(currentDocument);
-  writeJson(slide.path, buildStructuredSlideDocument(slideSpec, variants));
-  return slide;
-}
-
 module.exports = {
   getSlide,
   getSlides,
@@ -241,8 +209,6 @@ module.exports = {
   peekNextStructuredSlideFileName,
   readSlideSpec,
   readSlideSource,
-  readStructuredSlideVariants,
   writeSlideSpec,
-  writeStructuredSlideVariants,
   writeSlideSource
 };

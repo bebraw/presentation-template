@@ -1,11 +1,12 @@
 {
   "type": "content",
+  "layout": "strip",
   "index": 7,
-  "title": "Structured specs are the source",
-  "eyebrow": "Content model",
-  "summary": "Supported slides use compact JSON documents that the studio can validate, diff, render, and update without raw source editing.",
-  "signalsTitle": "Supported families",
-  "guardrailsTitle": "Spec contract",
+  "title": "Slides are readable JSON",
+  "eyebrow": "Source model",
+  "summary": "Each structured slide is a compact JSON file. The renderer turns those fields into the slide you inspect in the studio.",
+  "signalsTitle": "Current slide families",
+  "guardrailsTitle": "Why JSON helps",
   "signals": [
     {
       "id": "signal-cover",
@@ -20,29 +21,29 @@
     {
       "id": "signal-content",
       "title": "Content",
-      "body": "Evidence columns and guardrails."
+      "body": "Evidence and guardrail panels."
     },
     {
       "id": "signal-summary",
       "title": "Summary",
-      "body": "Checklist and resource cards."
+      "body": "Takeaways and resource cards."
     }
   ],
   "guardrails": [
     {
-      "id": "guardrail-schema",
-      "title": "Schema checked",
-      "body": "Invalid JSON cannot save."
+      "id": "guardrail-parse",
+      "title": "Parseable",
+      "body": "Invalid JSON cannot be saved."
     },
     {
-      "id": "guardrail-source",
-      "title": "Readable",
-      "body": "Specs stay compact."
+      "id": "guardrail-diff",
+      "title": "Diffable",
+      "body": "Changes stay reviewable in source."
     },
     {
-      "id": "guardrail-escape",
+      "id": "guardrail-extend",
       "title": "Extensible",
-      "body": "New families can be added."
+      "body": "New families can be added later."
     }
   ]
 }

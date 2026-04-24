@@ -1,48 +1,49 @@
 {
   "type": "content",
+  "layout": "strip",
   "index": 12,
-  "title": "Comparison is the decision surface",
-  "eyebrow": "Review workspace",
-  "summary": "The compare area stays hidden until candidates exist, then focuses on current versus candidate preview, changed fields, and apply choices.",
-  "signalsTitle": "Review signals",
+  "title": "Compare before applying",
+  "eyebrow": "Review",
+  "summary": "When candidates exist, the compare workspace becomes the decision surface: current slide, candidate slide, changed fields, and apply buttons.",
+  "signalsTitle": "What to inspect",
   "guardrailsTitle": "Decision cues",
   "signals": [
     {
       "id": "signal-current",
       "title": "Current",
-      "body": "Rendered slide and JSON."
+      "body": "The slide you would replace."
     },
     {
       "id": "signal-candidate",
       "title": "Candidate",
-      "body": "Rendered alternative and JSON."
+      "body": "The proposed version."
     },
     {
       "id": "signal-summary",
-      "title": "Change summary",
-      "body": "Touched areas and line diffs."
+      "title": "Changes",
+      "body": "Touched fields and line diffs."
     },
     {
       "id": "signal-apply",
-      "title": "Apply path",
-      "body": "Apply with optional checks."
+      "title": "Apply",
+      "body": "Promote with optional validation."
     }
   ],
   "guardrails": [
     {
       "id": "guardrail-hidden",
-      "title": "Hidden by default",
-      "body": "No empty comparison chrome."
+      "title": "Hidden until useful",
+      "body": "No empty comparison area."
     },
     {
-      "id": "guardrail-direct",
+      "id": "guardrail-select",
       "title": "Direct selection",
-      "body": "Rows choose what to inspect."
+      "body": "Rows choose the candidate to inspect."
     },
     {
-      "id": "guardrail-reversible",
+      "id": "guardrail-explicit",
       "title": "No surprise writes",
-      "body": "Candidates apply only on command."
+      "body": "Nothing changes without Apply."
     }
   ]
 }

@@ -1,48 +1,49 @@
 {
   "type": "content",
+  "layout": "focus",
   "index": 14,
-  "title": "The assistant calls workflows",
-  "eyebrow": "Chat layer",
-  "summary": "Workflow chat sits beside the studio, keeps selected slide text as context, and can trigger bounded operations instead of editing files directly.",
-  "signalsTitle": "Assistant inputs",
-  "guardrailsTitle": "Execution model",
+  "title": "Use chat for bounded tasks",
+  "eyebrow": "Assistant",
+  "summary": "The chat panel launches workflows. It can use selected slide text and call known operations.",
+  "signalsTitle": "Inputs it sees",
+  "guardrailsTitle": "How it stays inspectable",
   "signals": [
     {
       "id": "signal-message",
       "title": "Message",
-      "body": "User intent and request."
+      "body": "The request you type."
     },
     {
       "id": "signal-selection",
       "title": "Selection",
-      "body": "Optional slide text context."
+      "body": "Optional text from the preview."
     },
     {
       "id": "signal-slide",
-      "title": "Slide id",
-      "body": "Current working target."
+      "title": "Slide",
+      "body": "Current slide id and context."
     },
     {
       "id": "signal-mode",
-      "title": "Generation mode",
-      "body": "Local, LLM, or auto."
+      "title": "Mode",
+      "body": "Local, LLM, or automatic generation."
     }
   ],
   "guardrails": [
     {
       "id": "guardrail-actions",
-      "title": "Workflow actions",
-      "body": "Assistant triggers known operations."
+      "title": "Known actions",
+      "body": "Chat triggers studio workflows."
     },
     {
       "id": "guardrail-history",
-      "title": "Session history",
-      "body": "Messages persist repo-locally."
+      "title": "Local history",
+      "body": "Sessions remain repo-local."
     },
     {
       "id": "guardrail-debug",
-      "title": "Debug tucked away",
-      "body": "Provider state is inspectable."
+      "title": "Debug panel",
+      "body": "Provider state is hidden until needed."
     }
   ]
 }

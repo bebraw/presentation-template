@@ -46,6 +46,11 @@
     return allowed[key] || Object.values(allowed).find((stack) => stack.toLowerCase() === key) || baseTheme.fontFamily;
   }
 
+  function normalizeLayoutName(value) {
+    const normalized = String(value || "").trim().toLowerCase().replace(/[^a-z0-9-]/g, "-");
+    return normalized || "standard";
+  }
+
   function normalizeTheme(input) {
     const source = input && typeof input === "object" ? input : {};
     return {
@@ -335,9 +340,11 @@
     const theme = normalizeTheme(config.theme);
     const index = Number.isFinite(Number(config.index)) ? Number(config.index) : Number(slideSpec && slideSpec.index) || 1;
     const totalSlides = Number.isFinite(Number(config.totalSlides)) ? Number(config.totalSlides) : index;
+    const layout = normalizeLayoutName(slideSpec && slideSpec.layout);
+    const slideType = slideSpec && slideSpec.type ? slideSpec.type : "unsupported";
 
     return `
-      <article class="dom-slide dom-slide--${escapeHtml(slideSpec && slideSpec.type ? slideSpec.type : "unsupported")}" style="${renderThemeVars(theme)}" data-slide-type="${escapeHtml(slideSpec && slideSpec.type ? slideSpec.type : "unsupported")}">
+      <article class="dom-slide dom-slide--${escapeHtml(slideType)} dom-slide--layout-${escapeHtml(layout)}" style="${renderThemeVars(theme)}" data-slide-type="${escapeHtml(slideType)}" data-slide-layout="${escapeHtml(layout)}">
         ${renderSlideBody(slideSpec || {})}
         ${renderPageBadge(index, totalSlides)}
       </article>

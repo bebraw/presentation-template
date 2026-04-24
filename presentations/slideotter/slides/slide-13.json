@@ -1,48 +1,49 @@
 {
   "type": "content",
+  "layout": "steps",
   "index": 13,
-  "title": "Deck planning works above slides",
-  "eyebrow": "Structure workflow",
-  "summary": "Deck Planning uses the saved brief and outline to propose structural changes, shared context patches, and previewable plan candidates.",
-  "signalsTitle": "Plan outputs",
+  "title": "Plan the deck above slide level",
+  "eyebrow": "Deck Planning",
+  "summary": "Deck Planning is for outline, order, missing sections, and shared context, not single-slide edits.",
+  "signalsTitle": "Plan candidate contents",
   "guardrailsTitle": "Promotion rules",
   "signals": [
     {
       "id": "signal-outline",
       "title": "Outline",
-      "body": "Updated deck order and roles."
+      "body": "Proposed order and section roles."
     },
     {
-      "id": "signal-patch",
-      "title": "Deck patch",
-      "body": "Theme, constraints, and context."
+      "id": "signal-actions",
+      "title": "Actions",
+      "body": "Insert, retitle, replace, archive, move."
     },
     {
-      "id": "signal-slides",
-      "title": "Slide actions",
-      "body": "Insert, replace, archive, retitle."
+      "id": "signal-context",
+      "title": "Context",
+      "body": "Optional brief, theme, or constraints patch."
     },
     {
       "id": "signal-preview",
-      "title": "Preview strips",
-      "body": "Before and proposed deck."
+      "title": "Preview",
+      "body": "Before and proposed deck strips."
     }
   ],
   "guardrails": [
     {
-      "id": "guardrail-shared",
-      "title": "Shared settings toggle",
-      "body": "Deck patch is optional."
+      "id": "guardrail-toggle",
+      "title": "Shared patch optional",
+      "body": "Apply structure without context changes."
     },
     {
-      "id": "guardrail-scoped",
-      "title": "Presentation paths",
-      "body": "Diffs name active files."
+      "id": "guardrail-paths",
+      "title": "Paths are named",
+      "body": "Review touched files."
     },
     {
-      "id": "guardrail-apply",
+      "id": "guardrail-once",
       "title": "Apply once",
-      "body": "Plan changes are explicit."
+      "body": "Plan promotion is explicit."
     }
   ]
 }

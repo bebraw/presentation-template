@@ -1,25 +1,25 @@
 {
   "type": "toc",
   "index": 2,
-  "title": "Project map",
-  "eyebrow": "Twenty-slide tour",
-  "summary": "The deck explains the authoring problem, storage model, live editor, material workflow, generation, planning, validation, and archive handoff.",
-  "note": "The browser feels direct, but the server keeps writes, rendering, and validation inside clear boundaries.",
+  "title": "What you will learn",
+  "eyebrow": "Tour map",
+  "summary": "The deck follows the path a new author takes: choose a presentation, shape the content, review changes, and ship a checked archive.",
+  "note": "The same concepts apply whether you are editing the included demo or creating a new deck.",
   "cards": [
     {
-      "id": "outline-model",
-      "title": "Model",
-      "body": "Presentations, deck context, slide specs, and materials."
+      "id": "toc-start",
+      "title": "Start",
+      "body": "Pick or create a presentation, then give it useful constraints."
     },
     {
-      "id": "outline-workflow",
-      "title": "Workflow",
-      "body": "Edit live, generate candidates, compare, apply, and plan."
+      "id": "toc-author",
+      "title": "Author",
+      "body": "Edit structured slides, attach materials, and keep context close."
     },
     {
-      "id": "outline-ship",
-      "title": "Handoff",
-      "body": "Validate rendered output, refresh baselines, and archive the deck."
+      "id": "toc-ship",
+      "title": "Review and ship",
+      "body": "Compare candidates, run checks, and archive the intended version."
     }
   ]
 }

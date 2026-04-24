@@ -1,47 +1,48 @@
 {
   "type": "content",
+  "layout": "focus",
   "index": 3,
-  "title": "The problem is deck drift",
-  "eyebrow": "Why this exists",
-  "summary": "Presentation work breaks down when source, preview, context, generated options, and final PDF live in separate loops.",
-  "signalsTitle": "Common drift",
-  "guardrailsTitle": "Design response",
+  "title": "Why decks get messy",
+  "eyebrow": "Problem",
+  "summary": "Deck work gets hard when source, preview, and final PDF stop agreeing.",
+  "signalsTitle": "What usually drifts",
+  "guardrailsTitle": "What slideotter keeps together",
   "signals": [
     {
       "id": "signal-source",
-      "title": "Source drift",
-      "body": "Files stop matching what authors inspect."
+      "title": "Source",
+      "body": "The file no longer explains the visible slide."
     },
     {
       "id": "signal-context",
-      "title": "Context drift",
-      "body": "Intent and constraints disappear during edits."
+      "title": "Context",
+      "body": "Audience and tone live outside the deck."
     },
     {
-      "id": "signal-variants",
-      "title": "Variant drift",
-      "body": "Generated options overwrite too early."
+      "id": "signal-options",
+      "title": "Options",
+      "body": "Ideas replace originals before review."
     },
     {
       "id": "signal-output",
-      "title": "Output drift",
-      "body": "PDF differences appear late."
+      "title": "Output",
+      "body": "PDF issues appear after export."
     }
   ],
   "guardrails": [
     {
-      "id": "guardrail-one-loop",
+      "id": "guardrail-loop",
       "title": "One local loop",
-      "body": "Keep work in the browser studio."
+      "body": "Edit, preview, compare, and validate in the studio."
     },
     {
-      "id": "guardrail-visible",
+      "id": "guardrail-source",
       "title": "Visible source",
-      "body": "Keep JSON and preview close."
+      "body": "Keep JSON close to the rendered slide."
     },
     {
-      "id": "guardrail-gated",
-      "title": "Gated output",
+      "id": "guardrail-archive",
+      "title": "Intentional archive",
       "body": "Validate before archiving."
     }
   ]

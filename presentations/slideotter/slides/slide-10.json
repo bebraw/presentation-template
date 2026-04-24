@@ -1,16 +1,22 @@
 {
   "type": "content",
+  "layout": "focus",
   "index": 10,
-  "title": "One DOM path owns output",
-  "eyebrow": "Runtime model",
-  "summary": "The browser preview, thumbnails, compare panes, PNGs, PDF export, and validation all read the same DOM-rendered slide.",
-  "signalsTitle": "Output surfaces",
-  "guardrailsTitle": "Runtime boundary",
+  "title": "One renderer keeps previews honest",
+  "eyebrow": "Runtime",
+  "summary": "The studio avoids separate preview and export logic. The same DOM slide powers authoring, comparison, validation, and PDF output.",
+  "signalsTitle": "Surfaces using it",
+  "guardrailsTitle": "Why it matters",
   "signals": [
     {
-      "id": "signal-preview",
-      "title": "Studio preview",
-      "body": "Active slide and thumbnails."
+      "id": "signal-main",
+      "title": "Main preview",
+      "body": "The large slide in Slide Studio."
+    },
+    {
+      "id": "signal-thumbs",
+      "title": "Thumbnails",
+      "body": "Selector and presentation cards."
     },
     {
       "id": "signal-compare",
@@ -20,29 +26,24 @@
     {
       "id": "signal-export",
       "title": "PDF export",
-      "body": "Playwright prints the DOM."
-    },
-    {
-      "id": "signal-validate",
-      "title": "DOM validation",
-      "body": "Rendered layout is inspected."
+      "body": "Playwright prints the DOM output."
     }
   ],
   "guardrails": [
     {
-      "id": "guardrail-renderer",
-      "title": "Single renderer",
-      "body": "studio/client/slide-dom.ts."
+      "id": "guardrail-one",
+      "title": "One path",
+      "body": "Fewer places for layout drift."
     },
     {
       "id": "guardrail-browser",
-      "title": "Real layout",
-      "body": "Headless browser measures output."
+      "title": "Browser measured",
+      "body": "Checks inspect rendered geometry."
     },
     {
-      "id": "guardrail-no-split",
-      "title": "No split path",
-      "body": "Avoid parallel renderers."
+      "id": "guardrail-theme",
+      "title": "Deck themed",
+      "body": "Slides keep their own visual theme."
     }
   ]
 }

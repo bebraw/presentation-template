@@ -1,20 +1,21 @@
 {
   "type": "content",
+  "layout": "steps",
   "index": 17,
-  "title": "Output is reproducible",
-  "eyebrow": "Archive path",
-  "summary": "The same DOM runtime builds the local PDF, render pages, contact sheets, visual baselines, and checked-in archive snapshot.",
-  "signalsTitle": "Artifacts",
-  "guardrailsTitle": "Publish routine",
+  "title": "Archive the version you mean to share",
+  "eyebrow": "Output",
+  "summary": "Building and archiving are separate. Build creates current output; archive update copies the presentation PDF only when you intend to publish it.",
+  "signalsTitle": "Artifact path",
+  "guardrailsTitle": "Routine",
   "signals": [
     {
-      "id": "signal-pdf",
-      "title": "PDF",
+      "id": "signal-build",
+      "title": "Build",
       "body": "slides/output/<presentation-id>.pdf."
     },
     {
       "id": "signal-pages",
-      "title": "Preview pages",
+      "title": "Render pages",
       "body": "studio/output/<id>/rendered-pages."
     },
     {
@@ -31,18 +32,18 @@
   "guardrails": [
     {
       "id": "guardrail-build",
-      "title": "Build first",
-      "body": "Regenerate current output."
+      "title": "Regenerate",
+      "body": "Build after slide or theme changes."
     },
     {
       "id": "guardrail-gate",
-      "title": "Gate",
-      "body": "Run quality checks."
+      "title": "Validate",
+      "body": "Run the quality gate."
     },
     {
       "id": "guardrail-copy",
-      "title": "Archive update",
-      "body": "Copy only after intent is clear."
+      "title": "Archive",
+      "body": "Update the checked-in snapshot."
     }
   ]
 }

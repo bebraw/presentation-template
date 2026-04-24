@@ -1,48 +1,49 @@
 {
   "type": "content",
+  "layout": "steps",
   "index": 8,
-  "title": "The preview edits the spec",
-  "eyebrow": "Live editing",
-  "summary": "Direct text edits and JSON edits update the active DOM preview immediately, so authors can inspect changes without a build step.",
+  "title": "Edit with the slide in view",
+  "eyebrow": "Slide Studio",
+  "summary": "The main preview is the working surface. Text and JSON edits update it immediately.",
   "signalsTitle": "Edit path",
-  "guardrailsTitle": "Controls",
+  "guardrailsTitle": "What prevents mistakes",
   "signals": [
     {
-      "id": "signal-text",
-      "title": "Inline text",
-      "body": "Double-click editable DOM fields."
+      "id": "signal-select",
+      "title": "Select",
+      "body": "Choose the target in the slide strip."
+    },
+    {
+      "id": "signal-inline",
+      "title": "Inline",
+      "body": "Double-click editable preview text."
     },
     {
       "id": "signal-json",
-      "title": "JSON sheet",
-      "body": "Valid drafts preview live."
-    },
-    {
-      "id": "signal-selector",
-      "title": "Slide strip",
-      "body": "Compact preview-only navigation."
+      "title": "JSON",
+      "body": "Open the spec drawer."
     },
     {
       "id": "signal-save",
       "title": "Save",
-      "body": "Persist without rebuilding."
+      "body": "Persist valid changes."
     }
   ],
   "guardrails": [
     {
       "id": "guardrail-valid",
-      "title": "Valid only",
-      "body": "Save disables on parse errors."
+      "title": "Parse errors block save",
+      "body": "Invalid JSON cannot persist."
     },
     {
-      "id": "guardrail-selected",
-      "title": "Selected slide",
-      "body": "Operations stay scoped."
+      "id": "guardrail-scope",
+      "title": "Selected slide only",
+      "body": "Actions stay scoped."
     },
     {
-      "id": "guardrail-visible",
-      "title": "Preview first",
-      "body": "The slide remains dominant."
+      "id": "guardrail-preview",
+      "title": "Preview stays central",
+      "body": "Editing chrome is secondary."
     }
   ]
 }

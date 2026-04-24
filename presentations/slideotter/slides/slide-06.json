@@ -1,48 +1,49 @@
 {
   "type": "content",
+  "layout": "callout",
   "index": 6,
-  "title": "Context steers the deck",
-  "eyebrow": "Deck intent",
-  "summary": "Audience, objective, tone, constraints, outline, palette, validation settings, and per-slide intent live with the active presentation.",
-  "signalsTitle": "Context files",
-  "guardrailsTitle": "Usage rules",
+  "title": "Give the deck a brief",
+  "eyebrow": "Context",
+  "summary": "Before generating or reorganizing, write what the deck should do. Studio workflows reuse that context.",
+  "signalsTitle": "Useful brief fields",
+  "guardrailsTitle": "Where the brief helps",
   "signals": [
     {
-      "id": "signal-brief",
-      "title": "Deck brief",
-      "body": "presentations/<id>/state/deck-context.json."
+      "id": "signal-audience",
+      "title": "Audience",
+      "body": "Who needs to understand or decide?"
     },
     {
-      "id": "signal-slide",
-      "title": "Slide notes",
-      "body": "Intent, must-include points, layout hints."
+      "id": "signal-objective",
+      "title": "Objective",
+      "body": "What should become clearer?"
     },
     {
-      "id": "signal-theme",
-      "title": "Theme values",
-      "body": "Palette and font choices."
+      "id": "signal-tone",
+      "title": "Tone",
+      "body": "Direct, technical, executive, tutorial."
     },
     {
-      "id": "signal-checks",
-      "title": "Check settings",
-      "body": "Rule severity and media mode."
+      "id": "signal-constraints",
+      "title": "Constraints",
+      "body": "Non-negotiables for words and visuals."
     }
   ],
   "guardrails": [
     {
-      "id": "guardrail-nearby",
-      "title": "Nearby",
-      "body": "Visible when needed, hidden otherwise."
+      "id": "guardrail-planning",
+      "title": "Planning",
+      "body": "Deck plans use the saved brief and outline."
     },
     {
-      "id": "guardrail-shared",
-      "title": "Shared",
-      "body": "Generation and validation read it."
+      "id": "guardrail-variants",
+      "title": "Variants",
+      "body": "Generated options can respect the same intent."
     },
     {
-      "id": "guardrail-scoped",
-      "title": "Scoped",
-      "body": "Each presentation owns its context."
+      "id": "guardrail-checks",
+      "title": "Checks",
+      "body": "Validation settings travel with the deck."
     }
   ]
 }

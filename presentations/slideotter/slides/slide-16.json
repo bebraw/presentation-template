@@ -1,46 +1,47 @@
 {
   "type": "content",
+  "layout": "strip",
   "index": 16,
-  "title": "Validation reads the rendered deck",
-  "eyebrow": "Quality gate",
-  "summary": "The gate checks types, rendered layout, media behavior, slide-media preservation, deck plans, Studio layout, and render-baseline drift.",
+  "title": "Run checks before sharing",
+  "eyebrow": "Validation",
+  "summary": "Validation is subtle in the UI, but it is the final safety net before an archived PDF becomes the version people see.",
   "signalsTitle": "Gate coverage",
-  "guardrailsTitle": "Failure modes",
+  "guardrailsTitle": "What failures mean",
   "signals": [
     {
       "id": "signal-types",
-      "title": "Type check",
-      "body": "Studio, server, scripts."
+      "title": "Types",
+      "body": "Studio, server, and scripts compile."
     },
     {
       "id": "signal-layout",
-      "title": "DOM layout",
-      "body": "Bounds, padding, text, contrast."
+      "title": "Layout",
+      "body": "Rendered slide bounds, text, and contrast."
     },
     {
       "id": "signal-media",
-      "title": "Media checks",
-      "body": "Legibility, captions, sources."
+      "title": "Media",
+      "body": "Images, captions, and preservation."
     },
     {
       "id": "signal-browser",
-      "title": "Browser workflows",
-      "body": "Presentation and Studio smoke tests."
+      "title": "Browser",
+      "body": "Studio workflows and page chrome."
     }
   ],
   "guardrails": [
     {
       "id": "guardrail-baseline",
-      "title": "Baseline tracked",
-      "body": "Refresh intentional visual changes."
+      "title": "Baseline drift",
+      "body": "Refresh only intentional visual changes."
     },
     {
-      "id": "guardrail-settings",
+      "id": "guardrail-severity",
       "title": "Severity settings",
-      "body": "Rules stay inspectable."
+      "body": "Rules can be warning or error."
     },
     {
-      "id": "guardrail-fixture",
+      "id": "guardrail-fixtures",
       "title": "Fixtures",
       "body": "Known regressions stay covered."
     }

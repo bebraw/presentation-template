@@ -2538,6 +2538,167 @@ html[data-app-theme="dark"] .json-token-literal {
   padding: 0;
 }
 
+.dom-slide--layout-focus .dom-slide__section-header {
+  padding-top: 46px;
+}
+
+.dom-slide--layout-focus .dom-slide__summary {
+  max-width: 560px;
+}
+
+.dom-slide--layout-focus .dom-slide__content-columns {
+  grid-template-columns: minmax(0, 1.32fr) minmax(0, 0.68fr);
+  padding-top: 22px;
+}
+
+.dom-slide--layout-focus .dom-panel--signals {
+  background: var(--dom-surface, #ffffff);
+}
+
+.dom-slide--layout-focus .dom-panel--guardrails {
+  align-self: center;
+  border-radius: 28px;
+}
+
+.dom-slide--layout-steps .dom-slide__content-columns {
+  grid-template-columns: minmax(0, 1fr);
+  gap: 18px;
+}
+
+.dom-slide--layout-steps .dom-panel {
+  padding: 16px 20px;
+}
+
+.dom-slide--layout-steps .dom-panel--signals .dom-evidence-list {
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 10px;
+  counter-reset: step;
+}
+
+.dom-slide--layout-steps .dom-panel--signals .dom-evidence {
+  position: relative;
+  gap: 6px;
+  min-height: 94px;
+  padding: 30px 12px 12px;
+  border: 1px solid var(--dom-light, #d7e6f5);
+  border-radius: 16px;
+  background: var(--dom-surface, #ffffff);
+}
+
+.dom-slide--layout-steps .dom-panel--signals .dom-evidence::before {
+  counter-increment: step;
+  content: counter(step);
+  position: absolute;
+  top: 10px;
+  left: 12px;
+  display: grid;
+  width: 18px;
+  height: 18px;
+  place-items: center;
+  border-radius: 999px;
+  background: var(--dom-accent, #f28f3b);
+  color: var(--dom-surface, #ffffff);
+  font-size: 10px;
+  font-weight: 800;
+}
+
+.dom-slide--layout-steps .dom-panel--signals .dom-evidence h4 {
+  font-size: 14px;
+}
+
+.dom-slide--layout-steps .dom-panel--signals .dom-evidence p {
+  font-size: 13.4px;
+}
+
+.dom-slide--layout-steps .dom-panel--guardrails .dom-evidence-list {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 10px;
+}
+
+.dom-slide--layout-steps .dom-panel--guardrails .dom-evidence {
+  padding: 0 0 0 12px;
+  border-bottom: 0;
+  border-left: 3px solid var(--dom-secondary, #275d8c);
+}
+
+.dom-slide--layout-checklist .dom-slide__content-columns {
+  grid-template-columns: minmax(0, 0.78fr) minmax(0, 1.22fr);
+}
+
+.dom-slide--layout-checklist .dom-panel--guardrails {
+  background: var(--dom-surface, #ffffff);
+}
+
+.dom-slide--layout-checklist .dom-panel--guardrails .dom-evidence-list {
+  gap: 10px;
+}
+
+.dom-slide--layout-checklist .dom-panel--guardrails .dom-evidence {
+  position: relative;
+  padding: 0 0 10px 24px;
+}
+
+.dom-slide--layout-checklist .dom-panel--guardrails .dom-evidence::before {
+  content: "";
+  position: absolute;
+  top: 3px;
+  left: 0;
+  width: 12px;
+  height: 12px;
+  border: 3px solid var(--dom-accent, #f28f3b);
+  border-radius: 999px;
+}
+
+.dom-slide--layout-strip .dom-slide__section-header {
+  padding-top: 46px;
+}
+
+.dom-slide--layout-strip .dom-slide__content-columns {
+  grid-template-columns: minmax(0, 1fr);
+  gap: 18px;
+  padding-top: 20px;
+}
+
+.dom-slide--layout-strip .dom-panel--signals .dom-evidence-list,
+.dom-slide--layout-strip .dom-panel--guardrails .dom-evidence-list {
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 10px;
+}
+
+.dom-slide--layout-strip .dom-panel--guardrails .dom-evidence-list {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+
+.dom-slide--layout-strip .dom-evidence {
+  padding: 0;
+  border-bottom: 0;
+}
+
+.dom-slide--layout-callout .dom-slide__section-header {
+  padding-top: 48px;
+}
+
+.dom-slide--layout-callout .dom-slide__content-columns {
+  grid-template-columns: minmax(0, 1.05fr) minmax(0, 0.95fr);
+  align-items: center;
+  padding-top: 22px;
+}
+
+.dom-slide--layout-callout .dom-panel--signals {
+  border-radius: 30px;
+  padding: 24px 26px;
+  background: var(--dom-surface, #ffffff);
+}
+
+.dom-slide--layout-callout .dom-panel--guardrails {
+  border-style: dashed;
+}
+
+.dom-slide--layout-callout .dom-panel--signals .dom-evidence:first-child h4 {
+  font-size: 24px;
+  letter-spacing: -0.03em;
+}
+
 .dom-slide__summary-columns--stacked {
   grid-template-columns: minmax(0, 1fr);
   gap: 14px;

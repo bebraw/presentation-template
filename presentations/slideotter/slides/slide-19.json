@@ -1,48 +1,49 @@
 {
   "type": "content",
+  "layout": "checklist",
   "index": 19,
-  "title": "Next work stays pragmatic",
+  "title": "Good next improvements",
   "eyebrow": "Roadmap",
-  "summary": "The near-term roadmap favors real multi-deck usage, concrete media-heavy gaps, and targeted deck-planning modes over broad editor expansion.",
-  "signalsTitle": "Next slices",
-  "guardrailsTitle": "Avoided scope",
+  "summary": "The useful path is smoother real deck work, not a bigger generic editor.",
+  "signalsTitle": "Likely next slices",
+  "guardrailsTitle": "Scope to avoid",
   "signals": [
     {
       "id": "signal-multi",
-      "title": "Multi-deck hardening",
-      "body": "Wait for usage before tagging."
+      "title": "Multi-deck polish",
+      "body": "Harden selection, copying, deletion."
     },
     {
       "id": "signal-media",
-      "title": "Media validation",
-      "body": "Deepen when real gaps appear."
+      "title": "Media depth",
+      "body": "Improve image-heavy slide checks."
     },
     {
       "id": "signal-planning",
-      "title": "Deck planning",
-      "body": "Add modes with context patches."
+      "title": "Planning modes",
+      "body": "Clarify high-level transformations."
     },
     {
       "id": "signal-docs",
-      "title": "Docs",
-      "body": "Keep DOM-first guidance current."
+      "title": "Onboarding",
+      "body": "Keep examples and guidance current."
     }
   ],
   "guardrails": [
     {
-      "id": "guardrail-not-wysiwyg",
-      "title": "Not WYSIWYG",
-      "body": "Do not chase full editor scope."
+      "id": "guardrail-editor",
+      "title": "No full WYSIWYG chase",
+      "body": "Structured decks are the point."
     },
     {
-      "id": "guardrail-not-runtime",
+      "id": "guardrail-renderer",
       "title": "No second renderer",
-      "body": "DOM remains authoritative."
+      "body": "The DOM path remains authoritative."
     },
     {
-      "id": "guardrail-not-ai",
+      "id": "guardrail-ai",
       "title": "No blind apply",
-      "body": "Generation stays reviewable."
+      "body": "Generated changes stay reviewable."
     }
   ]
 }

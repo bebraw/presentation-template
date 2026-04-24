@@ -1,48 +1,49 @@
 {
   "type": "content",
+  "layout": "callout",
   "index": 11,
-  "title": "Candidates stay reviewable",
-  "eyebrow": "Variant loop",
-  "summary": "Slide generation creates session-only candidates with previews, source diffs, structured summaries, and explicit apply controls.",
-  "signalsTitle": "Candidate path",
+  "title": "Generate options, not surprises",
+  "eyebrow": "Variants",
+  "summary": "Generation creates review candidates. It does not silently replace the current slide.",
+  "signalsTitle": "What you control",
   "guardrailsTitle": "Apply discipline",
   "signals": [
     {
       "id": "signal-count",
-      "title": "Count control",
-      "body": "Default count is five."
+      "title": "How many",
+      "body": "Choose candidate count; five is default."
     },
     {
-      "id": "signal-modes",
-      "title": "Modes",
-      "body": "Ideate, wording, theme, layout."
+      "id": "signal-mode",
+      "title": "What kind",
+      "body": "Try wording, structure, layout, or theme."
     },
     {
-      "id": "signal-compare",
-      "title": "Compare",
-      "body": "Preview and source side by side."
+      "id": "signal-provider",
+      "title": "How generated",
+      "body": "Use local, LLM, or auto mode."
     },
     {
-      "id": "signal-theme",
-      "title": "Theme preview",
-      "body": "Fonts and colors can vary."
+      "id": "signal-preview",
+      "title": "How reviewed",
+      "body": "Preview and diff every option."
     }
   ],
   "guardrails": [
     {
       "id": "guardrail-session",
       "title": "Session-only",
-      "body": "No generated options in slides."
+      "body": "Candidates stay outside slide files until applied."
     },
     {
       "id": "guardrail-media",
       "title": "Media preserved",
-      "body": "Attachments carry forward."
+      "body": "Image attachments carry forward."
     },
     {
-      "id": "guardrail-apply",
-      "title": "Explicit apply",
-      "body": "Author controls promotion."
+      "id": "guardrail-author",
+      "title": "Author decides",
+      "body": "Promotion always needs a command."
     }
   ]
 }

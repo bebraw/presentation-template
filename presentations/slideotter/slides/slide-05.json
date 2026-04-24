@@ -1,48 +1,49 @@
 {
   "type": "content",
+  "layout": "checklist",
   "index": 5,
-  "title": "Presentations are first-class",
-  "eyebrow": "Workspace model",
-  "summary": "The active deck is selected from a registry, and every presentation owns its slides, materials, context, variants, and theme state.",
-  "signalsTitle": "Storage layout",
-  "guardrailsTitle": "User actions",
+  "title": "Choose a presentation first",
+  "eyebrow": "Workspace",
+  "summary": "slideotter can manage more than one deck. The selector shows the first slide, name, and facts before you open it.",
+  "signalsTitle": "What a deck owns",
+  "guardrailsTitle": "What you can do there",
   "signals": [
-    {
-      "id": "signal-registry",
-      "title": "Registry",
-      "body": "studio/state/presentations.json selects the deck."
-    },
     {
       "id": "signal-slides",
       "title": "Slides",
-      "body": "presentations/<id>/slides."
+      "body": "Specs under presentations/<id>/slides."
+    },
+    {
+      "id": "signal-context",
+      "title": "Context",
+      "body": "Brief, outline, theme, checks."
+    },
+    {
+      "id": "signal-materials",
+      "title": "Materials",
+      "body": "Images and metadata beside the deck."
     },
     {
       "id": "signal-state",
-      "title": "Deck state",
-      "body": "Context, variants, materials."
-    },
-    {
-      "id": "signal-preview",
-      "title": "Selector cards",
-      "body": "First-slide preview and deck facts."
+      "title": "State",
+      "body": "Variants, history, local choices."
     }
   ],
   "guardrails": [
     {
       "id": "guardrail-create",
       "title": "Create",
-      "body": "Start from constraints and a scaffold."
+      "body": "Describe constraints before the scaffold appears."
     },
     {
       "id": "guardrail-duplicate",
       "title": "Duplicate",
-      "body": "Copy the whole deck folder."
+      "body": "Copy a deck when you want a branch."
     },
     {
       "id": "guardrail-delete",
       "title": "Delete",
-      "body": "Remove with confirmation."
+      "body": "Remove a deck only after confirmation."
     }
   ]
 }

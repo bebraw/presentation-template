@@ -6,9 +6,9 @@
     "title": "slideotter",
     "lang": "en-US",
     "audience": "Deck authors and maintainers",
-    "objective": "Explain how slideotter turns deck editing into a local browser workflow with live structured edits, compact review surfaces, safe apply flows, DOM-first validation, and archived output.",
-    "tone": "Direct, practical, engineering-focused",
-    "constraints": "Keep slide copy concise and describe the active project rather than implementation history.",
+    "objective": "Introduce new users to slideotter by showing how to choose a presentation, set context, edit structured slides, attach materials, review generated options, validate output, and archive the intended PDF.",
+    "tone": "Friendly, practical, and new-user-focused",
+    "constraints": "Keep slide copy concise, vary layouts across the tour, and explain the active project without filler or implementation-history detours.",
     "designConstraints": {
       "maxWordsPerSlide": 80,
       "minCaptionGapIn": 0.1,
@@ -48,8 +48,8 @@
       "progressTrack": "d7e6f5",
       "progressFill": "275d8c"
     },
-    "themeBrief": "Clean local-workbench presentation with clear project framing and restrained technical detail.",
-    "outline": "1. slideotter\n2. Project map\n3. The problem is deck drift\n4. The studio loop is local\n5. Presentations are first-class\n6. Context steers the deck\n7. Structured specs are the source\n8. The preview edits the spec\n9. Materials attach to slides\n10. One DOM path owns output\n11. Candidates stay reviewable\n12. Comparison is the decision surface\n13. Deck planning works above slides\n14. The assistant calls workflows\n15. Writes stay narrow\n16. Validation reads the rendered deck\n17. Output is reproducible\n18. The project favors maintainable code\n19. Next work stays pragmatic\n20. What this enables",
+    "themeBrief": "Clean local-workbench presentation with friendly onboarding language, varied information layouts, and restrained technical detail.",
+    "outline": "1. slideotter\n2. What you will learn\n3. Why decks get messy\n4. A simple authoring loop\n5. Choose a presentation first\n6. Give the deck a brief\n7. Slides are readable JSON\n8. Edit with the slide in view\n9. Attach images as materials\n10. One renderer keeps previews honest\n11. Generate options, not surprises\n12. Compare before applying\n13. Plan the deck above slide level\n14. Use chat for bounded tasks\n15. Know what can change\n16. Run checks before sharing\n17. Archive the version you mean to share\n18. How to read the project\n19. Good next improvements\n20. The basic habit",
     "structureLabel": "",
     "structureSummary": "",
     "structurePlan": []

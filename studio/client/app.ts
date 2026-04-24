@@ -123,13 +123,19 @@ const elements: Record<string, any> = {
   operationStatus: document.getElementById("operation-status"),
   presentationAudience: document.getElementById("presentation-audience"),
   presentationConstraints: document.getElementById("presentation-constraints"),
+  presentationFontFamily: document.getElementById("presentation-font-family"),
   presentationGenerationMode: document.getElementById("presentation-generation-mode"),
   presentationList: document.getElementById("presentation-list"),
   presentationObjective: document.getElementById("presentation-objective"),
   presentationResultCount: document.getElementById("presentation-result-count"),
   presentationSearch: document.getElementById("presentation-search"),
   presentationTargetSlides: document.getElementById("presentation-target-slides"),
+  presentationThemeAccent: document.getElementById("presentation-theme-accent"),
+  presentationThemeBg: document.getElementById("presentation-theme-bg"),
   presentationThemeBrief: document.getElementById("presentation-theme-brief"),
+  presentationThemePanel: document.getElementById("presentation-theme-panel"),
+  presentationThemePrimary: document.getElementById("presentation-theme-primary"),
+  presentationThemeSecondary: document.getElementById("presentation-theme-secondary"),
   presentationTitle: document.getElementById("presentation-title"),
   presentationTone: document.getElementById("presentation-tone"),
   presentationsPage: document.getElementById("presentations-page"),
@@ -2766,6 +2772,12 @@ function clearPresentationForm() {
   elements.presentationObjective.value = "";
   elements.presentationConstraints.value = "";
   elements.presentationThemeBrief.value = "";
+  elements.presentationFontFamily.value = "avenir";
+  elements.presentationThemePrimary.value = "#183153";
+  elements.presentationThemeSecondary.value = "#275d8c";
+  elements.presentationThemeAccent.value = "#f28f3b";
+  elements.presentationThemeBg.value = "#f5f8fc";
+  elements.presentationThemePanel.value = "#f8fbfe";
 }
 
 function resetPresentationSelection() {
@@ -2826,7 +2838,17 @@ async function createPresentationFromForm() {
         targetSlideCount: Number.isFinite(targetSlideCount) ? targetSlideCount : null,
         themeBrief: elements.presentationThemeBrief.value.trim(),
         title,
-        tone: elements.presentationTone.value.trim()
+        tone: elements.presentationTone.value.trim(),
+        visualTheme: {
+          accent: elements.presentationThemeAccent.value,
+          bg: elements.presentationThemeBg.value,
+          fontFamily: elements.presentationFontFamily.value,
+          panel: elements.presentationThemePanel.value,
+          primary: elements.presentationThemePrimary.value,
+          progressFill: elements.presentationThemeSecondary.value,
+          progressTrack: elements.presentationThemeBg.value,
+          secondary: elements.presentationThemeSecondary.value
+        }
       }),
       method: "POST"
     });

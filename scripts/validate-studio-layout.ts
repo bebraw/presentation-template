@@ -141,7 +141,7 @@ async function main() {
             metrics.previewFrame.bottom <= metrics.viewportHeight + 1,
             `Active slide preview should fit in the first viewport at ${viewport.width}x${viewport.height} (bottom ${metrics.previewFrame.bottom.toFixed(1)}px > viewport ${metrics.viewportHeight}px)`
           );
-          assert.ok(metrics.studioTabs, "Slide Studio should expose Current slide and Variant generation tabs");
+          assert.ok(metrics.studioTabs, "Slide Studio should expose Current slide, Slide context, and Variant generation tabs");
           assert.ok(
             metrics.studioTabs.right <= metrics.viewportWidth + 1,
             `Slide Studio tabs should stay inside the viewport at ${viewport.width}x${viewport.height}`
@@ -150,26 +150,47 @@ async function main() {
           const initialTabMetrics = await page.evaluate(() => ({
             currentAriaSelected: document.querySelector("#show-current-slide-tab")?.getAttribute("aria-selected"),
             currentHidden: (document.querySelector("#current-slide-panel") as HTMLElement | null)?.hidden,
+            contextAriaSelected: document.querySelector("#show-slide-context-tab")?.getAttribute("aria-selected"),
             contextHidden: (document.querySelector("#slide-context-panel") as HTMLElement | null)?.hidden,
             variantAriaSelected: document.querySelector("#show-variant-generation-tab")?.getAttribute("aria-selected"),
             variantHidden: (document.querySelector("#variant-generation-panel") as HTMLElement | null)?.hidden
           }));
           assert.equal(initialTabMetrics.currentAriaSelected, "true", "Current slide tab should be selected by default");
+          assert.equal(initialTabMetrics.contextAriaSelected, "false", "Slide context tab should not be selected by default");
           assert.equal(initialTabMetrics.variantAriaSelected, "false", "Variant generation tab should not be selected by default");
           assert.equal(initialTabMetrics.currentHidden, false, "Current slide panel should be visible by default");
-          assert.equal(initialTabMetrics.contextHidden, false, "Current slide context should be visible by default");
+          assert.equal(initialTabMetrics.contextHidden, true, "Slide context panel should be hidden by default");
           assert.equal(initialTabMetrics.variantHidden, true, "Variant generation panel should be hidden by default");
+
+          await page.click("#show-slide-context-tab");
+          await page.waitForTimeout(80);
+          const contextTabMetrics = await page.evaluate(() => ({
+            currentAriaSelected: document.querySelector("#show-current-slide-tab")?.getAttribute("aria-selected"),
+            currentHidden: (document.querySelector("#current-slide-panel") as HTMLElement | null)?.hidden,
+            contextAriaSelected: document.querySelector("#show-slide-context-tab")?.getAttribute("aria-selected"),
+            contextHidden: (document.querySelector("#slide-context-panel") as HTMLElement | null)?.hidden,
+            variantAriaSelected: document.querySelector("#show-variant-generation-tab")?.getAttribute("aria-selected"),
+            variantHidden: (document.querySelector("#variant-generation-panel") as HTMLElement | null)?.hidden
+          }));
+          assert.equal(contextTabMetrics.currentAriaSelected, "false", "Current slide tab should deselect when Slide context is selected");
+          assert.equal(contextTabMetrics.contextAriaSelected, "true", "Slide context tab should expose selected state");
+          assert.equal(contextTabMetrics.variantAriaSelected, "false", "Variant generation tab should remain deselected when Slide context is selected");
+          assert.equal(contextTabMetrics.currentHidden, true, "Current slide panel should hide when Slide context is selected");
+          assert.equal(contextTabMetrics.contextHidden, false, "Slide context panel should be visible when selected");
+          assert.equal(contextTabMetrics.variantHidden, true, "Variant generation panel should remain hidden when Slide context is selected");
 
           await page.click("#show-variant-generation-tab");
           await page.waitForTimeout(80);
           const variantTabMetrics = await page.evaluate(() => ({
             currentAriaSelected: document.querySelector("#show-current-slide-tab")?.getAttribute("aria-selected"),
             currentHidden: (document.querySelector("#current-slide-panel") as HTMLElement | null)?.hidden,
+            contextAriaSelected: document.querySelector("#show-slide-context-tab")?.getAttribute("aria-selected"),
             contextHidden: (document.querySelector("#slide-context-panel") as HTMLElement | null)?.hidden,
             variantAriaSelected: document.querySelector("#show-variant-generation-tab")?.getAttribute("aria-selected"),
             variantHidden: (document.querySelector("#variant-generation-panel") as HTMLElement | null)?.hidden
           }));
           assert.equal(variantTabMetrics.currentAriaSelected, "false", "Current slide tab should deselect when Variant generation is selected");
+          assert.equal(variantTabMetrics.contextAriaSelected, "false", "Slide context tab should deselect when Variant generation is selected");
           assert.equal(variantTabMetrics.variantAriaSelected, "true", "Variant generation tab should expose selected state");
           assert.equal(variantTabMetrics.currentHidden, true, "Current slide panel should hide when Variant generation is selected");
           assert.equal(variantTabMetrics.contextHidden, true, "Current slide context should hide when Variant generation is selected");
@@ -244,27 +265,32 @@ async function main() {
             await new Promise((resolve) => window.requestAnimationFrame(resolve));
             const before = rail.scrollLeft;
             thumbnails[9].click();
-            await new Promise((resolve) => window.setTimeout(resolve, 250));
 
             return {
-              activeLabel: document.querySelector("#selected-slide-label")?.textContent || "",
-              after: rail.scrollLeft,
               before,
               skipped: false
             };
           });
 
           if (!thumbnailSelectionMetrics.skipped) {
+            await page.waitForFunction(() => {
+              return /10\//.test(document.querySelector("#selected-slide-label")?.textContent || "");
+            });
+            await page.waitForTimeout(120);
+            const thumbnailAfterSelection = await page.evaluate(() => ({
+              activeLabel: document.querySelector("#selected-slide-label")?.textContent || "",
+              after: (document.querySelector("#thumb-rail") as HTMLElement | null)?.scrollLeft || 0
+            }));
             assert.ok(
               thumbnailSelectionMetrics.before > 0,
               `Thumbnail rail should scroll to a later slide before selection at ${viewport.width}x${viewport.height}`
             );
             assert.ok(
-              thumbnailSelectionMetrics.after >= thumbnailSelectionMetrics.before - 2,
-              `Selecting a later slide should preserve thumbnail rail scroll at ${viewport.width}x${viewport.height} (${thumbnailSelectionMetrics.after.toFixed(1)}px < ${thumbnailSelectionMetrics.before.toFixed(1)}px)`
+              thumbnailAfterSelection.after >= thumbnailSelectionMetrics.before - 2,
+              `Selecting a later slide should preserve thumbnail rail scroll at ${viewport.width}x${viewport.height} (${thumbnailAfterSelection.after.toFixed(1)}px < ${thumbnailSelectionMetrics.before.toFixed(1)}px)`
             );
             assert.match(
-              thumbnailSelectionMetrics.activeLabel,
+              thumbnailAfterSelection.activeLabel,
               /10\//,
               `Selecting the tenth thumbnail should update the selected slide label at ${viewport.width}x${viewport.height}`
             );

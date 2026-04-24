@@ -17,6 +17,7 @@ const allowedImageTypes = {
   "image/png": "png",
   "image/webp": "webp"
 };
+const maxMaterialBytes = 4 * 1024 * 1024;
 
 function readJson(fileName, fallback) {
   try {
@@ -86,7 +87,7 @@ function parseDataUrl(dataUrl) {
     throw new Error("Material upload is empty");
   }
 
-  if (buffer.length > 4 * 1024 * 1024) {
+  if (buffer.length > maxMaterialBytes) {
     throw new Error("Material upload must be 4MB or smaller");
   }
 
@@ -95,6 +96,46 @@ function parseDataUrl(dataUrl) {
     extension,
     mimeType
   };
+}
+
+function normalizeRemoteImageUrl(value) {
+  const raw = String(value || "").trim();
+  if (!raw) {
+    throw new Error("Image URL is required");
+  }
+
+  const url = new URL(raw);
+  if (url.protocol !== "http:" && url.protocol !== "https:") {
+    throw new Error("Image URL must use http or https");
+  }
+
+  const hostname = url.hostname.toLowerCase();
+  const ipv4 = hostname.match(/^(\d+)\.(\d+)\.(\d+)\.(\d+)$/);
+  if (
+    hostname === "localhost"
+    || hostname === "0.0.0.0"
+    || hostname === "::1"
+    || hostname.endsWith(".localhost")
+    || hostname.endsWith(".local")
+  ) {
+    throw new Error("Image URL cannot point to a local host.");
+  }
+
+  if (ipv4) {
+    const first = Number(ipv4[1]);
+    const second = Number(ipv4[2]);
+    if (
+      first === 10
+      || first === 127
+      || first === 169 && second === 254
+      || first === 172 && second >= 16 && second <= 31
+      || first === 192 && second === 168
+    ) {
+      throw new Error("Image URL cannot point to a private network address.");
+    }
+  }
+
+  return url.toString();
 }
 
 function createMaterialUrl(presentationId, fileName) {
@@ -170,8 +211,7 @@ function getGenerationMaterialContext(options: any = {}) {
   };
 }
 
-function createMaterialFromDataUrl(input: any = {}) {
-  const parsed = parseDataUrl(input.dataUrl);
+function createMaterialFromParsedImage(parsed, input: any = {}) {
   const paths = getActivePresentationPaths();
   const presentationId = getActivePresentationId();
   const timestamp = new Date().toISOString();
@@ -205,6 +245,53 @@ function createMaterialFromDataUrl(input: any = {}) {
   return material;
 }
 
+function createMaterialFromDataUrl(input: any = {}) {
+  return createMaterialFromParsedImage(parseDataUrl(input.dataUrl), input);
+}
+
+async function createMaterialFromRemoteImage(input: any = {}) {
+  const imageUrl = normalizeRemoteImageUrl(input.url);
+  const response = await fetch(imageUrl, {
+    headers: {
+      Accept: "image/png,image/jpeg,image/gif,image/webp;q=0.9,*/*;q=0.1",
+      "User-Agent": "slideotter-image-import/1.0"
+    },
+    signal: AbortSignal.timeout(12000)
+  });
+
+  if (!response.ok) {
+    throw new Error(`Image request failed with status ${response.status}`);
+  }
+
+  if (response.url) {
+    normalizeRemoteImageUrl(response.url);
+  }
+  const contentLength = Number(response.headers.get("content-length"));
+  if (Number.isFinite(contentLength) && contentLength > maxMaterialBytes) {
+    throw new Error("Image response is too large. Limit is 4MB.");
+  }
+
+  const mimeType = String(response.headers.get("content-type") || "").split(";")[0].trim().toLowerCase();
+  const extension = allowedImageTypes[mimeType];
+  if (!extension) {
+    throw new Error(`Image response content type is not supported: ${mimeType || "unknown"}`);
+  }
+
+  const buffer = Buffer.from(await response.arrayBuffer());
+  if (!buffer.length) {
+    throw new Error("Image response is empty");
+  }
+  if (buffer.length > maxMaterialBytes) {
+    throw new Error("Image response is too large. Limit is 4MB.");
+  }
+
+  return createMaterialFromParsedImage({
+    buffer,
+    extension,
+    mimeType
+  }, input);
+}
+
 function getMaterialFilePath(presentationId, fileName) {
   if (!/^[a-z0-9][a-z0-9-]{0,63}$/.test(String(presentationId || ""))) {
     throw new Error("Invalid presentation id");
@@ -226,6 +313,7 @@ function getMaterialFilePath(presentationId, fileName) {
 
 module.exports = {
   createMaterialFromDataUrl,
+  createMaterialFromRemoteImage,
   getGenerationMaterialContext,
   getMaterial,
   getMaterialFilePath,

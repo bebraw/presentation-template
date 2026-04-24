@@ -33,6 +33,7 @@ const {
   getMaterialFilePath,
   listMaterials
 } = require("../studio/server/services/materials.ts");
+const { importImageSearchResults } = require("../studio/server/services/image-search.ts");
 const {
   createSource,
   deleteSource,
@@ -768,6 +769,59 @@ test("presentation generation can attach semantically matching image materials",
     title: "HTMX request flow"
   });
   assert.equal(withoutMaterials.slideSpecs.some((slideSpec) => slideSpec.media), false, "generation can opt out of active material attachments");
+});
+
+test("image search imports bounded remote results as presentation materials", async () => {
+  createCoveragePresentation("image-search");
+  const originalFetchForTest = global.fetch;
+  const imageBuffer = Buffer.from(tinyPngDataUrl.split(",")[1], "base64");
+  const requestedUrls = [];
+
+  global.fetch = async (url) => {
+    requestedUrls.push(String(url));
+    if (String(url).includes("api.openverse.org")) {
+      return new Response(JSON.stringify({
+        results: [
+          {
+            creator: "Coverage",
+            foreign_landing_url: "https://example.com/flow",
+            license: "cc0",
+            title: "HTMX request flow",
+            url: "https://images.example.com/flow.png"
+          }
+        ]
+      }), {
+        headers: {
+          "Content-Type": "application/json"
+        },
+        status: 200
+      });
+    }
+
+    return new Response(imageBuffer, {
+      headers: {
+        "Content-Length": String(imageBuffer.length),
+        "Content-Type": "image/png"
+      },
+      status: 200
+    });
+  };
+
+  try {
+    const result = await importImageSearchResults({
+      provider: "openverse",
+      query: "HTMX request flow",
+      restrictions: "license:cc0 source:flickr"
+    });
+
+    assert.equal(result.provider, "openverse", "image search should use the requested provider preset");
+    assert.equal(result.imported.length, 1, "image search should import fetchable remote images");
+    assert.equal(listMaterials()[0].id, result.imported[0].id, "imported images should become presentation materials");
+    assert.ok(requestedUrls[0].includes("license_type=cc0"), "Openverse restrictions should map to license filters");
+    assert.ok(requestedUrls[0].includes("source=flickr"), "Openverse restrictions should map to source filters");
+  } finally {
+    global.fetch = originalFetchForTest;
+  }
 });
 
 test("structured variants validate source before capture and apply only known variants", () => {

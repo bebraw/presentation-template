@@ -29,7 +29,7 @@ Then open `http://127.0.0.1:4173`.
 - Set a target presentation length while creating a deck, generate the initial slide set, then scale toward it without deleting skipped slides.
 - Edit supported slides as readable JSON specs.
 - Preview the active deck while you work.
-- Attach image materials to slides, or provide a starter image during new presentation setup so generation can place matching visuals automatically.
+- Attach image materials to slides, provide a starter image, or import open-license images through Openverse or Wikimedia Commons during new presentation setup.
 - Generate local or LLM-assisted candidates.
 - Compare candidate slides and deck plans before applying them.
 - Validate layout, text, media references, workflow behavior, and rendered output.

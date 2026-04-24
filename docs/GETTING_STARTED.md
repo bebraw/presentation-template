@@ -114,6 +114,8 @@ npm run ci:local
 
 LLM providers are optional. Without provider credentials, the studio uses local deterministic generation rules. See [DEVELOPMENT.md](../DEVELOPMENT.md) for OpenAI, LM Studio, and OpenRouter setup.
 
+Image search during new presentation setup is optional and uses public provider APIs. The built-in presets are Openverse for open-licensed images and Wikimedia Commons for commons-hosted media. Use the restrictions field for provider hints such as `license:cc0` or `source:flickr`; imported images are copied into the active presentation material library before generation uses them.
+
 ## Generated Files
 
 - `slides/output/<presentation-id>.pdf` is generated locally and ignored by Git.

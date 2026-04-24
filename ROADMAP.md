@@ -38,7 +38,7 @@ The DOM-first runtime is now the active path:
 7. the render-baseline gate now compares the current DOM-built PDF against the approved raster baseline
 8. the active deck is selected from a presentation registry, with slides and deck state stored under `presentations/<id>/`
 9. presentation-scoped image materials live beside the active deck and can be attached to structured slide specs through the DOM renderer
-10. presentation-scoped source records and image material metadata live beside the active deck and are retrieved into initial or regenerated deck prompts as bounded grounded context
+10. presentation-scoped source records and image material metadata live beside the active deck and are retrieved into initial or regenerated deck prompts as bounded grounded context, with optional Openverse/Wikimedia image search importing material before generation
 
 The next practical tasks are:
 

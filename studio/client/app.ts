@@ -131,6 +131,9 @@ const elements: Record<string, any> = {
   presentationConstraints: document.getElementById("presentation-constraints"),
   presentationFontFamily: document.getElementById("presentation-font-family"),
   presentationGenerationMode: document.getElementById("presentation-generation-mode"),
+  presentationImageSearchProvider: document.getElementById("presentation-image-search-provider"),
+  presentationImageSearchQuery: document.getElementById("presentation-image-search-query"),
+  presentationImageSearchRestrictions: document.getElementById("presentation-image-search-restrictions"),
   presentationList: document.getElementById("presentation-list"),
   presentationMaterialFile: document.getElementById("presentation-material-file"),
   presentationObjective: document.getElementById("presentation-objective"),
@@ -2978,6 +2981,9 @@ function clearPresentationForm() {
   elements.presentationThemeBrief.value = "";
   elements.presentationSourceText.value = "";
   elements.presentationMaterialFile.value = "";
+  elements.presentationImageSearchQuery.value = "";
+  elements.presentationImageSearchProvider.value = "openverse";
+  elements.presentationImageSearchRestrictions.value = "";
   elements.presentationFontFamily.value = "avenir";
   elements.presentationThemePrimary.value = "#183153";
   elements.presentationThemeSecondary.value = "#275d8c";
@@ -3049,6 +3055,12 @@ async function createPresentationFromForm() {
         audience: elements.presentationAudience.value.trim(),
         constraints: elements.presentationConstraints.value.trim(),
         generationMode: elements.presentationGenerationMode.value,
+        imageSearch: {
+          count: 3,
+          provider: elements.presentationImageSearchProvider.value,
+          query: elements.presentationImageSearchQuery.value.trim(),
+          restrictions: elements.presentationImageSearchRestrictions.value.trim()
+        },
         objective: elements.presentationObjective.value.trim(),
         presentationMaterials,
         presentationSourceText: elements.presentationSourceText.value.trim(),

@@ -64,6 +64,7 @@ This document tracks the next practical steps for combining Slideotter's determi
    - New presentation setup can save a starter image before the initial deck is generated.
    - Generation receives bounded material metadata and may attach matching image material by id.
    - Server-side materialization validates that attached media refers to known presentation material metadata.
+   - Image search can import bounded results from Openverse or Wikimedia Commons before generation; users can set source/license restrictions such as `license:cc0` or `source:flickr`.
 
 ## Non-Goals For Now
 

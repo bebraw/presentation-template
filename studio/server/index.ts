@@ -10,6 +10,7 @@ loadEnvFiles();
 const { getAssistantSession, getAssistantSuggestions, handleAssistantMessage } = require("./services/assistant.ts");
 const { buildAndRenderDeck, getPreviewManifest } = require("./services/build.ts");
 const { getDomPreviewState, renderDomPreviewDocument } = require("./services/dom-preview.ts");
+const { importImageSearchResults } = require("./services/image-search.ts");
 const { getLlmStatus, verifyLlmConnection } = require("./services/llm/client.ts");
 const { createMaterialFromDataUrl, getMaterial, getMaterialFilePath, listMaterials } = require("./services/materials.ts");
 const { clientDir, outputDir } = require("./services/paths.ts");
@@ -447,6 +448,17 @@ async function handlePresentationCreate(req, res) {
       });
     });
 
+    let imageSearchResult = null;
+    if (fields.imageSearch && typeof fields.imageSearch === "object" && String(fields.imageSearch.query || "").trim()) {
+      imageSearchResult = await importImageSearchResults({
+        count: fields.imageSearch.count,
+        provider: fields.imageSearch.provider,
+        query: fields.imageSearch.query,
+        restrictions: fields.imageSearch.restrictions,
+        source: fields.imageSearch.source
+      });
+    }
+
     const generated = await generateInitialPresentation({
       ...fields,
       includeActiveMaterials: true,
@@ -463,7 +475,8 @@ async function handlePresentationCreate(req, res) {
       message: [
         generated.summary,
         starterSourceText ? "Starter sources were saved with the new presentation." : "",
-        starterMaterials.length ? `${starterMaterials.length} starter image${starterMaterials.length === 1 ? "" : "s"} were saved with the new presentation.` : ""
+        starterMaterials.length ? `${starterMaterials.length} starter image${starterMaterials.length === 1 ? "" : "s"} were saved with the new presentation.` : "",
+        imageSearchResult && imageSearchResult.imported.length ? `${imageSearchResult.imported.length} searched image${imageSearchResult.imported.length === 1 ? "" : "s"} were imported from ${imageSearchResult.providerLabel || imageSearchResult.provider}.` : ""
       ].filter(Boolean).join(" "),
       ok: true,
       operation: "create-presentation",

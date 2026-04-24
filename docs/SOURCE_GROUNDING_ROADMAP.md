@@ -8,7 +8,7 @@ This document tracks the next practical steps for combining Slideotter's determi
 - Deck Planning can add pasted text, notes, or URLs as presentation sources.
 - Generation builds a lightweight retrieval query from deck fields and retrieves matching source chunks through keyword scoring.
 - Retrieved chunks are injected into initial or regenerated deck generation. Local generation can use them directly, and LLM generation receives them as grounded context.
-- Retrieved source metadata is returned by generation but is not yet surfaced clearly in the UI.
+- Retrieved source metadata is returned by generation and surfaced in the collapsed generation diagnostics panel.
 
 ## Product Goals
 
@@ -20,6 +20,7 @@ This document tracks the next practical steps for combining Slideotter's determi
 ## Implementation Roadmap
 
 1. **Generation Diagnostics Visibility**
+   - Status: implemented.
    - Show the snippets retrieved for the last generation in the debug/diagnostics area.
    - Include source title, URL when present, chunk index, and a short excerpt.
    - Keep this hidden by default so normal users are not forced to think about retrieval internals.

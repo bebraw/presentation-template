@@ -201,7 +201,7 @@ The assistant layer sits on top of workflow actions:
 - message history persists in a repo-local session store
 - the assistant endpoint accepts user messages plus current studio selection
 - the assistant can answer in text, trigger a workflow, or return both text and variants
-- intermediate states such as `gathering context`, `generating variants`, `rendering preview`, and `validation passed` flow through SSE-backed runtime events and workflow history
+- intermediate states such as `gathering context`, provider-specific LLM substatus, `generating variants`, `rendering preview`, and `validation passed` flow through SSE-backed runtime events and workflow history
 
 This should feel like an assistant inside the studio, not a separate general-purpose chatbot.
 

@@ -31,8 +31,10 @@ The browser studio baseline is complete.
 - Structured slide specs can carry an optional validated layout treatment, and local content-layout candidates now use those treatments while preserving existing layout choices on generated candidates unless a candidate explicitly changes them.
 - Structured JSON editing and compare source blocks use lightweight syntax highlighting for keys, strings, numbers, and literals.
 - The browser UI uses a compact sticky top navigation with the project name first, page controls, current slide identity, and check state kept available without a large pitch header.
-- Slide variant generation sits directly below the active preview and selector, and now uses a compact workbench with explicit generation modes, a candidate-count control defaulting to five, progress steps, selected-candidate review state, and visual theme candidates that preview font and color changes before apply.
-- Generation diagnostics are collapsed by default and group LLM provider state, current operation text, and recent workflow events behind one inspectable panel.
+- Slide Studio uses tabs for the current slide, slide context, and variant generation so the preview, context fields, and candidate workflow do not compete for the same viewport.
+- Slide variant generation uses a compact workbench with explicit generation modes, a candidate-count control defaulting to five, progress steps, selected-candidate review state, a visible live operation line, and visual theme candidates that preview font and color changes before apply.
+- Generation diagnostics are collapsed by default and group source retrieval plus recent workflow events behind one inspectable panel.
+- LLM-backed workflows publish provider substatus through runtime events, including request submission, streamed LM Studio response chunks, and structured JSON parsing.
 - Generation diagnostics also show the source snippets retrieved for the last generated deck so source grounding remains inspectable without becoming primary UI.
 - Deck checks are available from a compact masthead control that opens an inspectable check console and focused report without becoming a primary workspace page.
 - Check settings and rule severity overrides use explicit show/hide disclosure controls so advanced validation configuration stays discoverable without being visible by default.
@@ -41,8 +43,8 @@ The browser studio baseline is complete.
 - Local deck-planning candidates carry shared deck-context patches, use presentation-scoped path labels, and generate content scaffolds with title/body evidence items rather than placeholder metric bars.
 - Deck-plan diffs report presentation-scoped slide paths so review copy matches the active storage layout.
 - Slide candidate review and visual comparison share one workspace: direct-select rows drive the adjacent current-versus-candidate preview and diff pane, while the compare pane stays hidden until candidates exist.
-- Selected-slide context is collapsed by default into a compact disclosure, leaving the active preview and workflow surfaces higher on the page.
-- Workflow chat uses compact drawer copy, shorter empty state and message labels, and shorter canned workflow replies.
+- Selected-slide context is a direct tabbed editor view rather than a nested disclosure.
+- Workflow chat uses compact drawer copy, shorter empty state and message labels, shorter canned workflow replies, and Chat/Log tabs so history does not crowd the main action surface.
 - Workflow chat can attach selected text from the active slide preview as turn context, shown as a compact selection chip before send and on the saved user message.
 - The structured draft drawer uses a wider editor-first sheet with save anchored below the JSON editor and snapshot capture tucked behind a disclosure; Spec and Chat drawer tabs use narrower closed rails on desktop and short bottom handles on mobile, and the slide selector uses a compact preview-only strip with index badges to keep the active slide and current action dominant.
 - Studio writes are server-controlled and limited to approved presentation folders, repo-local state, and generated studio artifacts.

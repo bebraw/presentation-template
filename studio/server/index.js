@@ -215,7 +215,8 @@ function sendFile(res, fileName) {
     ".html": "text/html; charset=utf-8",
     ".js": "application/javascript; charset=utf-8",
     ".json": "application/json; charset=utf-8",
-    ".png": "image/png"
+    ".png": "image/png",
+    ".svg": "image/svg+xml; charset=utf-8"
   })[ext] || "application/octet-stream";
 
   const stream = fs.createReadStream(fileName);

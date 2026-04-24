@@ -16,6 +16,27 @@ function assertString(value, label) {
   }
 }
 
+const allowedSlideLayouts = new Set([
+  "callout",
+  "checklist",
+  "focus",
+  "standard",
+  "steps",
+  "strip"
+]);
+
+function assertOptionalLayout(value, label) {
+  if (value === undefined || value === null || value === "") {
+    return;
+  }
+
+  assertString(value, label);
+
+  if (!allowedSlideLayouts.has(value)) {
+    throw new Error(`${label} must be one of: ${Array.from(allowedSlideLayouts).join(", ")}`);
+  }
+}
+
 function assertNumber(value, label) {
   if (typeof value !== "number" || Number.isNaN(value)) {
     throw new Error(`${label} must be a number`);
@@ -97,6 +118,7 @@ function validateSlideSpec(spec) {
   assertObject(spec, "slideSpec");
   assertString(spec.type, "slideSpec.type");
   assertString(spec.title, "slideSpec.title");
+  assertOptionalLayout(spec.layout, "slideSpec.layout");
   assertMediaItem(spec.media, "slideSpec.media");
 
   switch (spec.type) {

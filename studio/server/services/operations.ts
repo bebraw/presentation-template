@@ -1246,6 +1246,7 @@ function createContentLayoutCandidates(currentSpec, layoutContext, options: any 
         eyebrow: "Priority",
         guardrails: rotateItems(currentSpec.guardrails, 1),
         guardrailsTitle: "Supporting guardrails",
+        layout: "focus",
         signals: orderByNumericValue(currentSpec.signals, "desc"),
         signalsTitle: "Leading signals",
         summary: `Start with the strongest visible signal, then use the guardrails to explain how the setup stays stable.`,
@@ -1261,6 +1262,7 @@ function createContentLayoutCandidates(currentSpec, layoutContext, options: any 
         eyebrow: "Controls",
         guardrails: orderByNumericValue(currentSpec.guardrails, "desc"),
         guardrailsTitle: "Primary guardrails",
+        layout: "checklist",
         signals: rotateItems(currentSpec.signals, 1),
         signalsTitle: "Supporting signals",
         summary: `Lead with the operating limits, then show the signals that justify keeping the current path.`,
@@ -1276,6 +1278,7 @@ function createContentLayoutCandidates(currentSpec, layoutContext, options: any 
         eyebrow: "Watch list",
         guardrails: orderByNumericValue(currentSpec.guardrails, "asc"),
         guardrailsTitle: "Tightest guardrails",
+        layout: "strip",
         signals: orderByNumericValue(currentSpec.signals, "asc"),
         signalsTitle: "Weakest signals first",
         summary: `Use the slide as a watch list: surface the weakest signal, then show which guardrail needs the most care.`,
@@ -1286,7 +1289,7 @@ function createContentLayoutCandidates(currentSpec, layoutContext, options: any 
     changeSummary: [
       `Reworked the ${currentSpec.type} slide toward a ${variant.label.toLowerCase()}.`,
       "Reordered the signal bars and guardrail rows to change which evidence lands first.",
-      "Retitled the left and right panels while keeping the existing two-column structure intact.",
+      "Changed the content layout treatment while keeping the same structured slide family.",
       modeLabel
     ],
     generator: "local",
@@ -3284,6 +3287,14 @@ function applyCandidateSlideDefaults(candidateSlideSpec, baseSlideSpec) {
     nextSpec.media = {
       ...baseSlideSpec.media
     };
+  }
+
+  if (
+    baseSlideSpec &&
+    baseSlideSpec.layout &&
+    !Object.hasOwn(candidateSlideSpec || {}, "layout")
+  ) {
+    nextSpec.layout = baseSlideSpec.layout;
   }
 
   return validateSlideSpec(nextSpec);

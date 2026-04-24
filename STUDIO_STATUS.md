@@ -25,6 +25,7 @@ The browser studio baseline is complete.
 - Presentation selection uses visual first-slide cards with the presentation name, compact metadata facts, active state, search/filter, duplication, and deletion controls.
 - Slide-level workflows, manual slide add/remove controls, deck-planning workflows, assistant-triggered actions, session-only candidates, safe apply flows, and compare views are available from the browser.
 - Supported structured slides allow direct text edits and valid JSON spec edits to update the active DOM preview immediately while saving through the server-controlled slide-spec path without a render pass.
+- Structured slide specs can carry an optional validated layout treatment, and local content-layout candidates now use those treatments while preserving existing layout choices on generated candidates unless a candidate explicitly changes them.
 - Structured JSON editing and compare source blocks use lightweight syntax highlighting for keys, strings, numbers, and literals.
 - The browser UI uses a compact sticky top navigation with the project name first, page controls, current slide identity, and check state kept available without a large pitch header.
 - Slide variant generation sits directly below the active preview and selector, and now uses a compact workbench with explicit generation modes, a candidate-count control defaulting to five, progress steps, selected-candidate review state, and visual theme candidates that preview font and color changes before apply.

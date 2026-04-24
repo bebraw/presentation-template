@@ -79,6 +79,13 @@ function createResourceSchema() {
   };
 }
 
+function createLayoutSchema() {
+  return {
+    enum: ["callout", "checklist", "focus", "standard", "steps", "strip"],
+    type: "string"
+  };
+}
+
 function getSlideSpecSchema(slideType) {
   switch (slideType) {
     case "cover":
@@ -92,6 +99,7 @@ function getSlideSpecSchema(slideType) {
             type: "array"
           },
           eyebrow: { type: "string" },
+          layout: createLayoutSchema(),
           note: { type: "string" },
           summary: { type: "string" },
           title: { type: "string" },
@@ -111,6 +119,7 @@ function getSlideSpecSchema(slideType) {
             type: "array"
           },
           eyebrow: { type: "string" },
+          layout: createLayoutSchema(),
           note: { type: "string" },
           summary: { type: "string" },
           title: { type: "string" },
@@ -131,6 +140,7 @@ function getSlideSpecSchema(slideType) {
             type: "array"
           },
           guardrailsTitle: { type: "string" },
+          layout: createLayoutSchema(),
           signals: {
             items: createSignalSchema(),
             maxItems: 4,
@@ -156,6 +166,7 @@ function getSlideSpecSchema(slideType) {
             type: "array"
           },
           eyebrow: { type: "string" },
+          layout: createLayoutSchema(),
           resources: {
             items: createResourceSchema(),
             maxItems: 2,

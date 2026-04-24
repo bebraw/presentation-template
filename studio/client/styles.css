@@ -291,11 +291,13 @@ input[type="color"]::-moz-color-swatch {
 .editorial-flow {
   display: grid;
   gap: 2.25rem;
+  min-width: 0;
 }
 
 .workspace-page {
   display: grid;
   gap: 2.25rem;
+  min-width: 0;
 }
 
 .workspace-page[hidden] {
@@ -321,6 +323,9 @@ input[type="color"]::-moz-color-swatch {
 }
 
 .preview-section {
+  display: grid;
+  gap: 0.85rem;
+  min-width: 0;
   padding: 0 0 2rem;
   border-bottom: 1px solid var(--app-line);
 }
@@ -1430,18 +1435,23 @@ input[type="color"]::-moz-color-swatch {
 
 .preview-frame {
   position: relative;
+  width: min(100%, calc((100vh - 8rem) * 1.7778));
   aspect-ratio: 16 / 9;
   border: 1px solid var(--app-line);
   background: var(--app-surface-strong);
   overflow: hidden;
-  margin-bottom: 1rem;
+  margin: 0 auto;
 }
 
 .thumb-rail {
   display: flex;
   gap: 0.7rem;
+  min-width: 0;
+  max-width: 100%;
+  max-height: 8.75rem;
   margin-inline: -0.15rem;
   overflow-x: auto;
+  overflow-y: hidden;
   overscroll-behavior-x: contain;
   padding: 0 0.15rem 0.55rem;
   scrollbar-gutter: stable;
@@ -1449,12 +1459,12 @@ input[type="color"]::-moz-color-swatch {
 }
 
 .thumb {
-  flex: 0 0 9.6rem;
+  flex: 0 0 7.5rem;
   scroll-snap-align: start;
   border: 0;
   border-top: 1px solid var(--app-line);
   border-radius: 0;
-  padding: 0.75rem 0 0.4rem;
+  padding: 0.55rem 0 0.3rem;
   background: transparent;
   cursor: pointer;
   text-align: left;
@@ -1474,10 +1484,27 @@ input[type="color"]::-moz-color-swatch {
   font-weight: 600;
 }
 
+.thumb strong {
+  overflow: hidden;
+  font-size: 0.82rem;
+  line-height: 1.2;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
 .thumb span,
 .variant-card span {
   color: var(--app-soft-text);
   font-size: 0.82rem;
+}
+
+.thumb span {
+  display: block;
+  overflow: hidden;
+  font-size: 0.68rem;
+  line-height: 1.2;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .variant-list {
@@ -1702,7 +1729,7 @@ input[type="color"]::-moz-color-swatch {
 }
 
 .thumb-preview {
-  margin-bottom: 0.5rem;
+  margin-bottom: 0.38rem;
   border: 1px solid var(--app-line);
   background: #ffffff;
   overflow: hidden;

@@ -1,10 +1,10 @@
 # Development
 
-This file contains the development-facing setup, commands, and workflow notes for slideotter. The README stays focused on what the project is and what it can do today.
+This file contains development-facing workflow notes for slideotter. For required tools and first-run setup, see [docs/GETTING_STARTED.md](docs/GETTING_STARTED.md).
 
 ## Setup
 
-Install dependencies:
+After installing the hard dependencies from the getting-started guide, install project dependencies:
 
 ```bash
 npm install

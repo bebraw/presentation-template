@@ -36,10 +36,11 @@ The DOM-first runtime is now the active path:
 5. studio validation and the CLI quality gate now use that same DOM validation path for supported slide families, with a browser layout fixture guarding the Slide Studio preview viewport
 6. complete media validation mode now adds rendered-media checks for small, clipped, upscaled, distorted, unlabeled, unloaded, dimensionless, text-overlapping, or progress-area-crowding visuals plus caption/source attachment, preferred caption position, minimum spacing, and maximum attachment distance
 7. the render-baseline gate now compares the current DOM-built PDF against the approved raster baseline
+8. the active deck is selected from a presentation registry, with slides and deck state stored under `presentations/<id>/`
 
 The next practical tasks are:
 
-1. keep future UI refinements aligned with the pragmatic review direction now that the April 2026 pass has promoted Variant Generation, hidden empty compare space, collapsed Checks settings, reduced drawer and thumbnail chrome, and tucked Deck Planning palette and guardrail controls away until inspection
+1. keep hardening multiple-presentation workflows now that create, select, duplicate, and delete exist; the next useful slice is better archive/export naming per active presentation
 2. keep hardening complete media-validation mode beyond its current media legibility, slide bounds, progress-area spacing, and caption/source attachment checks, now covered by a fixture in the quality gate, especially once media-heavy slide families land
 3. keep extending shared deck-context patches if new deck-plan modes are added; the current sequence, boundary, decision, operator, compressed, composed, and deck-authoring candidates all carry shared-context steering, and generated content scaffolds use prose evidence items instead of metric-style placeholders, enforced by the deck-plan fixture in the quality gate
 4. keep documentation aligned with the DOM-first runtime when older guidance is touched
@@ -72,6 +73,7 @@ Current implementation is now DOM-first:
 - studio-triggered PDF export and preview PNG generation now run through Playwright in [`studio/server/services/dom-export.ts`](./studio/server/services/dom-export.ts)
 - studio geometry and text validation for supported slide families now run through Playwright DOM inspection in [`studio/server/services/dom-validate.ts`](./studio/server/services/dom-validate.ts)
 - that DOM validator now covers content-gap floors, contrast, vertical-balance checks, and complete-mode media checks in addition to bounds, panel padding, minimum font size, and words-per-slide
+- active presentation selection is stored in [`studio/state/presentations.json`](./studio/state/presentations.json), while per-deck slides and context live under [`presentations/<id>/`](./presentations/)
 - the CLI build and geometry/text validation entrypoints now live under [`scripts/`](./scripts/) and call that same Playwright-backed DOM renderer and DOM validator
 - studio preview strips and contact sheets now use [`studio/server/services/page-artifacts.ts`](./studio/server/services/page-artifacts.ts)
 - repo-level [`scripts/`](./scripts/) entrypoints now drive build, diagram rendering, geometry/text validation, and baseline refresh around the DOM runtime
@@ -87,9 +89,9 @@ The active architecture is DOM-first:
 
 The point of the pivot was to reduce total complexity, not split it again. Do not reintroduce a second long-lived renderer beside the shared DOM runtime.
 
-Deck-level planning context should still flow into shared rendering behavior where it is safe and deterministic to do so. The current implementation already proves that with metadata, progress totals, design constraints, and shared palette values. The DOM-first renderer should inherit that same deck-context boundary instead of inventing browser-only presentation state.
+Deck-level planning context should still flow into shared rendering behavior where it is safe and deterministic to do so. The current implementation already proves that with metadata, progress totals, design constraints, and shared palette values. The DOM-first renderer should inherit the active presentation's deck-context boundary instead of inventing browser-only presentation state.
 
-The studio write boundary should stay explicit and narrow. Studio-driven file mutation is now limited to slide files under `slides/slide-*`, repo-local state files under `studio/state/*.json`, and generated workflow artifacts under `studio/output/**`. Future workflow expansion should continue extending that allowlist deliberately rather than relying on ad hoc file writes.
+The studio write boundary should stay explicit and narrow. Studio-driven file mutation is now limited to slide files and per-presentation state under `presentations/<id>/`, the global presentation registry under `studio/state/presentations.json`, repo-local session state under `studio/state/*.json`, and generated workflow artifacts under `studio/output/**`. Future workflow expansion should continue extending that allowlist deliberately rather than relying on ad hoc file writes.
 
 ## LLM Integration Plan
 
@@ -180,7 +182,7 @@ Each type should have a clear schema for fields such as:
 
 The server should own the materialization step from slide spec to source. That keeps layout rules and shared runtime constraints in one place instead of leaking them into the UI or prompts.
 
-Generated slide candidates are session-only: the server renders compare-ready previews and returns candidate specs to the browser, but it does not write generated options into `slides/slide-*.json`. Theme candidates also carry font and color overrides so Ideate Theme behaves as a visual theme operation during comparison. Applying one candidate writes only the chosen slide spec and any chosen visual theme. Manual snapshots can still persist in `studio/state/variants.json`, keeping slide JSON focused on the active deck content.
+Generated slide candidates are session-only: the server renders compare-ready previews and returns candidate specs to the browser, but it does not write generated options into `presentations/<id>/slides/slide-*.json`. Theme candidates also carry font and color overrides so Ideate Theme behaves as a visual theme operation during comparison. Applying one candidate writes only the chosen slide spec and any chosen visual theme. Manual snapshots persist with the active presentation, keeping slide JSON focused on the active deck content.
 
 A custom DSL should be considered only later if JSON becomes too awkward for composition, references, or layout relationships.
 
@@ -285,7 +287,7 @@ Delivered in this order:
 - the same DOM renderer powers live studio preview and exported PDF for supported slides
 - supported slide families use the shared DOM renderer for authoritative layout
 - validation results come from DOM layout and rendered output, not from the old slide-canvas geometry model
-- the active demo deck uses the DOM runtime to build, preview, and validate
+- the active presentation uses the DOM runtime to build, preview, and validate
 
 ## UX Shape
 

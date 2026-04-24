@@ -1,14 +1,14 @@
 # Architecture
 
-This document explains how the repository currently assembles, previews, validates, and publishes the demo deck.
+This document explains how the repository currently assembles, previews, validates, and publishes the active presentation.
 
-The repo is now DOM-first for active authoring and PDF output. Slide-spec JSON under `slides/` is the content model, `studio/client/slide-dom.ts` is the shared renderer, and Playwright is the export and validation runtime around that renderer.
+The repo is now DOM-first for active authoring and PDF output. Slide-spec JSON under `presentations/<id>/slides/` is the content model, `studio/client/slide-dom.ts` is the shared renderer, and Playwright is the export and validation runtime around that renderer.
 
 ## Overview
 
 There are now three layers:
 
-1. `slides/*.json` holds the active slide content model for supported slide families.
+1. `studio/state/presentations.json` selects the active presentation and `presentations/<id>/slides/*.json` holds its slide content model for supported slide families.
 2. `studio/client/slide-dom.ts` renders those slide specs into a shared HTML/CSS slide runtime.
 3. Playwright-backed server services turn that same runtime into PDFs, preview PNGs, and validation inputs.
 
@@ -25,8 +25,9 @@ flowchart TD
     package --> studio["npm run studio:start"]
 
     subgraph content["Content Layer"]
-        slides["slides/slide-01.json ... slide-10.json"]
-        state["studio/state/*.json"]
+        registry["studio/state/presentations.json"]
+        slides["presentations/<id>/slides/slide-*.json"]
+        state["presentations/<id>/state/*.json"]
     end
 
     subgraph dom["DOM Runtime"]
@@ -63,6 +64,7 @@ flowchart TD
     end
 
     slides --> slideDom
+    registry --> slides
     state --> preview
     theme --> preview
     constraints --> validateDom

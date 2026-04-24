@@ -20,16 +20,16 @@ It is not a PowerPoint replacement and not a broad WYSIWYG editor. The project f
 
 The repository includes a ten-slide demo deck that explains the project itself:
 
-- `slides/slide-01.json`: project framing
-- `slides/slide-02.json`: project map
-- `slides/slide-03.json`: authoring context
-- `slides/slide-04.json`: structured slide model
-- `slides/slide-05.json`: live preview loop
-- `slides/slide-06.json`: DOM-first runtime
-- `slides/slide-07.json`: candidate review
-- `slides/slide-08.json`: write boundary
-- `slides/slide-09.json`: validation gate
-- `slides/slide-10.json`: summary and next steps
+- `presentations/slideotter/slides/slide-01.json`: project framing
+- `presentations/slideotter/slides/slide-02.json`: project map
+- `presentations/slideotter/slides/slide-03.json`: authoring context
+- `presentations/slideotter/slides/slide-04.json`: structured slide model
+- `presentations/slideotter/slides/slide-05.json`: live preview loop
+- `presentations/slideotter/slides/slide-06.json`: DOM-first runtime
+- `presentations/slideotter/slides/slide-07.json`: candidate review
+- `presentations/slideotter/slides/slide-08.json`: write boundary
+- `presentations/slideotter/slides/slide-09.json`: validation gate
+- `presentations/slideotter/slides/slide-10.json`: summary and next steps
 
 Current local PDF output is written to `slides/output/demo-presentation.pdf`. The checked-in archive copy lives at `archive/demo-presentation.pdf`.
 
@@ -42,6 +42,7 @@ The local studio lives under `studio/` and runs as a small Node server with a st
 The UI currently includes:
 
 - a compact sticky navigation with the project name first
+- visual presentation selection with create, duplicate, and delete workflows
 - active slide preview and thumbnail navigation
 - collapsible selected-slide context
 - direct slide-text editing from the DOM preview
@@ -54,10 +55,11 @@ The same DOM renderer is also exposed as a standalone deck preview at `/deck-pre
 
 ## Repository Map
 
-- `slides/`: active demo deck slide specs
+- `presentations/`: presentation folders containing slide specs and per-presentation state
+- `slides/output/`: generated local PDF output
 - `studio/client/`: browser UI and shared DOM slide renderer
 - `studio/server/`: local server, workflow actions, export, validation, write boundary, and LLM integration
-- `studio/state/`: repo-local deck context, validation settings, assistant sessions, and related state
+- `studio/state/`: global studio registry plus repo-local assistant sessions and related state
 - `studio/baseline/`: approved render-baseline images for visual regression checks
 - `scripts/`: CLI wrappers for build, validation, diagram rendering, and baseline refresh
 - `skills/`: presentation-focused Codex workflow guidance

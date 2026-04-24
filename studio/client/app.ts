@@ -10,6 +10,10 @@ const state: any = {
     slides: [],
     theme: null
   },
+  presentations: {
+    activePresentationId: null,
+    presentations: []
+  },
   previews: { pages: [] },
   runtime: null,
   selectedDeckStructureId: null,
@@ -63,6 +67,7 @@ const elements: Record<string, any> = {
   compareVariantLabel: document.getElementById("compare-variant-label"),
   compareVariantMeta: document.getElementById("compare-variant-meta"),
   compareVariantPreview: document.getElementById("compare-variant-preview"),
+  createPresentationButton: document.getElementById("create-presentation-button"),
   createSystemSlideButton: document.getElementById("create-system-slide-button"),
   designMaxWords: document.getElementById("design-max-words"),
   designMinCaptionGap: document.getElementById("design-min-caption-gap"),
@@ -95,6 +100,14 @@ const elements: Record<string, any> = {
   manualSystemSummary: document.getElementById("manual-system-summary"),
   manualSystemTitle: document.getElementById("manual-system-title"),
   operationStatus: document.getElementById("operation-status"),
+  presentationAudience: document.getElementById("presentation-audience"),
+  presentationConstraints: document.getElementById("presentation-constraints"),
+  presentationList: document.getElementById("presentation-list"),
+  presentationObjective: document.getElementById("presentation-objective"),
+  presentationThemeBrief: document.getElementById("presentation-theme-brief"),
+  presentationTitle: document.getElementById("presentation-title"),
+  presentationTone: document.getElementById("presentation-tone"),
+  presentationsPage: document.getElementById("presentations-page"),
   reportBox: document.getElementById("report-box"),
   redoLayoutButton: document.getElementById("redo-layout-button"),
   saveDeckContextButton: document.getElementById("save-deck-context-button"),
@@ -102,6 +115,7 @@ const elements: Record<string, any> = {
   saveSlideContextButton: document.getElementById("save-slide-context-button"),
   saveSlideSpecButton: document.getElementById("save-slide-spec-button"),
   showPlanningPageButton: document.getElementById("show-planning-page"),
+  showPresentationsPageButton: document.getElementById("show-presentations-page"),
   showStudioPageButton: document.getElementById("show-studio-page"),
   slideSpecEditor: document.getElementById("slide-spec-editor"),
   slideSpecStatus: document.getElementById("slide-spec-status"),
@@ -663,6 +677,9 @@ function persistStructuredDraftDrawerPreference() {
 
 function loadCurrentPagePreference() {
   const hash = typeof window.location.hash === "string" ? window.location.hash.replace(/^#/, "") : "";
+  if (hash === "presentations") {
+    return "presentations";
+  }
   if (hash === "planning") {
     return "planning";
   }
@@ -672,7 +689,7 @@ function loadCurrentPagePreference() {
 
   try {
     const value = window.localStorage.getItem("studio.currentPage");
-    return value === "planning" ? value : "studio";
+    return value === "planning" || value === "presentations" ? value : "studio";
   } catch (error) {
     return "studio";
   }
@@ -688,13 +705,16 @@ function persistCurrentPagePreference() {
 
 function renderPages() {
   const current = state.ui.currentPage;
+  elements.presentationsPage.hidden = current !== "presentations";
   elements.studioPage.hidden = current !== "studio";
   elements.planningPage.hidden = current !== "planning";
   elements.validationPage.hidden = !state.ui.checksOpen;
   elements.structuredDraftDrawer.hidden = current !== "studio";
+  elements.showPresentationsPageButton.classList.toggle("active", current === "presentations");
   elements.showStudioPageButton.classList.toggle("active", current === "studio");
   elements.showPlanningPageButton.classList.toggle("active", current === "planning");
   elements.showValidationPageButton.classList.toggle("active", state.ui.checksOpen);
+  elements.showPresentationsPageButton.setAttribute("aria-pressed", current === "presentations" ? "true" : "false");
   elements.showStudioPageButton.setAttribute("aria-pressed", current === "studio" ? "true" : "false");
   elements.showPlanningPageButton.setAttribute("aria-pressed", current === "planning" ? "true" : "false");
   elements.showValidationPageButton.setAttribute("aria-expanded", state.ui.checksOpen ? "true" : "false");
@@ -702,7 +722,7 @@ function renderPages() {
 }
 
 function setCurrentPage(page) {
-  state.ui.currentPage = page === "planning" ? page : "studio";
+  state.ui.currentPage = page === "planning" || page === "presentations" ? page : "studio";
   const nextHash = `#${state.ui.currentPage}`;
   if (window.location.hash !== nextHash) {
     window.history.replaceState(null, "", nextHash);
@@ -1944,6 +1964,89 @@ function renderPreviews() {
   });
 }
 
+function getPresentationState() {
+  const presentationsState = state.presentations && typeof state.presentations === "object"
+    ? state.presentations
+    : {};
+
+  return {
+    activePresentationId: presentationsState.activePresentationId || null,
+    presentations: Array.isArray(presentationsState.presentations) ? presentationsState.presentations : []
+  };
+}
+
+function renderPresentations() {
+  const presentationState = getPresentationState();
+  const presentations = presentationState.presentations;
+  elements.presentationList.innerHTML = "";
+
+  if (!presentations.length) {
+    elements.presentationList.innerHTML = `
+      <div class="presentation-empty">
+        <strong>No presentations found</strong>
+        <span>Create one from constraints and a starter scaffold.</span>
+      </div>
+    `;
+    return;
+  }
+
+  presentations.forEach((presentation) => {
+    const active = presentation.id === presentationState.activePresentationId;
+    const card = document.createElement("article");
+    card.className = `presentation-card${active ? " active" : ""}`;
+    card.dataset.presentationId = presentation.id;
+    card.innerHTML = `
+      <div class="presentation-card-preview" aria-hidden="true"></div>
+      <div class="presentation-card-body">
+        <div class="presentation-card-title-row">
+          <h3>${escapeHtml(presentation.title || presentation.id)}</h3>
+          ${active ? "<span class=\"presentation-active-pill\">Active</span>" : ""}
+        </div>
+        <p>${escapeHtml(presentation.description || "No brief saved yet.")}</p>
+        <span class="presentation-card-meta">${presentation.slideCount || 0} slide${presentation.slideCount === 1 ? "" : "s"}</span>
+      </div>
+      <div class="presentation-card-actions">
+        <button class="secondary presentation-select-button" type="button">${active ? "Open" : "Select"}</button>
+        <button class="secondary presentation-duplicate-button" type="button">Duplicate</button>
+        <button class="secondary presentation-delete-button" type="button"${presentations.length <= 1 ? " disabled" : ""}>Delete</button>
+      </div>
+    `;
+
+    const preview = card.querySelector(".presentation-card-preview");
+    if (presentation.firstSlideSpec) {
+      renderDomSlide(preview, presentation.firstSlideSpec, {
+        index: 1,
+        theme: presentation.theme,
+        totalSlides: presentation.slideCount || 1
+      });
+    }
+
+    const selectButton = card.querySelector(".presentation-select-button");
+    const duplicateButton = card.querySelector(".presentation-duplicate-button");
+    const deleteButton = card.querySelector(".presentation-delete-button");
+
+    selectButton.addEventListener("click", () => {
+      selectPresentation(presentation.id, selectButton).catch((error) => window.alert(error.message));
+    });
+    duplicateButton.addEventListener("click", () => {
+      duplicatePresentation(presentation, duplicateButton).catch((error) => window.alert(error.message));
+    });
+    deleteButton.addEventListener("click", () => {
+      deletePresentation(presentation, deleteButton).catch((error) => window.alert(error.message));
+    });
+    card.addEventListener("click", (event) => {
+      const target = event.target as Element | null;
+      if (target && target.closest("button")) {
+        return;
+      }
+
+      selectPresentation(presentation.id, selectButton).catch((error) => window.alert(error.message));
+    });
+
+    elements.presentationList.appendChild(card);
+  });
+}
+
 function renderVariants() {
   const variants = getSlideVariants();
   const savedCount = variants.filter((variant) => variant.persisted !== false).length;
@@ -2328,12 +2431,128 @@ async function selectSlideByIndex(index) {
   await loadSlide(slide.id);
 }
 
+function clearPresentationForm() {
+  elements.presentationTitle.value = "";
+  elements.presentationAudience.value = "";
+  elements.presentationTone.value = "";
+  elements.presentationObjective.value = "";
+  elements.presentationConstraints.value = "";
+  elements.presentationThemeBrief.value = "";
+}
+
+function resetPresentationSelection() {
+  state.selectedSlideId = null;
+  state.selectedSlideIndex = 1;
+  state.selectedSlideSpec = null;
+  state.selectedSlideSpecDraftError = null;
+  state.selectedSlideSpecError = null;
+  state.selectedSlideStructured = false;
+  state.selectedSlideSource = "";
+  state.selectedVariantId = null;
+  state.transientVariants = [];
+}
+
+async function selectPresentation(presentationId, button = null) {
+  const presentationState = getPresentationState();
+  if (presentationId === presentationState.activePresentationId) {
+    setCurrentPage("studio");
+    return;
+  }
+
+  const done = button ? setBusy(button, "Selecting...") : null;
+  try {
+    await request("/api/presentations/select", {
+      body: JSON.stringify({ presentationId }),
+      method: "POST"
+    });
+    resetPresentationSelection();
+    await refreshState();
+    setCurrentPage("studio");
+  } finally {
+    if (done) {
+      done();
+    }
+  }
+}
+
+async function createPresentationFromForm() {
+  const title = elements.presentationTitle.value.trim();
+  if (!title) {
+    elements.presentationTitle.focus();
+    return;
+  }
+
+  const done = setBusy(elements.createPresentationButton, "Creating...");
+  try {
+    await request("/api/presentations", {
+      body: JSON.stringify({
+        audience: elements.presentationAudience.value.trim(),
+        constraints: elements.presentationConstraints.value.trim(),
+        objective: elements.presentationObjective.value.trim(),
+        themeBrief: elements.presentationThemeBrief.value.trim(),
+        title,
+        tone: elements.presentationTone.value.trim()
+      }),
+      method: "POST"
+    });
+    clearPresentationForm();
+    resetPresentationSelection();
+    await refreshState();
+    setCurrentPage("studio");
+  } finally {
+    done();
+  }
+}
+
+async function duplicatePresentation(presentation, button = null) {
+  const title = `${presentation.title || presentation.id} copy`;
+  const done = button ? setBusy(button, "Duplicating...") : null;
+  try {
+    await request("/api/presentations/duplicate", {
+      body: JSON.stringify({
+        presentationId: presentation.id,
+        title
+      }),
+      method: "POST"
+    });
+    resetPresentationSelection();
+    await refreshState();
+    setCurrentPage("studio");
+  } finally {
+    if (done) {
+      done();
+    }
+  }
+}
+
+async function deletePresentation(presentation, button = null) {
+  const confirmed = window.confirm(`Delete "${presentation.title || presentation.id}"? This removes the presentation folder from this workspace.`);
+  if (!confirmed) {
+    return;
+  }
+
+  const done = button ? setBusy(button, "Deleting...") : null;
+  try {
+    await request("/api/presentations/delete", {
+      body: JSON.stringify({ presentationId: presentation.id }),
+      method: "POST"
+    });
+    resetPresentationSelection();
+    await refreshState();
+  } finally {
+    if (done) {
+      done();
+    }
+  }
+}
+
 async function refreshState() {
   const payload = await request("/api/state");
   state.assistant = payload.assistant || { session: null, suggestions: [] };
   state.context = payload.context;
   state.deckStructureCandidates = [];
   setDomPreviewState(payload);
+  state.presentations = payload.presentations || { activePresentationId: null, presentations: [] };
   state.previews = payload.previews;
   state.runtime = payload.runtime;
   state.workflowHistory = Array.isArray(payload.runtime && payload.runtime.workflowHistory) ? payload.runtime.workflowHistory : [];
@@ -2351,6 +2570,7 @@ async function refreshState() {
 
   renderDeckFields();
   renderDeckStructureCandidates();
+  renderPresentations();
   renderAssistant();
   renderStatus();
   renderPreviews();
@@ -3077,6 +3297,7 @@ elements.assistantSendButton.addEventListener("click", () => sendAssistantMessag
 elements.assistantToggle.addEventListener("click", () => {
   setAssistantDrawerOpen(!state.ui.assistantOpen);
 });
+elements.showPresentationsPageButton.addEventListener("click", () => setCurrentPage("presentations"));
 elements.showStudioPageButton.addEventListener("click", () => setCurrentPage("studio"));
 elements.showPlanningPageButton.addEventListener("click", () => setCurrentPage("planning"));
 elements.showValidationPageButton.addEventListener("click", () => setChecksPanelOpen(!state.ui.checksOpen));
@@ -3087,6 +3308,7 @@ elements.structuredDraftToggle.addEventListener("click", () => {
 elements.saveDeckContextButton.addEventListener("click", () => saveDeckContext().catch((error) => window.alert(error.message)));
 elements.saveValidationSettingsButton.addEventListener("click", () => saveValidationSettings().catch((error) => window.alert(error.message)));
 elements.saveSlideContextButton.addEventListener("click", () => saveSlideContext().catch((error) => window.alert(error.message)));
+elements.createPresentationButton.addEventListener("click", () => createPresentationFromForm().catch((error) => window.alert(error.message)));
 
 document.addEventListener("keydown", (event) => {
   if (event.key === "Escape") {
@@ -3110,7 +3332,7 @@ window.addEventListener("hashchange", () => {
     return;
   }
 
-  setCurrentPage(page === "planning" ? page : "studio");
+  setCurrentPage(page === "planning" || page === "presentations" ? page : "studio");
 });
 
 state.ui.currentPage = loadCurrentPagePreference();

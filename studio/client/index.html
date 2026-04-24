@@ -13,6 +13,7 @@
         <a class="product-mark" href="#studio" aria-label="slideotter home">slideotter</a>
 
         <nav class="page-nav" aria-label="Studio pages">
+          <button class="secondary page-nav-button" id="show-presentations-page" type="button">Presentations</button>
           <button class="secondary page-nav-button" id="show-studio-page" type="button">Slide Studio</button>
           <button class="secondary page-nav-button" id="show-planning-page" type="button">Deck Planning</button>
         </nav>
@@ -32,6 +33,69 @@
       </header>
 
       <main class="editorial-flow">
+        <section class="workspace-page presentations-page" id="presentations-page" hidden>
+          <article class="editorial-block editorial-block-wide presentations-console">
+            <div class="section-heading">
+              <div>
+                <p class="eyebrow">Workspace</p>
+                <h2>Presentations</h2>
+              </div>
+            </div>
+
+            <div class="presentation-grid" id="presentation-list"></div>
+
+            <details class="presentation-create-details">
+              <summary>
+                <span class="disclosure-copy">
+                  <strong>New presentation</strong>
+                  <small>Describe the constraints first, then start from a small structured scaffold.</small>
+                </span>
+                <span class="disclosure-action" aria-hidden="true">
+                  <span class="disclosure-action-closed">Create</span>
+                  <span class="disclosure-action-open">Hide form</span>
+                  <span class="disclosure-action-mark"></span>
+                </span>
+              </summary>
+
+              <div class="presentation-create-grid">
+                <label class="field">
+                  <span>Title</span>
+                  <input id="presentation-title" type="text" placeholder="Presentation name">
+                </label>
+
+                <label class="field">
+                  <span>Audience</span>
+                  <input id="presentation-audience" type="text" placeholder="Who this is for">
+                </label>
+
+                <label class="field">
+                  <span>Tone</span>
+                  <input id="presentation-tone" type="text" placeholder="Direct, technical, executive...">
+                </label>
+
+                <label class="field">
+                  <span>Objective</span>
+                  <textarea id="presentation-objective" placeholder="What should this deck help the audience decide or understand?"></textarea>
+                </label>
+
+                <label class="field">
+                  <span>Constraints and opinions</span>
+                  <textarea id="presentation-constraints" placeholder="Non-negotiables, visual preferences, scope boundaries, or review criteria."></textarea>
+                </label>
+
+                <label class="field">
+                  <span>Theme brief</span>
+                  <textarea id="presentation-theme-brief" placeholder="Color, typography, mood, or brand direction."></textarea>
+                </label>
+
+                <div class="button-row compact presentation-create-actions">
+                  <button id="create-presentation-button" type="button">Create presentation</button>
+                </div>
+              </div>
+            </details>
+          </article>
+        </section>
+
         <section class="workspace-page" id="studio-page">
           <section class="preview-section">
             <div class="preview-frame">

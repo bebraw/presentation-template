@@ -14,9 +14,12 @@ The browser studio baseline is complete.
 
 - The local studio runs through `studio/server/` and `studio/client/`.
 - The studio and scripts are TypeScript sources executed through Node's type-stripping runtime, and `npm run typecheck` is part of the local and CI quality gates.
+- Presentations are registry-backed: `studio/state/presentations.json` selects the active presentation, and each deck keeps slides plus deck-local state under `presentations/<id>/`.
 - Slide-spec JSON is the source content model for supported `cover`, `toc`, `content`, and `summary` slides.
 - The shared DOM renderer powers browser preview, the compact horizontal thumbnail selector, compare views, preview PNGs, PDF export, and CLI builds.
-- Deck and slide context, design constraints, validation settings, visual theme values, assistant sessions, and manual snapshots persist in repo-local studio state; generated slide candidates stay session-only until applied.
+- Deck and slide context, design constraints, validation settings, visual theme values, and manual snapshots persist with the active presentation; assistant sessions and the presentation registry remain repo-local studio state; generated slide candidates stay session-only until applied.
+- The browser can create a new presentation from title, audience, tone, objective, constraints, and theme brief; the server bootstraps a small structured slide scaffold before the user expands it.
+- Presentation selection uses visual first-slide cards with the presentation name, slide count, active state, duplication, and deletion controls.
 - Slide-level workflows, manual slide add/remove controls, deck-planning workflows, assistant-triggered actions, session-only candidates, safe apply flows, and compare views are available from the browser.
 - Supported structured slides allow direct text edits and valid JSON spec edits to update the active DOM preview immediately while saving through the server-controlled slide-spec path without a render pass.
 - Structured JSON editing and compare source blocks use lightweight syntax highlighting for keys, strings, numbers, and literals.
@@ -32,12 +35,13 @@ The browser studio baseline is complete.
 - Workflow chat uses compact drawer copy, shorter empty state and message labels, and shorter canned workflow replies.
 - Workflow chat can attach selected text from the active slide preview as turn context, shown as a compact selection chip before send and on the saved user message.
 - The structured draft drawer uses a wider editor-first sheet with save anchored below the JSON editor and snapshot capture tucked behind a disclosure; Spec and Chat drawer tabs use narrower closed rails on desktop and short bottom handles on mobile, and the slide selector uses a compact preview-only strip with index badges to keep the active slide and current action dominant.
-- Studio writes are server-controlled and limited to approved slide files, repo-local state, and generated studio artifacts.
+- Studio writes are server-controlled and limited to approved presentation folders, repo-local state, and generated studio artifacts.
 - Geometry, text, render, deck-plan, Studio layout, and media-validation fixtures run through the same quality gate used by the CLI; complete media mode also catches visuals that leave the slide viewport or crowd the slide progress area.
 
 ## Maintenance Focus
 
-- Keep future UI changes aligned with the pragmatic review direction: prioritize the active slide, current workflow, compact status, and inspectable secondary controls.
+- Keep future UI changes aligned with the pragmatic review direction: prioritize the active presentation, active slide, current workflow, compact status, and inspectable secondary controls.
+- Harden archive/export naming and generated artifacts around the active presentation instead of assuming the demo deck is the only deck.
 - Keep new deck-planning modes tied to shared deck-context patches when they change narrative direction, theme, constraints, or other deck-level decisions.
 - Deepen DOM media validation only when new media-heavy slide families expose concrete screenshot, chart, diagram, or legibility gaps beyond the current size, bounds, spacing, labeling, loading, and caption/source attachment checks.
 - Correct stale documentation opportunistically if it refers to removed rendering, validation, or authoring paths as active implementation.

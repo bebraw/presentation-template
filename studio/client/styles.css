@@ -522,6 +522,142 @@ input[type="color"]::-moz-color-swatch {
   padding-top: 0;
 }
 
+.presentations-console {
+  padding-top: 0;
+}
+
+.presentation-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(18rem, 100%), 1fr));
+  gap: 1rem;
+  margin-top: 1rem;
+}
+
+.presentation-card {
+  display: grid;
+  gap: 0.85rem;
+  min-width: 0;
+  padding-top: 0.7rem;
+  border-top: 2px solid var(--app-line);
+  cursor: pointer;
+}
+
+.presentation-card.active {
+  border-top-color: var(--app-accent);
+}
+
+.presentation-card-preview {
+  border: 1px solid var(--app-line);
+  background: #ffffff;
+  overflow: hidden;
+}
+
+.presentation-card-title-row {
+  display: flex;
+  gap: 0.6rem;
+  align-items: center;
+  justify-content: space-between;
+  min-width: 0;
+}
+
+.presentation-card h3 {
+  min-width: 0;
+  margin: 0;
+  overflow: hidden;
+  color: var(--app-text);
+  font-size: 1.05rem;
+  font-weight: 650;
+  letter-spacing: 0;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.presentation-card p {
+  display: -webkit-box;
+  min-height: 2.8rem;
+  margin: 0.38rem 0 0.35rem;
+  overflow: hidden;
+  color: var(--app-soft-text);
+  font-size: 0.9rem;
+  line-height: 1.45;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+}
+
+.presentation-card-meta {
+  display: inline-flex;
+  color: var(--app-soft-text);
+  font-size: 0.78rem;
+}
+
+.presentation-active-pill {
+  display: inline-flex;
+  flex: 0 0 auto;
+  border-radius: 999px;
+  padding: 0.23rem 0.46rem;
+  background: var(--app-accent-soft);
+  color: var(--app-accent);
+  font-size: 0.7rem;
+  font-weight: 650;
+  line-height: 1;
+}
+
+.presentation-card-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.45rem;
+}
+
+.presentation-card-actions button {
+  padding: 0.56rem 0.75rem;
+  font-size: 0.82rem;
+}
+
+.presentation-create-details {
+  margin-top: 1.5rem;
+  padding-top: 1rem;
+  border-top: 1px solid var(--app-line);
+}
+
+.presentation-create-details summary {
+  display: flex;
+  gap: 1rem;
+  align-items: center;
+  justify-content: space-between;
+  cursor: pointer;
+  list-style: none;
+}
+
+.presentation-create-details summary::-webkit-details-marker {
+  display: none;
+}
+
+.presentation-create-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 0.8rem;
+  margin-top: 1rem;
+}
+
+.presentation-create-grid textarea {
+  min-height: 6rem;
+}
+
+.presentation-create-actions {
+  grid-column: 1 / -1;
+}
+
+.presentation-empty {
+  display: grid;
+  gap: 0.25rem;
+  padding: 1rem 0;
+  color: var(--app-soft-text);
+}
+
+.presentation-empty strong {
+  color: var(--app-text);
+}
+
 .planning-actions {
   margin-top: 1.05rem;
 }
@@ -1920,6 +2056,7 @@ input[type="color"]::-moz-color-swatch {
 }
 
 .thumb-preview,
+.presentation-card-preview,
 .variant-preview,
 .compare-preview,
 #active-preview {
@@ -2914,6 +3051,10 @@ input[type="color"]::-moz-color-swatch {
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 
+  .presentation-create-grid {
+    grid-template-columns: 1fr;
+  }
+
   .manual-delete-grid,
   .manual-system-grid {
     grid-template-columns: 1fr;
@@ -3108,6 +3249,15 @@ input[type="color"]::-moz-color-swatch {
   }
 
   .planning-page .field-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .presentation-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .presentation-card-actions {
+    display: grid;
     grid-template-columns: 1fr;
   }
 

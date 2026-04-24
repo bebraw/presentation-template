@@ -106,6 +106,81 @@ async function main() {
           assert.equal(metrics.thumbTextVisible, false, "Thumbnail rail should not expose title or file labels that can clip");
 
           assert.ok(metrics.checksButton, "Slide Studio should expose deck checks from the masthead");
+
+          await page.click("#show-presentations-page");
+          await page.waitForSelector("#presentation-list .presentation-card", {
+            timeout: 30_000
+          });
+          await page.waitForTimeout(150);
+
+          const presentationMetrics = await page.evaluate(() => {
+            function rectFor(selector) {
+              const element = document.querySelector(selector);
+              if (!element) {
+                return null;
+              }
+
+              const rect = element.getBoundingClientRect();
+              return {
+                bottom: rect.bottom,
+                height: rect.height,
+                left: rect.left,
+                right: rect.right,
+                top: rect.top,
+                width: rect.width
+              };
+            }
+
+            const firstTitle = document.querySelector(".presentation-card h3")?.textContent || "";
+
+            return {
+              activeCardCount: document.querySelectorAll(".presentation-card.active").length,
+              card: rectFor(".presentation-card"),
+              cardActions: rectFor(".presentation-card-actions"),
+              cardCount: document.querySelectorAll(".presentation-card").length,
+              createOpen: Boolean((document.querySelector(".presentation-create-details") as HTMLDetailsElement | null)?.open),
+              documentClientWidth: document.documentElement.clientWidth,
+              documentScrollWidth: document.documentElement.scrollWidth,
+              firstTitle,
+              pageHidden: (document.querySelector("#presentations-page") as HTMLElement | null)?.hidden,
+              preview: rectFor(".presentation-card-preview"),
+              studioHidden: (document.querySelector("#studio-page") as HTMLElement | null)?.hidden,
+              viewportWidth: window.innerWidth
+            };
+          });
+
+          assert.equal(presentationMetrics.pageHidden, false, "Presentations page should be visible after navigation");
+          assert.equal(presentationMetrics.studioHidden, true, "Slide Studio should be hidden while browsing presentations");
+          assert.ok(presentationMetrics.cardCount > 0, "Presentations page should render at least one presentation card");
+          assert.equal(presentationMetrics.activeCardCount, 1, "Presentations page should mark exactly one active presentation");
+          assert.ok(presentationMetrics.firstTitle.trim().length > 0, "Presentation cards should show the presentation name");
+          assert.equal(presentationMetrics.createOpen, false, "Presentation creation constraints should stay collapsed by default");
+          assert.ok(
+            presentationMetrics.documentScrollWidth <= presentationMetrics.documentClientWidth + 1,
+            `Presentations page should not create horizontal page overflow at ${viewport.width}x${viewport.height}`
+          );
+          assert.ok(presentationMetrics.card, "Presentations page should expose a selectable card");
+          assert.ok(
+            presentationMetrics.card.right <= presentationMetrics.viewportWidth + 1,
+            `Presentation cards should stay inside the viewport at ${viewport.width}x${viewport.height}`
+          );
+          assert.ok(presentationMetrics.preview, "Presentation cards should show a first-slide preview");
+          assert.ok(
+            presentationMetrics.preview.width >= Math.min(260, presentationMetrics.viewportWidth * 0.65),
+            `Presentation preview should remain inspectable at ${viewport.width}x${viewport.height}`
+          );
+          assert.ok(
+            Math.abs((presentationMetrics.preview.width / presentationMetrics.preview.height) - (16 / 9)) < 0.08,
+            `Presentation preview should preserve a slide-like aspect ratio at ${viewport.width}x${viewport.height}`
+          );
+          assert.ok(presentationMetrics.cardActions, "Presentation cards should expose select, duplicate, and delete actions");
+
+          await page.click("#show-studio-page");
+          await page.waitForSelector("#active-preview .dom-slide-viewport, #active-preview img", {
+            timeout: 30_000
+          });
+          await page.waitForTimeout(120);
+
           await page.click("#structured-draft-toggle");
           await page.waitForTimeout(280);
 

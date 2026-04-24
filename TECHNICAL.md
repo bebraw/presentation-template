@@ -8,7 +8,7 @@ For day-to-day setup and commands, see [DEVELOPMENT.md](DEVELOPMENT.md).
 
 ## Development Layout
 
-- `slides/slide-01.json` to `slides/slide-10.json` hold the demo deck content.
+- `presentations/slideotter/slides/slide-01.json` to `presentations/slideotter/slides/slide-10.json` hold the demo deck content.
 - `studio/` holds the browser studio, shared DOM renderer, Playwright export path, and DOM validation runtime.
 - `scripts/` now holds CLI build, validation, diagram, and baseline commands while shared deck settings and baseline utilities live under `studio/server/services/`.
 - `skills/` contains presentation workflow guidance.
@@ -24,6 +24,14 @@ For day-to-day setup and commands, see [DEVELOPMENT.md](DEVELOPMENT.md).
 ├── ARCHITECTURE.md
 ├── DEVELOPMENT.md
 ├── package.json
+├── presentations/
+│   └── slideotter/
+│       ├── presentation.json
+│       ├── slides/
+│       │   ├── slide-01.json
+│       │   ├── slide-02.json
+│       │   └── ...
+│       └── state/
 ├── README.md
 ├── scripts/
 │   ├── build-deck.ts
@@ -37,14 +45,7 @@ For day-to-day setup and commands, see [DEVELOPMENT.md](DEVELOPMENT.md).
 ├── skills/
 │   └── ...
 ├── slides/
-│   ├── assets/
-│   │   └── diagrams/
-│   ├── output/
-│   ├── slide-01.json
-│   ├── slide-02.json
-│   ├── slide-03.json
-│   ├── ...
-│   └── slide-10.json
+│   └── output/
 └── studio/
     ├── baseline/
     ├── client/
@@ -56,8 +57,7 @@ For day-to-day setup and commands, see [DEVELOPMENT.md](DEVELOPMENT.md).
 
 ## Notes
 
-- Slide content lives in `slides/`, while the active authoring/runtime path now lives primarily in `studio/`.
-- Diagram graphics in `slides/assets/diagrams/` must come from Graphviz `.dot` sources; do not hand-maintain the generated PNGs.
+- Slide content lives under `presentations/<id>/slides/`, while the active authoring/runtime path now lives primarily in `studio/`.
 - The production build path now renders PDF through Playwright and the shared DOM slide renderer.
 - The deck uses `Avenir Next` for both display and body text.
 - Shared palette, deck metadata, design constraints, and output config now live under `studio/server/services/`, while the authoritative slide layout/runtime lives in `studio/client/slide-dom.ts`.

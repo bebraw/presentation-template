@@ -18,12 +18,18 @@ It is not a PowerPoint replacement and not a broad WYSIWYG editor. The project f
 
 ## Current Demo
 
-The repository includes a four-slide demo deck that explains the project itself:
+The repository includes a ten-slide demo deck that explains the project itself:
 
 - `slides/slide-01.json`: project framing
-- `slides/slide-02.json`: workflow outline
-- `slides/slide-03.json`: architecture signals
-- `slides/slide-04.json`: summary and next steps
+- `slides/slide-02.json`: project map
+- `slides/slide-03.json`: authoring context
+- `slides/slide-04.json`: structured slide model
+- `slides/slide-05.json`: live preview loop
+- `slides/slide-06.json`: DOM-first runtime
+- `slides/slide-07.json`: candidate review
+- `slides/slide-08.json`: write boundary
+- `slides/slide-09.json`: validation gate
+- `slides/slide-10.json`: summary and next steps
 
 Current local PDF output is written to `slides/output/demo-presentation.pdf`. The checked-in archive copy lives at `archive/demo-presentation.pdf`.
 

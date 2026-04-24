@@ -1,0 +1,48 @@
+{
+  "type": "content",
+  "index": 5,
+  "title": "The preview is live",
+  "eyebrow": "Editing loop",
+  "summary": "Direct text and JSON edits update the active DOM preview immediately, without a separate manual build step.",
+  "signalsTitle": "Feedback path",
+  "guardrailsTitle": "Edit controls",
+  "signals": [
+    {
+      "id": "signal-text",
+      "label": "Text edits",
+      "value": 0.94
+    },
+    {
+      "id": "signal-json",
+      "label": "JSON edits",
+      "value": 0.88
+    },
+    {
+      "id": "signal-preview",
+      "label": "Preview",
+      "value": 0.96
+    },
+    {
+      "id": "signal-save",
+      "label": "Save path",
+      "value": 0.9
+    }
+  ],
+  "guardrails": [
+    {
+      "id": "guardrail-supported",
+      "label": "supported families",
+      "value": "4"
+    },
+    {
+      "id": "guardrail-server",
+      "label": "server-owned save",
+      "value": "save"
+    },
+    {
+      "id": "guardrail-invalid",
+      "label": "invalid JSON blocked",
+      "value": "no"
+    }
+  ]
+}

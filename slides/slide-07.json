@@ -1,0 +1,48 @@
+{
+  "type": "content",
+  "index": 7,
+  "title": "Generation stays reviewable",
+  "eyebrow": "Variants",
+  "summary": "Generated slide and theme candidates are temporary until the author selects, inspects, and applies one.",
+  "signalsTitle": "Candidate workflow",
+  "guardrailsTitle": "Apply rules",
+  "signals": [
+    {
+      "id": "signal-count",
+      "label": "Count control",
+      "value": 0.9
+    },
+    {
+      "id": "signal-review",
+      "label": "Review",
+      "value": 0.92
+    },
+    {
+      "id": "signal-diff",
+      "label": "Diff",
+      "value": 0.88
+    },
+    {
+      "id": "signal-theme",
+      "label": "Theme preview",
+      "value": 0.86
+    }
+  ],
+  "guardrails": [
+    {
+      "id": "guardrail-session",
+      "label": "generated state",
+      "value": "temp"
+    },
+    {
+      "id": "guardrail-apply",
+      "label": "promotion",
+      "value": "yes"
+    },
+    {
+      "id": "guardrail-snapshot",
+      "label": "manual snapshots",
+      "value": "keep"
+    }
+  ]
+}

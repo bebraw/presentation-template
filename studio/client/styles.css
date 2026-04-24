@@ -2007,8 +2007,8 @@ input[type="color"]::-moz-color-swatch {
 
 .dom-guardrail {
   display: grid;
-  grid-template-columns: 56px minmax(0, 1fr);
-  gap: 12px;
+  grid-template-columns: minmax(96px, 0.35fr) minmax(0, 1fr);
+  gap: 14px;
   align-items: center;
   padding: 5px 0 12px;
 }
@@ -2019,14 +2019,16 @@ input[type="color"]::-moz-color-swatch {
 
 .dom-guardrail strong {
   color: var(--dom-primary, #183153);
-  font-size: 32px;
+  font-size: 26px;
   line-height: 1;
+  overflow-wrap: anywhere;
 }
 
 .dom-guardrail span {
   color: var(--dom-primary, #183153);
-  font-size: 17px;
+  font-size: 15px;
   font-weight: 600;
+  line-height: 1.2;
 }
 
 .dom-bullet-list {

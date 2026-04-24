@@ -1,25 +1,25 @@
 {
   "type": "toc",
   "index": 2,
-  "title": "What slideotter does",
-  "eyebrow": "Workflow",
-  "summary": "slideotter keeps intent, content, workflow actions, preview, and validation in one local loop.",
-  "note": "Authors work in the browser; the server owns writes, rendering, and validation.",
+  "title": "Project map",
+  "eyebrow": "Ten-slide tour",
+  "summary": "The deck walks from authoring goals through runtime boundaries, comparison flows, validation, and maintenance focus.",
+  "note": "The browser feels direct, but the server still owns writes, rendering, and validation.",
   "cards": [
     {
-      "id": "outline-context",
-      "title": "Capture context",
-      "body": "Store audience, objective, tone, constraints, and per-slide intent once."
+      "id": "outline-authoring",
+      "title": "Authoring loop",
+      "body": "Plan the deck, edit structured slides, and keep project context close."
     },
     {
-      "id": "outline-actions",
-      "title": "Edit and run",
-      "body": "Edit text in preview, choose candidate counts, ideate slides, and compare options."
+      "id": "outline-runtime",
+      "title": "Runtime model",
+      "body": "Use one DOM renderer, narrow write paths, and session-only candidates."
     },
     {
-      "id": "outline-validate",
-      "title": "Validate output",
-      "body": "Use DOM checks and render gates to catch spacing, text, media, and PDF drift."
+      "id": "outline-ship",
+      "title": "Validation and archive",
+      "body": "Gate geometry, text, media, rendering, and the exported project snapshot."
     }
   ]
 }

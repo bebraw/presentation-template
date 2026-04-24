@@ -1,39 +1,48 @@
 {
-  "type": "summary",
+  "type": "content",
   "index": 4,
-  "title": "What this enables",
-  "eyebrow": "Takeaway",
-  "summary": "Deck authors get one guarded local loop for text edits, preview, export, and validation.",
-  "resourcesTitle": "Where the work lives",
-  "bullets": [
+  "title": "Structured slides are the source",
+  "eyebrow": "Content model",
+  "summary": "Supported slides use compact JSON specs so slide meaning stays readable before rendering.",
+  "signalsTitle": "Structured families",
+  "guardrailsTitle": "Spec contract",
+  "signals": [
     {
-      "id": "summary-author",
-      "title": "Author with context",
-      "body": "Edit slide text in preview while keeping intent, notes, theme, and constraints nearby."
+      "id": "signal-cover",
+      "label": "Cover",
+      "value": 0.95
     },
     {
-      "id": "summary-iterate",
-      "title": "Iterate safely",
-      "body": "Generate session-only candidates, compare previews and diffs, then apply one."
+      "id": "signal-toc",
+      "label": "TOC",
+      "value": 0.9
     },
     {
-      "id": "summary-ship",
-      "title": "Ship with guardrails",
-      "body": "Use the DOM gate to catch layout, text, media, and render drift."
+      "id": "signal-content",
+      "label": "Content",
+      "value": 0.93
+    },
+    {
+      "id": "signal-summary",
+      "label": "Summary",
+      "value": 0.9
     }
   ],
-  "resources": [
+  "guardrails": [
     {
-      "id": "summary-studio",
-      "title": "slideotter app",
-      "body": "studio/client and studio/server",
-      "bodyFontSize": 11.2
+      "id": "guardrail-json",
+      "label": "slide specs",
+      "value": "JSON"
     },
     {
-      "id": "summary-runtime",
-      "title": "Runtime path",
-      "body": "slide JSON, DOM renderer, PDF export, gate",
-      "bodyFontSize": 10.6
+      "id": "guardrail-schema",
+      "label": "validated fields",
+      "value": "strict"
+    },
+    {
+      "id": "guardrail-escape",
+      "label": "legacy escape hatch",
+      "value": "kept"
     }
   ]
 }

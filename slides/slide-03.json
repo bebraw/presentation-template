@@ -1,48 +1,48 @@
 {
   "type": "content",
   "index": 3,
-  "title": "Why the architecture works",
-  "eyebrow": "System model",
-  "summary": "Repeatability comes from one content model, one render path, server-controlled writes, and validation that reads the rendered deck.",
-  "signalsTitle": "Project strengths",
-  "guardrailsTitle": "Safety rails",
+  "title": "Authoring starts with context",
+  "eyebrow": "Deck intent",
+  "summary": "slideotter keeps audience, objective, tone, constraints, and per-slide intent beside the active deck.",
+  "signalsTitle": "Context kept near work",
+  "guardrailsTitle": "Authoring bounds",
   "signals": [
     {
-      "id": "signal-context",
-      "label": "Context",
-      "value": 0.94
+      "id": "signal-audience",
+      "label": "Audience",
+      "value": 0.92
     },
     {
-      "id": "signal-preview",
-      "label": "Preview",
-      "value": 0.89
+      "id": "signal-objective",
+      "label": "Objective",
+      "value": 0.9
     },
     {
-      "id": "signal-apply",
-      "label": "Apply",
-      "value": 0.91
+      "id": "signal-tone",
+      "label": "Tone",
+      "value": 0.86
     },
     {
-      "id": "signal-validation",
-      "label": "Validation",
-      "value": 0.87
+      "id": "signal-constraints",
+      "label": "Constraints",
+      "value": 0.88
     }
   ],
   "guardrails": [
     {
-      "id": "guardrail-specs",
-      "label": "slide specs",
-      "value": "4"
+      "id": "guardrail-local",
+      "label": "local state files",
+      "value": "repo"
     },
     {
-      "id": "guardrail-renderer",
-      "label": "render path",
-      "value": "1"
+      "id": "guardrail-focused",
+      "label": "operation context",
+      "value": "small"
     },
     {
-      "id": "guardrail-boundary",
-      "label": "write boundary",
-      "value": "1"
+      "id": "guardrail-visible",
+      "label": "current deck",
+      "value": "active"
     }
   ]
 }

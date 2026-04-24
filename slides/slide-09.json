@@ -1,0 +1,48 @@
+{
+  "type": "content",
+  "index": 9,
+  "title": "Validation reads the rendered deck",
+  "eyebrow": "Quality gate",
+  "summary": "The gate checks types, slide geometry, text, media fixtures, deck plans, and render-baseline drift.",
+  "signalsTitle": "Gate coverage",
+  "guardrailsTitle": "Failure modes",
+  "signals": [
+    {
+      "id": "signal-types",
+      "label": "Types",
+      "value": 0.9
+    },
+    {
+      "id": "signal-layout",
+      "label": "Layout",
+      "value": 0.88
+    },
+    {
+      "id": "signal-media",
+      "label": "Media",
+      "value": 0.8
+    },
+    {
+      "id": "signal-render",
+      "label": "Render diff",
+      "value": 0.86
+    }
+  ],
+  "guardrails": [
+    {
+      "id": "guardrail-baseline",
+      "label": "approved baseline",
+      "value": "base"
+    },
+    {
+      "id": "guardrail-warnings",
+      "label": "severity settings",
+      "value": "rules"
+    },
+    {
+      "id": "guardrail-pdf",
+      "label": "PDF page count",
+      "value": "pages"
+    }
+  ]
+}

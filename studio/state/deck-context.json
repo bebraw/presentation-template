@@ -44,12 +44,12 @@
       "bg": "f5f8fc",
       "panel": "f8fbfe",
       "surface": "ffffff",
-      "slideCount": 4,
+      "slideCount": 10,
       "progressTrack": "d7e6f5",
       "progressFill": "275d8c"
     },
     "themeBrief": "Clean local-workbench presentation with clear project framing and restrained technical detail.",
-    "outline": "1. What slideotter is\n2. What workflow it supports, including direct text edits\n3. Why the architecture is repeatable\n4. What the project enables",
+    "outline": "1. What slideotter is\n2. Project map\n3. Authoring starts with context\n4. Structured slides are the source\n5. The preview is live\n6. One DOM path owns output\n7. Generation stays reviewable\n8. Writes stay narrow\n9. Validation reads the rendered deck\n10. What this enables",
     "structureLabel": "",
     "structureSummary": "",
     "structurePlan": []

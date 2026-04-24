@@ -1,0 +1,48 @@
+{
+  "type": "content",
+  "index": 6,
+  "title": "One DOM path owns output",
+  "eyebrow": "Runtime model",
+  "summary": "The browser preview, thumbnails, compare panes, PNGs, PDF export, and validation all read the same DOM-rendered slide.",
+  "signalsTitle": "Shared surfaces",
+  "guardrailsTitle": "Runtime boundary",
+  "signals": [
+    {
+      "id": "signal-preview",
+      "label": "Preview",
+      "value": 0.95
+    },
+    {
+      "id": "signal-compare",
+      "label": "Compare",
+      "value": 0.9
+    },
+    {
+      "id": "signal-export",
+      "label": "Export",
+      "value": 0.92
+    },
+    {
+      "id": "signal-validate",
+      "label": "Validate",
+      "value": 0.89
+    }
+  ],
+  "guardrails": [
+    {
+      "id": "guardrail-renderer",
+      "label": "authoritative renderer",
+      "value": "DOM"
+    },
+    {
+      "id": "guardrail-playwright",
+      "label": "export runner",
+      "value": "auto"
+    },
+    {
+      "id": "guardrail-no-split",
+      "label": "parallel renderer",
+      "value": "none"
+    }
+  ]
+}

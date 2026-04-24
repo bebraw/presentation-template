@@ -1,5 +1,5 @@
 const path = require("path");
-const { pdfFile } = require("./output-config.ts");
+const { getOutputConfig } = require("./output-config.ts");
 const {
   comparePageImages,
   listPages,
@@ -45,6 +45,7 @@ function summarizeFailure(error, message) {
 
 async function runRenderValidation() {
   const validationSettings = readValidationSettings();
+  const { pdfFile } = getOutputConfig();
   const baselinePages = listPages(baselineDir);
   if (!baselinePages.length) {
     return {

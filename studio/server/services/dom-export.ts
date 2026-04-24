@@ -3,7 +3,7 @@ const path = require("path");
 const { chromium } = require("playwright");
 const { renderDeckDocument, renderSlideDocument } = require("../../client/slide-dom.ts");
 const { clientDir, contactSheetFile, outputDir, previewDir } = require("./paths.ts");
-const { pdfFile } = require("./output-config.ts");
+const { getOutputConfig } = require("./output-config.ts");
 const { createContactSheet, ensureDir, listPages, resetDir } = require("./page-artifacts.ts");
 
 function readInlineStyles() {
@@ -91,6 +91,7 @@ async function withBrowser(task) {
 
 async function exportDeckPdfFromDom(previewState) {
   const html = createStandaloneDeckHtml(previewState);
+  const { pdfFile } = getOutputConfig();
   ensureDir(path.dirname(pdfFile));
 
   await withBrowser(async (browser) => {

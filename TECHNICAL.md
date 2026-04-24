@@ -61,7 +61,7 @@ For day-to-day setup and commands, see [DEVELOPMENT.md](DEVELOPMENT.md).
 - The production build path now renders PDF through Playwright and the shared DOM slide renderer.
 - The deck uses `Avenir Next` for both display and body text.
 - Shared palette, deck metadata, design constraints, and output config now live under `studio/server/services/`, while the authoritative slide layout/runtime lives in `studio/client/slide-dom.ts`.
-- `slides/output/` is git-ignored, so generated binaries stay local.
+- `slides/output/` is git-ignored, so generated per-presentation binaries stay local.
 - `archive/demo-presentation.pdf` stores the checked-in PDF snapshot for linking and archival.
 - `studio/baseline/` stores the approved render baseline for the current deck output.
 - `npm run quality:gate` runs DOM-backed geometry/text validation before checking the generated PDF against the approved render baseline.

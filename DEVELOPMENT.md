@@ -78,7 +78,7 @@ npm run baseline:render
 
 ## Output And Baselines
 
-- `slides/output/demo-presentation.pdf` is generated locally by `npm run build`.
+- `slides/output/<presentation-id>.pdf` is generated locally by `npm run build`; the included deck writes `slides/output/slideotter.pdf`.
 - `slides/output/` is git-ignored.
 - `studio/baseline/` stores approved render-baseline PNGs used by the visual regression gate.
 - `docs/assets/studio-home.png` is refreshed manually by `npm run screenshot:home`.

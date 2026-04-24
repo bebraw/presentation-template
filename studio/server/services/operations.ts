@@ -3071,7 +3071,7 @@ function createLocalDeckStructureCandidates(context) {
               eyebrow: "Action",
               resources: [
                 {
-                  body: "slides/output/demo-presentation.pdf",
+                  body: "slides/output/<presentation-id>.pdf",
                   title: "Approval artifact"
                 },
                 {

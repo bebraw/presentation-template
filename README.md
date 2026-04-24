@@ -31,7 +31,7 @@ The repository includes a ten-slide demo deck that explains the project itself:
 - `presentations/slideotter/slides/slide-09.json`: validation gate
 - `presentations/slideotter/slides/slide-10.json`: summary and next steps
 
-Current local PDF output is written to `slides/output/demo-presentation.pdf`. The checked-in archive copy lives at `archive/demo-presentation.pdf`.
+Current local PDF output is written to `slides/output/<presentation-id>.pdf`, so the included `slideotter` deck builds to `slides/output/slideotter.pdf`. The checked-in archive copy lives at `archive/demo-presentation.pdf`.
 
 ## Browser Studio
 

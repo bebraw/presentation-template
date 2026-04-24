@@ -19,7 +19,7 @@ These are durable presentation design and workflow rules for this repository. Re
 
 ### Workflow Rules
 
-- Rebuild the deck after every slide or theme change so `slides/output/demo-presentation.pdf` stays current.
+- Rebuild the deck after every slide or theme change so `slides/output/<presentation-id>.pdf` stays current.
 - Run `npm run quality:gate` before considering presentation work done.
 - If visible output changes intentionally, refresh `studio/baseline/` with `npm run baseline:render` before rerunning the gate.
 - Keep slide-specific implementation in `slides/`, active runtime logic and shared deck settings in `studio/`, and repo-level command wrappers in `scripts/`.

@@ -13,10 +13,10 @@ Use this skill for presentation work in this repository.
 
 ## Scope
 
-- Slide content lives in `slides/`.
+- Slide content lives under `presentations/<presentation-id>/slides/`.
 - Active build, rendering, and validation runtime now flows through `studio/` plus repo-level command wrappers under `scripts/`.
-- Primary output is `slides/output/demo-presentation.pdf`.
-- Checked-in archive snapshot is `archive/demo-presentation.pdf`.
+- Primary output is `slides/output/<presentation-id>.pdf`.
+- Checked-in archive snapshots use `archive/<presentation-id>.pdf`.
 - Approved render baseline lives in `studio/baseline/`.
 
 ## Default Workflow
@@ -31,11 +31,11 @@ Do not consider presentation work done unless `npm run quality:gate` passes.
 
 ## Editing Rules
 
-- Keep one file per slide spec, following the existing naming pattern such as `slides/slide-05.json`.
-- Prefer updating the existing shared design system in `studio/client/slide-dom.js`, `studio/server/services/deck-theme.js`, and `studio/server/services/design-constraints.js` over slide-local style drift.
-- Put presentation source assets under `slides/assets/`.
+- Keep one file per slide spec, following the existing naming pattern such as `presentations/slideotter/slides/slide-05.json`.
+- Prefer updating the existing shared design system in `studio/client/slide-dom.ts`, `studio/server/services/deck-theme.ts`, and `studio/server/services/design-constraints.ts` over slide-local style drift.
+- Put presentation source assets under `presentations/<presentation-id>/materials/`.
 - Keep final deck output in `slides/output/` and studio workflow artifacts under `studio/output/`.
-- Treat `archive/demo-presentation.pdf` as a release snapshot. Update it only when the user asks for the archival copy to be refreshed.
+- Treat `archive/<presentation-id>.pdf` as a release snapshot. Update it only when the user asks for the archival copy to be refreshed.
 
 ## Validation Rules
 
@@ -47,7 +47,7 @@ Do not consider presentation work done unless `npm run quality:gate` passes.
 ## Structural Guidance
 
 - Add new DOM-first build or validation logic under `studio/`, and use `scripts/` only for thin command wrappers unless there is a clear reason not to.
-- Add new content slides under `slides/`.
+- Add new content slides under the active presentation's `slides/` directory.
 - Keep slide specs dependent on shared runtime utilities rather than duplicating helpers.
 - If the deck order changes, update the active slide indices or other live ordering source in the same change.
 

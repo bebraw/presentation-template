@@ -5,11 +5,14 @@ const {
   renderPdfPages
 } = require("../studio/server/services/baseline-utils.ts");
 
-function main() {
+async function main() {
   const { baselineDir, pdfFile } = getOutputConfig();
-  const pages = renderPdfPages(baselineDir, pdfFile);
-  createContactSheet(pages, path.join(baselineDir, "contact-sheet.png"));
+  const pages = await renderPdfPages(baselineDir, pdfFile);
+  await createContactSheet(pages, path.join(baselineDir, "contact-sheet.png"));
   process.stdout.write(`${baselineDir}\n`);
 }
 
-main();
+main().catch((error) => {
+  process.stderr.write(`${error.stack || error}\n`);
+  process.exitCode = 1;
+});

@@ -149,7 +149,7 @@ async function renderDeckPreviewImagesFromDom(previewState) {
   });
 
   const pages = listPages(previewDir);
-  createContactSheet(pages, contactSheetFile);
+  await createContactSheet(pages, contactSheetFile);
   return pages;
 }
 

@@ -61,7 +61,7 @@ async function runRenderValidation() {
   }
 
   ensureAllowedDir(renderCheckDiffDir);
-  const currentPages = renderPdfPages(renderCheckCurrentDir, pdfFile);
+  const currentPages = await renderPdfPages(renderCheckCurrentDir, pdfFile);
   if (baselinePages.length !== currentPages.length) {
     return {
       errors: [{
@@ -81,7 +81,7 @@ async function runRenderValidation() {
 
   for (let index = 0; index < baselinePages.length; index += 1) {
     const diffPath = path.join(renderCheckDiffDir, `page-${String(index).padStart(2, "0")}-diff.png`);
-    const comparison = comparePageImages(baselinePages[index], currentPages[index], diffPath);
+    const comparison = await comparePageImages(baselinePages[index], currentPages[index], diffPath);
 
     if (!Number.isFinite(comparison.normalized) || comparison.normalized > MAX_NORMALIZED_RMSE) {
       failures.push({

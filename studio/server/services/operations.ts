@@ -2513,7 +2513,7 @@ async function renderDeckStructureCandidatePreview(candidate) {
     });
     const currentStripPath = path.join(candidateDir, "current-strip.png");
     if (currentCopiedPages.length) {
-      createContactSheet(currentCopiedPages, currentStripPath);
+      await createContactSheet(currentCopiedPages, currentStripPath);
     }
 
     applyDeckStructurePlan({
@@ -2539,7 +2539,7 @@ async function renderDeckStructureCandidatePreview(candidate) {
       return targetPath;
     });
     const stripPath = path.join(candidateDir, "strip.png");
-    createContactSheet(copiedPages, stripPath);
+    await createContactSheet(copiedPages, stripPath);
 
     const preview = candidate.preview || {};
     const previewHints = Array.isArray(preview.previewHints) ? preview.previewHints : [];

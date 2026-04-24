@@ -185,9 +185,9 @@ This is the same validation path used by the studio server.
 `npm run validate:render` still checks the final PDF visually against the approved raster baseline:
 
 1. build the current PDF through the DOM export path
-2. rasterize the PDF pages with ImageMagick through `studio/server/services/baseline-utils.ts`
-3. compare the rasterized pages to `studio/baseline/<presentation-id>/*.png`
-4. write diffs under `slides/output/render-diff/` when pages drift
+2. rasterize the PDF pages with PDF.js through `studio/server/services/baseline-utils.ts`
+3. compare the rasterized pages to `studio/baseline/<presentation-id>/*.png` with `sharp`
+4. write diffs under `studio/output/render-check/diff/` when pages drift
 
 `npm run quality:gate` runs the DOM geometry/text validators first and then this render-baseline gate.
 

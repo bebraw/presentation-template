@@ -21,7 +21,7 @@ function fail(message) {
   process.exit(1);
 }
 
-function main() {
+async function main() {
   const { baselineDir, pdfFile } = getOutputConfig();
   const baselinePages = listPages(baselineDir);
   if (!baselinePages.length) {
@@ -33,8 +33,8 @@ function main() {
     );
   }
 
-  const currentPages = renderPdfPages(renderCheckCurrentDir, pdfFile);
-  createContactSheet(currentPages, path.join(renderCheckCurrentDir, "contact-sheet.png"));
+  const currentPages = await renderPdfPages(renderCheckCurrentDir, pdfFile);
+  await createContactSheet(currentPages, path.join(renderCheckCurrentDir, "contact-sheet.png"));
 
   if (baselinePages.length !== currentPages.length) {
     fail(
@@ -49,7 +49,7 @@ function main() {
     const baselinePage = baselinePages[index];
     const currentPage = currentPages[index];
     const diffPath = path.join(renderCheckDiffDir, `page-${String(index).padStart(2, "0")}-diff.png`);
-    const comparison = comparePageImages(baselinePage, currentPage, diffPath);
+    const comparison = await comparePageImages(baselinePage, currentPage, diffPath);
 
     if (!Number.isFinite(comparison.normalized) || comparison.normalized > MAX_NORMALIZED_RMSE) {
       failures.push({
@@ -78,4 +78,7 @@ function main() {
 
 ensureDir(outputDir);
 ensureDir(renderCheckDiffDir);
-main();
+main().catch((error) => {
+  process.stderr.write(`${error.stack || error}\n`);
+  process.exitCode = 1;
+});

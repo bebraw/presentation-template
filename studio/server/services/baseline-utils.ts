@@ -1,45 +1,42 @@
 const fs = require("fs");
 const path = require("path");
-const { runImageMagick } = require("./imagemagick.ts");
+const sharp = require("sharp");
+const { createCanvas } = require("@napi-rs/canvas");
+const {
+  createContactSheet,
+  ensureDir,
+  listPages,
+  resetDir
+} = require("./page-artifacts.ts");
 
-function ensureDir(dir) {
-  fs.mkdirSync(dir, { recursive: true });
-}
-
-function resetDir(dir) {
-  fs.rmSync(dir, { recursive: true, force: true });
-  ensureDir(dir);
-}
-
-function listPages(dir) {
-  if (!fs.existsSync(dir)) {
-    return [];
-  }
-
-  return fs.readdirSync(dir)
-    .filter((name) => /^page-\d+\.png$/.test(name))
-    .sort()
-    .map((name) => path.join(dir, name));
-}
-
-function renderPdfPages(targetDir, inputFile) {
+async function renderPdfPages(targetDir, inputFile) {
   if (!fs.existsSync(inputFile)) {
     throw new Error(`Missing PDF input: ${inputFile}`);
   }
 
   resetDir(targetDir);
-  const pattern = path.join(targetDir, "page-%02d.png");
-  const result = runImageMagick([
-    "-density",
-    "160",
-    inputFile,
-    pattern
-  ]);
+  const pdfjs = await import("pdfjs-dist/legacy/build/pdf.mjs");
+  const data = new Uint8Array(fs.readFileSync(inputFile));
+  const document = await pdfjs.getDocument({
+    data,
+    disableFontFace: true
+  }).promise;
 
-  if (result.status !== 0) {
-    const details = (result.stderr || result.stdout || "").trim();
-    throw new Error(`Failed to rasterize PDF pages.\n${details}`);
+  for (let pageNumber = 1; pageNumber <= document.numPages; pageNumber += 1) {
+    const page = await document.getPage(pageNumber);
+    const viewport = page.getViewport({ scale: 160 / 72 });
+    const canvas = createCanvas(Math.ceil(viewport.width), Math.ceil(viewport.height));
+    const context = canvas.getContext("2d");
+    await page.render({ canvas, canvasContext: context, viewport }).promise;
+    fs.writeFileSync(
+      path.join(targetDir, `page-${String(pageNumber - 1).padStart(2, "0")}.png`),
+      canvas.toBuffer("image/png")
+    );
+    page.cleanup();
   }
+
+  await document.cleanup();
+  await document.destroy();
 
   const pages = listPages(targetDir);
   if (!pages.length) {
@@ -49,59 +46,84 @@ function renderPdfPages(targetDir, inputFile) {
   return pages;
 }
 
-function createContactSheet(pageFiles, targetPath) {
-  const rows = [];
-  const tempDir = path.join(path.dirname(targetPath), ".contact-sheet-rows");
-  resetDir(tempDir);
+function createDimensionDiff(diffPath, leftMetadata, rightMetadata) {
+  const width = Math.max(leftMetadata.width || 1, rightMetadata.width || 1);
+  const height = Math.max(leftMetadata.height || 1, rightMetadata.height || 1);
 
-  for (let index = 0; index < pageFiles.length; index += 2) {
-    const rowPath = path.join(tempDir, `row-${String(index / 2).padStart(2, "0")}.png`);
-    const rowResult = runImageMagick([
-      ...pageFiles.slice(index, index + 2),
-      "+append",
-      rowPath
-    ]);
-
-    if (rowResult.status !== 0) {
-      const details = (rowResult.stderr || rowResult.stdout || "").trim();
-      throw new Error(`Failed to create contact-sheet row.\n${details}`);
+  return sharp({
+    create: {
+      background: "#c2410c",
+      channels: 4,
+      height,
+      width
     }
-
-    rows.push(rowPath);
-  }
-
-  const sheetResult = runImageMagick([
-    ...rows,
-    "-append",
-    targetPath
-  ]);
-
-  fs.rmSync(tempDir, { recursive: true, force: true });
-
-  if (sheetResult.status !== 0) {
-    const details = (sheetResult.stderr || sheetResult.stdout || "").trim();
-    throw new Error(`Failed to create contact sheet.\n${details}`);
-  }
+  })
+    .png()
+    .toFile(diffPath);
 }
 
-function comparePageImages(baselinePage, currentPage, diffPath) {
-  const result = runImageMagick([
-    "compare",
-    "-metric",
-    "RMSE",
-    baselinePage,
-    currentPage,
-    diffPath
+async function readRawRgba(fileName) {
+  return sharp(fileName)
+    .ensureAlpha()
+    .raw()
+    .toBuffer({ resolveWithObject: true });
+}
+
+async function comparePageImages(baselinePage, currentPage, diffPath) {
+  ensureDir(path.dirname(diffPath));
+  const [baselineMetadata, currentMetadata] = await Promise.all([
+    sharp(baselinePage).metadata(),
+    sharp(currentPage).metadata()
   ]);
 
-  const metricOutput = (result.stderr || result.stdout || "").trim();
-  const match = metricOutput.match(/\(([\d.]+)\)/);
-  const normalized = match ? Number(match[1]) : Number.NaN;
+  if (
+    baselineMetadata.width !== currentMetadata.width ||
+    baselineMetadata.height !== currentMetadata.height
+  ) {
+    await createDimensionDiff(diffPath, baselineMetadata, currentMetadata);
+
+    return {
+      normalized: 1,
+      raw: `dimension mismatch (${baselineMetadata.width}x${baselineMetadata.height} vs ${currentMetadata.width}x${currentMetadata.height})`,
+      exitCode: 1
+    };
+  }
+
+  const [baseline, current] = await Promise.all([
+    readRawRgba(baselinePage),
+    readRawRgba(currentPage)
+  ]);
+  const diffBuffer = Buffer.alloc(baseline.data.length);
+  let sumSquared = 0;
+
+  for (let index = 0; index < baseline.data.length; index += 4) {
+    for (let channel = 0; channel < 3; channel += 1) {
+      const offset = index + channel;
+      const delta = baseline.data[offset] - current.data[offset];
+      sumSquared += delta * delta;
+      diffBuffer[offset] = Math.min(255, Math.abs(delta) * 4);
+    }
+
+    diffBuffer[index + 3] = 255;
+  }
+
+  const channelCount = (baseline.info.width || 0) * (baseline.info.height || 0) * 3;
+  const rmse = Math.sqrt(sumSquared / channelCount);
+  const normalized = rmse / 255;
+  await sharp(diffBuffer, {
+    raw: {
+      channels: 4,
+      height: baseline.info.height,
+      width: baseline.info.width
+    }
+  })
+    .png()
+    .toFile(diffPath);
 
   return {
+    exitCode: normalized > 0 ? 1 : 0,
     normalized,
-    raw: metricOutput,
-    exitCode: result.status
+    raw: `RMSE ${rmse.toFixed(6)} (${normalized.toFixed(6)})`
   };
 }
 

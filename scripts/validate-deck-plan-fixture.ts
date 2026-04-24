@@ -36,4 +36,28 @@ assert.deepEqual(
   "every local deck-plan candidate should show shared deck-setting preview cues"
 );
 
+function collectGeneratedContentSpecs(candidate) {
+  const slides = Array.isArray(candidate.slides) ? candidate.slides : [];
+  return slides
+    .flatMap((slide) => [
+      slide && slide.scaffold && slide.scaffold.slideSpec,
+      slide && slide.replacement && slide.replacement.slideSpec
+    ])
+    .filter((slideSpec) => slideSpec && slideSpec.type === "content");
+}
+
+const metricContentSpecs = candidates.filter((candidate) =>
+  collectGeneratedContentSpecs(candidate).some((slideSpec) => {
+    const signals = Array.isArray(slideSpec.signals) ? slideSpec.signals : [];
+    const guardrails = Array.isArray(slideSpec.guardrails) ? slideSpec.guardrails : [];
+    return signals.some((item) => !item.title || !item.body || Object.hasOwn(item, "value")) ||
+      guardrails.some((item) => !item.title || !item.body || Object.hasOwn(item, "value"));
+  })
+);
+assert.deepEqual(
+  metricContentSpecs.map((candidate) => candidate.label),
+  [],
+  "generated deck-plan content slides should use title/body evidence items instead of metric-style signal values"
+);
+
 process.stdout.write("Deck-plan fixture validation passed.\n");

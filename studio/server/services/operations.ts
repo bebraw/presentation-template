@@ -1744,17 +1744,45 @@ function createInsertedDecisionCriteriaSlide(context, proposedIndex) {
   return validateSlideSpec({
     eyebrow: "Decision criteria",
     guardrails: [
-      { id: `decision-criteria-guardrail-1`, label: "must-include", value: "1" },
-      { id: `decision-criteria-guardrail-2`, label: "apply step", value: "1" },
-      { id: `decision-criteria-guardrail-3`, label: "preview pass", value: "1" }
+      {
+        body: "The slide must carry the claim, evidence, and next action.",
+        id: `decision-criteria-guardrail-1`,
+        title: "Must include"
+      },
+      {
+        body: "Only the selected candidate should be promoted into the deck.",
+        id: `decision-criteria-guardrail-2`,
+        title: "Apply step"
+      },
+      {
+        body: "The proof needs a visible preview before acceptance.",
+        id: `decision-criteria-guardrail-3`,
+        title: "Preview pass"
+      }
     ],
     guardrailsTitle: "Decision checks",
     index: proposedIndex,
     signals: [
-      { id: `decision-criteria-signal-1`, label: "claim", value: 0.9 },
-      { id: `decision-criteria-signal-2`, label: "options", value: 0.86 },
-      { id: `decision-criteria-signal-3`, label: "proof", value: 0.92 },
-      { id: `decision-criteria-signal-4`, label: "action", value: 0.84 }
+      {
+        body: "Name the decision the audience should be able to make.",
+        id: `decision-criteria-signal-1`,
+        title: "Claim"
+      },
+      {
+        body: "Show the structure options before judging them.",
+        id: `decision-criteria-signal-2`,
+        title: "Options"
+      },
+      {
+        body: "Connect the proof slide to the shared runtime and validation path.",
+        id: `decision-criteria-signal-3`,
+        title: "Proof"
+      },
+      {
+        body: "End with the concrete authoring or approval action.",
+        id: `decision-criteria-signal-4`,
+        title: "Action"
+      }
     ],
     signalsTitle: "Decision inputs",
     summary: `Surface the criteria that connect ${context.slides[1] ? context.slides[1].currentTitle : "structure options"} to ${context.slides[2] ? context.slides[2].currentTitle : "proof"}.`,
@@ -1844,16 +1872,16 @@ function rewriteContentSlideSpec(baseSpec, proposedIndex, proposedTitle, content
   return validateSlideSpec({
     eyebrow: content.eyebrow,
     guardrails: baseSpec.guardrails.map((guardrail, index) => ({
-      ...guardrail,
-      label: content.guardrails[index].label,
-      value: content.guardrails[index].value
+      body: content.guardrails[index].body,
+      id: guardrail.id || `guardrail-${index + 1}`,
+      title: content.guardrails[index].title
     })),
     guardrailsTitle: content.guardrailsTitle,
     index: proposedIndex,
     signals: baseSpec.signals.map((signal, index) => ({
-      ...signal,
-      label: content.signals[index].label,
-      value: content.signals[index].value
+      body: content.signals[index].body,
+      id: signal.id || `signal-${index + 1}`,
+      title: content.signals[index].title
     })),
     signalsTitle: content.signalsTitle,
     summary: content.summary,
@@ -2989,16 +3017,37 @@ function createLocalDeckStructureCandidates(context) {
             return rewriteContentSlideSpec(baseSpec, details.proposedIndex, details.proposedTitle, {
               eyebrow: "Evidence",
               guardrails: [
-                { label: "slides in path", value: String(currentContext.slides.length) },
-                { label: "approval steps", value: "1" },
-                { label: "quality gate", value: "1" }
+                {
+                  body: `Keep the live path to ${currentContext.slides.length} reviewed slides.`,
+                  title: "Slides in path"
+                },
+                {
+                  body: "Ask for one explicit approval after comparison.",
+                  title: "Approval step"
+                },
+                {
+                  body: "Run the local quality gate before archive update.",
+                  title: "Quality gate"
+                }
               ],
               guardrailsTitle: "Decision guardrails",
               signals: [
-                { label: "claim", value: 0.92 },
-                { label: "system", value: 0.88 },
-                { label: "proof", value: 0.95 },
-                { label: "action", value: 0.84 }
+                {
+                  body: "The slide should state the decision the deck supports.",
+                  title: "Claim"
+                },
+                {
+                  body: "The runtime path explains why the claim is maintainable.",
+                  title: "System"
+                },
+                {
+                  body: "Validation and baseline checks make the proof inspectable.",
+                  title: "Proof"
+                },
+                {
+                  body: "The final slide should name the next authoring action.",
+                  title: "Action"
+                }
               ],
               signalsTitle: "Decision signals",
               summary: "Concentrate the strongest proof and operating limits on one slide before asking for approval."
@@ -3115,16 +3164,37 @@ function createLocalDeckStructureCandidates(context) {
             return rewriteContentSlideSpec(baseSpec, details.proposedIndex, details.proposedTitle, {
               eyebrow: "Guardrails",
               guardrails: [
-                { label: "slide files", value: String(currentContext.slides.length) },
-                { label: "runtime path", value: "1" },
-                { label: "render gate", value: "1" }
+                {
+                  body: `Keep edits scoped to the ${currentContext.slides.length} active slide files.`,
+                  title: "Slide files"
+                },
+                {
+                  body: "Keep browser preview and export on the shared DOM path.",
+                  title: "Runtime path"
+                },
+                {
+                  body: "Treat render validation as the handoff gate.",
+                  title: "Render gate"
+                }
               ],
               guardrailsTitle: "Operating guardrails",
               signals: [
-                { label: "authoring", value: 0.9 },
-                { label: "runtime", value: 0.87 },
-                { label: "preview", value: 0.91 },
-                { label: "validation", value: 0.96 }
+                {
+                  body: "Deck context and slide specs describe the intended edit.",
+                  title: "Authoring"
+                },
+                {
+                  body: "The DOM renderer owns preview and exported output.",
+                  title: "Runtime"
+                },
+                {
+                  body: "Compare surfaces show candidates before apply.",
+                  title: "Preview"
+                },
+                {
+                  body: "The quality gate confirms text, layout, media, and render state.",
+                  title: "Validation"
+                }
               ],
               signalsTitle: "Operating signals",
               summary: "Make the runtime signals and validation guardrails explicit so the next editor knows what keeps the deck stable."

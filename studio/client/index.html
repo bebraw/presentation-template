@@ -412,11 +412,16 @@
                 </div>
               </div>
 
+              <div class="workflow-status-line" aria-live="polite">
+                <span>Operation</span>
+                <strong id="operation-status">Uses deck brief, slide intent, layout hint, notes, outline, and constraints as workflow inputs.</strong>
+              </div>
+
               <details class="workflow-debug-details" id="workflow-debug-details">
                 <summary>
                   <span class="disclosure-copy">
                     <strong>Generation diagnostics</strong>
-                    <small>Provider state, current operation, and recent workflow events</small>
+                    <small>Provider state, source retrieval, and recent workflow events</small>
                   </span>
                   <span class="disclosure-action" aria-hidden="true">
                     <span class="disclosure-action-closed">Inspect debug</span>
@@ -426,13 +431,6 @@
                 </summary>
 
                 <div class="workflow-debug-panel">
-                  <div class="workflow-debug-section">
-                    <p class="eyebrow">Operation</p>
-                    <p class="operation-note" id="operation-status">
-                      Uses deck brief, slide intent, layout hint, notes, outline, and constraints as workflow inputs.
-                    </p>
-                  </div>
-
                   <div class="workflow-debug-section">
                     <p class="eyebrow">Source Retrieval</p>
                     <div class="source-retrieval-list" id="source-retrieval-list"></div>

@@ -1,9 +1,12 @@
 const assert = require("node:assert/strict");
 const test = require("node:test");
 
-const { getLlmStatus } = require("../studio/server/services/llm/client.ts");
+const { createStructuredResponse, getLlmStatus } = require("../studio/server/services/llm/client.ts");
 
 const trackedEnvKeys = [
+  "LMSTUDIO_API_KEY",
+  "LMSTUDIO_BASE_URL",
+  "LMSTUDIO_MODEL",
   "OPENROUTER_API_KEY",
   "OPENROUTER_BASE_URL",
   "OPENROUTER_MODEL",
@@ -12,6 +15,7 @@ const trackedEnvKeys = [
   "STUDIO_LLM_PROVIDER"
 ];
 const originalEnv = Object.fromEntries(trackedEnvKeys.map((key) => [key, process.env[key]]));
+const originalFetch = global.fetch;
 
 function restoreEnv() {
   trackedEnvKeys.forEach((key) => {
@@ -25,6 +29,7 @@ function restoreEnv() {
 
 test.after(() => {
   restoreEnv();
+  global.fetch = originalFetch;
 });
 
 test("OpenRouter provider reports configuration from environment", () => {
@@ -66,4 +71,66 @@ test("OpenRouter provider requires both API key and model", () => {
 
   assert.equal(status.available, false);
   assert.match(status.configuredReason, /OPENROUTER_API_KEY and OPENROUTER_MODEL/);
+});
+
+test("LM Studio structured responses stream progress updates", async () => {
+  restoreEnv();
+  process.env.STUDIO_LLM_PROVIDER = "lmstudio";
+  process.env.LMSTUDIO_BASE_URL = "http://127.0.0.1:1234/v1";
+  process.env.LMSTUDIO_MODEL = "loaded-local-model";
+
+  const progressEvents = [];
+  global.fetch = async (url, init) => {
+    assert.equal(url, "http://127.0.0.1:1234/v1/chat/completions");
+    const requestBody = JSON.parse(init.body);
+    assert.equal(requestBody.stream, true);
+
+    const stream = new ReadableStream({
+      start(controller) {
+        const encoder = new TextEncoder();
+        [
+          "data: {\"id\":\"chatcmpl-test\",\"model\":\"loaded-local-model\",\"choices\":[{\"delta\":{\"content\":\"{\\\"status\\\":\\\"ok\\\"\"},\"finish_reason\":null}]}\n\n",
+          "data: {\"choices\":[{\"delta\":{\"content\":\",\\\"provider\\\":\\\"lmstudio\\\"}\"},\"finish_reason\":null}]}\n\n",
+          "data: {\"choices\":[{\"delta\":{},\"finish_reason\":\"stop\"}]}\n\n",
+          "data: [DONE]\n\n"
+        ].forEach((chunk) => controller.enqueue(encoder.encode(chunk)));
+        controller.close();
+      }
+    });
+
+    return new Response(stream, {
+      headers: {
+        "Content-Type": "text/event-stream"
+      },
+      status: 200
+    });
+  };
+
+  const result = await createStructuredResponse({
+    developerPrompt: "Return JSON.",
+    onProgress: (event) => progressEvents.push(event),
+    schema: {
+      additionalProperties: false,
+      properties: {
+        provider: { type: "string" },
+        status: { type: "string" }
+      },
+      required: ["status", "provider"],
+      type: "object"
+    },
+    schemaName: "lmstudio_stream_test",
+    userPrompt: "Return ok."
+  });
+
+  assert.deepEqual(result.data, {
+    provider: "lmstudio",
+    status: "ok"
+  });
+  assert.equal(result.model, "loaded-local-model");
+  assert.equal(result.provider, "lmstudio");
+  assert.ok(progressEvents.some((event) => event.llm && event.llm.status === "submitting"));
+  assert.ok(progressEvents.some((event) => event.llm && event.llm.status === "receiving" && event.llm.chunks === 1));
+  assert.ok(progressEvents.some((event) => event.llm && event.llm.status === "parsing"));
+
+  global.fetch = originalFetch;
 });

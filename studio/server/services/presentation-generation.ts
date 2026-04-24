@@ -558,7 +558,7 @@ function assertGeneratedSlideQuality(slideSpecs) {
   return slideSpecs;
 }
 
-async function createLlmPlan(fields, slideCount) {
+async function createLlmPlan(fields, slideCount, options: any = {}) {
   const suppliedUrls = collectProvidedUrls(fields);
   const sourceContext = fields.sourceContext || { promptText: "", snippets: [] };
   const result = await createStructuredResponse({
@@ -576,6 +576,7 @@ async function createLlmPlan(fields, slideCount) {
       "Keep each slide concise enough for projected presentation content."
     ].join("\n"),
     maxOutputTokens: Math.max(2600, slideCount * 420),
+    onProgress: options.onProgress,
     schema: createPlanSchema(slideCount),
     schemaName: "initial_presentation_plan",
     userPrompt: [
@@ -618,7 +619,9 @@ async function generateInitialPresentation(fields: any = {}) {
   let response = null;
 
   if (generation.mode === "llm") {
-    response = await createLlmPlan(generationFields, slideCount);
+    response = await createLlmPlan(generationFields, slideCount, {
+      onProgress: fields.onProgress
+    });
     plan = response.plan;
   } else {
     plan = createLocalPlan(generationFields, slideCount);

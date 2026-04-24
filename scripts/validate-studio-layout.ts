@@ -79,6 +79,8 @@ async function main() {
               llmState: document.querySelector("#llm-nav-status")?.getAttribute("data-state") || "",
               previewFrame: rectFor(".preview-frame"),
               studioTabs: rectFor(".studio-tabs"),
+              workflowStatus: rectFor("#operation-status"),
+              workflowStatusInDebug: Boolean(document.querySelector(".workflow-debug-details #operation-status")),
               themeLabel: document.querySelector("#theme-toggle-label")?.textContent || "",
               themePressed: document.querySelector("#theme-toggle")?.getAttribute("aria-pressed"),
               themeToggle: rectFor("#theme-toggle"),
@@ -137,6 +139,8 @@ async function main() {
           );
 
           assert.ok(metrics.previewFrame, "Slide Studio should render the active preview frame");
+          assert.ok(metrics.workflowStatus, "Slide Studio should show live workflow status outside debug panels");
+          assert.equal(metrics.workflowStatusInDebug, false, "Live workflow status should remain visible without opening diagnostics");
           assert.ok(
             metrics.previewFrame.bottom <= metrics.viewportHeight + 1,
             `Active slide preview should fit in the first viewport at ${viewport.width}x${viewport.height} (bottom ${metrics.previewFrame.bottom.toFixed(1)}px > viewport ${metrics.viewportHeight}px)`

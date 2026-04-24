@@ -251,7 +251,173 @@ function parseStructuredText(text, options, config, payload) {
   }
 }
 
+function formatProviderName(provider) {
+  return ({
+    lmstudio: "LM Studio",
+    openai: "OpenAI",
+    openrouter: "OpenRouter"
+  })[provider] || provider || "LLM";
+}
+
+function reportLlmProgress(config, options, detail: any = {}) {
+  if (typeof options.onProgress !== "function") {
+    return;
+  }
+
+  const providerName = formatProviderName(config.provider);
+  const llm = {
+    chunks: Number.isFinite(Number(detail.chunks)) ? Number(detail.chunks) : undefined,
+    detail: detail.detail || "",
+    model: options.model || config.model,
+    provider: config.provider,
+    providerName,
+    receivedChars: Number.isFinite(Number(detail.receivedChars)) ? Number(detail.receivedChars) : undefined,
+    status: detail.status || "working"
+  };
+
+  options.onProgress({
+    llm,
+    message: detail.message || `${providerName}: ${llm.detail || llm.status}`,
+    stage: detail.stage || `llm-${llm.status}`
+  });
+}
+
+function formatReceivedTextProgress(providerName, receivedChars, chunks) {
+  const approxKb = Math.max(0.1, receivedChars / 1024);
+  return `${providerName}: receiving response (${chunks} chunk${chunks === 1 ? "" : "s"}, ${approxKb.toFixed(1)} KB)`;
+}
+
+async function readChatCompletionStream(response, config, options) {
+  if (!response.body || typeof response.body.getReader !== "function") {
+    throw new Error(`${config.provider} streaming response did not expose a readable body`);
+  }
+
+  const providerName = formatProviderName(config.provider);
+  const decoder = new TextDecoder();
+  const reader = response.body.getReader();
+  let buffer = "";
+  let chunks = 0;
+  let content = "";
+  let responseId = null;
+  let model = options.model || config.model;
+  let lastReportedChars = 0;
+
+  function handlePayload(payload) {
+    if (!payload || typeof payload !== "object") {
+      return false;
+    }
+
+    responseId = responseId || payload.id || null;
+    model = payload.model || model;
+
+    const choice = Array.isArray(payload.choices) ? payload.choices[0] : null;
+    const delta = choice && choice.delta ? choice.delta : null;
+    const text = delta && typeof delta.content === "string"
+      ? delta.content
+      : delta && typeof delta.reasoning_content === "string"
+        ? delta.reasoning_content
+        : "";
+
+    if (text) {
+      content += text;
+      chunks += 1;
+      if (chunks === 1 || content.length - lastReportedChars >= 900) {
+        lastReportedChars = content.length;
+        reportLlmProgress(config, options, {
+          chunks,
+          detail: `Receiving streamed response from ${providerName}.`,
+          message: formatReceivedTextProgress(providerName, content.length, chunks),
+          receivedChars: content.length,
+          stage: "llm-receiving",
+          status: "receiving"
+        });
+      }
+    }
+
+    return Boolean(choice && choice.finish_reason);
+  }
+
+  for (;;) {
+    const { done, value } = await reader.read();
+    if (done) {
+      break;
+    }
+
+    buffer += decoder.decode(value, { stream: true });
+    const events = buffer.split(/\n\n/);
+    buffer = events.pop() || "";
+
+    for (const eventText of events) {
+      const dataLines = eventText
+        .split(/\n/)
+        .map((line) => line.trim())
+        .filter((line) => line.startsWith("data:"))
+        .map((line) => line.slice(5).trim());
+
+      for (const dataLine of dataLines) {
+        if (!dataLine || dataLine === "[DONE]") {
+          continue;
+        }
+
+        try {
+          handlePayload(JSON.parse(dataLine));
+        } catch (error) {
+          // Ignore malformed stream fragments; the final parse will still validate complete JSON.
+        }
+      }
+    }
+  }
+
+  buffer += decoder.decode();
+  if (buffer.trim()) {
+    const dataLines = buffer
+      .split(/\n/)
+      .map((line) => line.trim())
+      .filter((line) => line.startsWith("data:"))
+      .map((line) => line.slice(5).trim());
+
+    dataLines.forEach((dataLine) => {
+      if (!dataLine || dataLine === "[DONE]") {
+        return;
+      }
+
+      try {
+        handlePayload(JSON.parse(dataLine));
+      } catch (error) {
+        // Ignore trailing malformed stream fragments.
+      }
+    });
+  }
+
+  reportLlmProgress(config, options, {
+    chunks,
+    detail: "Stream complete; parsing structured JSON.",
+    message: `${providerName}: stream complete, parsing structured JSON.`,
+    receivedChars: content.length,
+    stage: "llm-parsing",
+    status: "parsing"
+  });
+
+  return {
+    choices: [
+      {
+        message: {
+          content
+        }
+      }
+    ],
+    id: responseId,
+    model
+  };
+}
+
 async function createOpenAiStructuredResponse(config, options) {
+  reportLlmProgress(config, options, {
+    detail: "Submitting structured response request.",
+    message: `${formatProviderName(config.provider)}: submitting structured response request.`,
+    stage: "llm-submitting",
+    status: "submitting"
+  });
   const response = await fetch(`${config.baseUrl}/responses`, {
     method: "POST",
     headers: createAuthHeaders(config),
@@ -298,10 +464,23 @@ async function createOpenAiStructuredResponse(config, options) {
     throw new Error(message);
   }
 
+  reportLlmProgress(config, options, {
+    detail: "Response received; parsing structured JSON.",
+    message: `${formatProviderName(config.provider)}: response received, parsing structured JSON.`,
+    stage: "llm-parsing",
+    status: "parsing"
+  });
+
   return parseStructuredText(extractResponseOutputText(payload), options, config, payload);
 }
 
 async function createLmStudioStructuredResponse(config, options) {
+  reportLlmProgress(config, options, {
+    detail: "Submitting streaming chat completion request.",
+    message: `${formatProviderName(config.provider)}: submitting streaming chat completion request.`,
+    stage: "llm-submitting",
+    status: "submitting"
+  });
   const response = await fetch(`${config.baseUrl}/chat/completions`, {
     method: "POST",
     headers: createAuthHeaders(config),
@@ -326,23 +505,30 @@ async function createLmStudioStructuredResponse(config, options) {
           strict: true
         }
       },
-      stream: false,
+      stream: true,
       temperature: 0
     })
   });
 
-  const payload = await response.json().catch(() => ({}));
   if (!response.ok) {
+    const payload = await response.json().catch(() => ({}));
     const message = payload && payload.error && payload.error.message
       ? payload.error.message
       : `LM Studio request failed with status ${response.status}`;
     throw new Error(message);
   }
 
+  const payload = await readChatCompletionStream(response, config, options);
   return parseStructuredText(extractChatCompletionText(payload), options, config, payload);
 }
 
 async function createOpenRouterStructuredResponse(config, options) {
+  reportLlmProgress(config, options, {
+    detail: "Submitting structured chat completion request.",
+    message: `${formatProviderName(config.provider)}: submitting structured chat completion request.`,
+    stage: "llm-submitting",
+    status: "submitting"
+  });
   const response = await fetch(`${config.baseUrl}/chat/completions`, {
     method: "POST",
     headers: createAuthHeaders(config),
@@ -382,6 +568,13 @@ async function createOpenRouterStructuredResponse(config, options) {
       : `OpenRouter request failed with status ${response.status}`;
     throw new Error(message);
   }
+
+  reportLlmProgress(config, options, {
+    detail: "Response received; parsing structured JSON.",
+    message: `${formatProviderName(config.provider)}: response received, parsing structured JSON.`,
+    stage: "llm-parsing",
+    status: "parsing"
+  });
 
   return parseStructuredText(extractChatCompletionText(payload), options, config, payload);
 }

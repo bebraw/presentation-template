@@ -423,6 +423,7 @@ async function handlePresentationCreate(req, res) {
   const generated = await generateInitialPresentation({
     ...fields,
     includeActiveSources: false,
+    onProgress: reportProgress,
     presentationSourceText: starterSourceText
   });
   const presentation = createPresentation({
@@ -489,6 +490,7 @@ async function handlePresentationRegenerate(req, res) {
   const generated = await generateInitialPresentation({
     ...deck,
     generationMode: body.generationMode || "auto",
+    onProgress: reportProgress,
     targetSlideCount
   });
   const presentation = regeneratePresentationSlides(body.presentationId, generated.slideSpecs, {

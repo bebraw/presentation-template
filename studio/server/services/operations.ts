@@ -938,7 +938,7 @@ function createLocalThemeCandidates(slide, currentSpec, context, options: any = 
   }));
 }
 
-async function createLlmIdeateCandidates(slide, slideType, source, context, candidateCount) {
+async function createLlmIdeateCandidates(slide, slideType, source, context, candidateCount, options: any = {}) {
   const count = normalizeCandidateCount(candidateCount);
   const prompts = buildIdeateSlidePrompts({
     candidateCount: count,
@@ -949,6 +949,7 @@ async function createLlmIdeateCandidates(slide, slideType, source, context, cand
   });
   const result = await createStructuredResponse({
     developerPrompt: prompts.developerPrompt,
+    onProgress: options.onProgress,
     schema: getIdeateSlideResponseSchema(slideType, count),
     schemaName: `ideate_slide_${slideType}_variants`,
     userPrompt: prompts.userPrompt
@@ -3434,7 +3435,7 @@ async function ideateSlide(slideId, options: any = {}) {
       stage: "generating-variants"
     });
     const candidates = generation.mode === "llm"
-      ? await createLlmIdeateCandidates(slide, slideType, serializeSlideSpec(originalSlideSpec), context, candidateCount)
+      ? await createLlmIdeateCandidates(slide, slideType, serializeSlideSpec(originalSlideSpec), context, candidateCount, options)
       : fitCandidateCount(createLocalIdeateCandidates(slide, slideType, context), candidateCount);
 
     reportProgress(options, {

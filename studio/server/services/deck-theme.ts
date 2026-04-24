@@ -1,7 +1,4 @@
-const fs = require("fs");
-const path = require("path");
-
-const deckContextFile = path.join(__dirname, "..", "state", "deck-context.json");
+const { readActiveDeckContext } = require("./active-deck-context.ts");
 
 const theme = {
   primary: "183153",
@@ -82,12 +79,8 @@ function normalizeVisualTheme(input: any = {}) {
 }
 
 function readDeckVisualTheme() {
-  try {
-    const raw = JSON.parse(fs.readFileSync(deckContextFile, "utf8"));
-    return normalizeVisualTheme(raw && raw.deck && raw.deck.visualTheme);
-  } catch (error) {
-    return { ...theme };
-  }
+  const raw = readActiveDeckContext(null);
+  return normalizeVisualTheme(raw && raw.deck && raw.deck.visualTheme);
 }
 
 function resolveTheme(overrides: any = {}) {

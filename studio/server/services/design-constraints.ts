@@ -1,7 +1,4 @@
-const fs = require("fs");
-const path = require("path");
-
-const deckContextFile = path.join(__dirname, "..", "state", "deck-context.json");
+const { readActiveDeckContext } = require("./active-deck-context.ts");
 
 const defaultDesignConstraints = Object.freeze({
   maxWordsPerSlide: 80,
@@ -53,12 +50,8 @@ function normalizeDesignConstraints(input: any = {}) {
 }
 
 function readDesignConstraints() {
-  try {
-    const raw = JSON.parse(fs.readFileSync(deckContextFile, "utf8"));
-    return normalizeDesignConstraints(raw && raw.deck && raw.deck.designConstraints);
-  } catch (error) {
-    return { ...defaultDesignConstraints };
-  }
+  const raw = readActiveDeckContext(null);
+  return normalizeDesignConstraints(raw && raw.deck && raw.deck.designConstraints);
 }
 
 function describeDesignConstraints(input: any = {}) {

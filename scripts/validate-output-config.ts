@@ -1,7 +1,8 @@
 const assert = require("node:assert/strict");
 const path = require("node:path");
+const activeDeckContext = require("../studio/server/services/active-deck-context.ts");
 const { getOutputConfig } = require("../studio/server/services/output-config.ts");
-const { listPresentations } = require("../studio/server/services/presentations.ts");
+const { getActivePresentationPaths, listPresentations } = require("../studio/server/services/presentations.ts");
 
 function main() {
   const presentationsState = listPresentations();
@@ -53,6 +54,11 @@ function main() {
     outputConfig.variantPreviewDir,
     expectedVariantPreviewDir,
     "Variant preview path should be derived from the active presentation id"
+  );
+  assert.equal(
+    activeDeckContext._test.getActiveDeckContextFile(),
+    getActivePresentationPaths().deckContextFile,
+    "Shared deck readers should resolve through the active presentation deck context"
   );
 
   process.stdout.write("Output config validation passed.\n");

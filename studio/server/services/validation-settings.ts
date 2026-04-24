@@ -1,7 +1,4 @@
-const fs = require("fs");
-const path = require("path");
-
-const deckContextFile = path.join(__dirname, "..", "state", "deck-context.json");
+const { readActiveDeckContext } = require("./active-deck-context.ts");
 
 const validationRuleDefaults = Object.freeze({
   "baseline-missing": "error",
@@ -72,12 +69,8 @@ function normalizeValidationSettings(input: unknown = {}): ValidationSettings {
 }
 
 function readValidationSettings(): ValidationSettings {
-  try {
-    const raw = JSON.parse(fs.readFileSync(deckContextFile, "utf8"));
-    return normalizeValidationSettings(raw && raw.deck && raw.deck.validationSettings);
-  } catch (error) {
-    return normalizeValidationSettings(defaultValidationSettings);
-  }
+  const raw = readActiveDeckContext(null);
+  return normalizeValidationSettings(raw && raw.deck && raw.deck.validationSettings);
 }
 
 function resolveValidationLevel(

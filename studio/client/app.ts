@@ -36,6 +36,8 @@ const state: any = {
     checksOpen: false,
     deckPlanApplySharedSettings: {},
     currentPage: "studio",
+    llmChecking: false,
+    llmPopoverOpen: false,
     structuredDraftOpen: false,
   },
   validation: null,
@@ -107,6 +109,7 @@ const elements: Record<string, any> = {
   deckTone: document.getElementById("deck-tone"),
   llmStatusNote: document.getElementById("llm-status-note"),
   llmNavStatus: document.getElementById("llm-nav-status"),
+  llmPopover: document.getElementById("llm-status-popover"),
   manualSystemAfter: document.getElementById("manual-system-after"),
   manualDeleteSlide: document.getElementById("manual-delete-slide"),
   materialAlt: document.getElementById("material-alt"),
@@ -616,6 +619,15 @@ function toColorInputValue(value, fallback = "#000000") {
 }
 
 function getLlmConnectionView(llm) {
+  if (state.ui.llmChecking) {
+    return {
+      detail: "Checking LLM provider configuration and structured output support.",
+      label: "LLM checking",
+      providerLine: "LLM provider",
+      state: "idle"
+    };
+  }
+
   if (!llm) {
     return {
       detail: "LLM provider state has not loaded yet.",
@@ -675,6 +687,9 @@ function renderStatus() {
   elements.llmNavStatus.dataset.state = llmView.state;
   elements.showLlmDiagnosticsButton.title = llmView.detail;
   elements.showLlmDiagnosticsButton.setAttribute("aria-label", `${llmView.label}. ${llmView.detail}`);
+  elements.showLlmDiagnosticsButton.classList.toggle("active", state.ui.llmPopoverOpen);
+  elements.showLlmDiagnosticsButton.setAttribute("aria-expanded", state.ui.llmPopoverOpen ? "true" : "false");
+  elements.llmPopover.hidden = !state.ui.llmPopoverOpen;
 
   elements.ideateSlideButton.disabled = !selected || workflowRunning;
   elements.ideateStructureButton.disabled = !selected || workflowRunning;
@@ -700,15 +715,13 @@ function renderStatus() {
   elements.llmStatusNote.innerHTML = `<strong>${escapeHtml(llmView.providerLine)}</strong>${escapeHtml(llmDetail)}`;
 }
 
-function revealLlmDiagnostics() {
-  setCurrentPage("studio");
-  const details = document.getElementById("workflow-debug-details") as HTMLDetailsElement | null;
-  if (details) {
-    details.open = true;
-    window.requestAnimationFrame(() => {
-      details.scrollIntoView({ behavior: "smooth", block: "start" });
-    });
-  }
+function setLlmPopoverOpen(open) {
+  state.ui.llmPopoverOpen = Boolean(open);
+  renderStatus();
+}
+
+function toggleLlmPopover() {
+  setLlmPopoverOpen(!state.ui.llmPopoverOpen);
 }
 
 function loadAssistantDrawerPreference() {
@@ -3350,20 +3363,34 @@ async function validate(includeRender) {
   }
 }
 
-async function checkLlmProvider() {
-  const done = setBusy(elements.checkLlmButton, "Checking...");
+async function checkLlmProvider(options: any = {}) {
+  const done = options.silent ? null : setBusy(elements.checkLlmButton, "Checking...");
+  state.ui.llmChecking = true;
+  renderStatus();
+
   try {
     const payload = await request("/api/llm/check", {
       body: JSON.stringify({}),
       method: "POST"
     });
     state.runtime = payload.runtime;
-    elements.operationStatus.textContent = payload.result && payload.result.summary
-      ? payload.result.summary
-      : "LLM provider check completed.";
+    if (!options.silent) {
+      elements.operationStatus.textContent = payload.result && payload.result.summary
+        ? payload.result.summary
+        : "LLM provider check completed.";
+    }
     renderStatus();
+  } catch (error) {
+    if (!options.silent) {
+      throw error;
+    }
+    elements.llmStatusNote.innerHTML = `<strong>LLM provider</strong> startup check failed. ${escapeHtml(error.message)}`;
   } finally {
-    done();
+    state.ui.llmChecking = false;
+    renderStatus();
+    if (done) {
+      done();
+    }
   }
 }
 
@@ -3816,7 +3843,11 @@ elements.showPresentationsPageButton.addEventListener("click", () => setCurrentP
 elements.showStudioPageButton.addEventListener("click", () => setCurrentPage("studio"));
 elements.showPlanningPageButton.addEventListener("click", () => setCurrentPage("planning"));
 elements.themeToggle.addEventListener("click", toggleAppTheme);
-elements.showLlmDiagnosticsButton.addEventListener("click", revealLlmDiagnostics);
+elements.showLlmDiagnosticsButton.addEventListener("click", (event) => {
+  event.stopPropagation();
+  toggleLlmPopover();
+});
+elements.llmPopover.addEventListener("click", (event) => event.stopPropagation());
 elements.showValidationPageButton.addEventListener("click", () => setChecksPanelOpen(!state.ui.checksOpen));
 elements.closeValidationPageButton.addEventListener("click", () => setChecksPanelOpen(false));
 elements.structuredDraftToggle.addEventListener("click", () => {
@@ -3830,6 +3861,9 @@ elements.presentationSearch.addEventListener("input", renderPresentations);
 
 document.addEventListener("keydown", (event) => {
   if (event.key === "Escape") {
+    if (state.ui.llmPopoverOpen) {
+      setLlmPopoverOpen(false);
+    }
     if (state.ui.checksOpen) {
       setChecksPanelOpen(false);
     }
@@ -3839,6 +3873,12 @@ document.addEventListener("keydown", (event) => {
     if (state.ui.structuredDraftOpen) {
       setStructuredDraftDrawerOpen(false);
     }
+  }
+});
+
+document.addEventListener("click", () => {
+  if (state.ui.llmPopoverOpen) {
+    setLlmPopoverOpen(false);
   }
 });
 
@@ -3866,6 +3906,10 @@ connectRuntimeStream();
 
 refreshState()
   .then(async () => {
+    checkLlmProvider({ silent: true }).catch(() => {
+      // Startup verification is best-effort; the popover keeps manual retry available.
+    });
+
     if (!state.previews.pages.length) {
       await buildDeck();
     }

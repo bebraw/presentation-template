@@ -73,6 +73,7 @@ async function main() {
               documentScrollWidth: document.documentElement.scrollWidth,
               appTheme: document.documentElement.dataset.appTheme,
               llmButton: rectFor("#show-llm-diagnostics"),
+              llmPopoverHidden: (document.querySelector("#llm-status-popover") as HTMLElement | null)?.hidden,
               llmStatus: document.querySelector("#llm-nav-status")?.textContent || "",
               llmState: document.querySelector("#llm-nav-status")?.getAttribute("data-state") || "",
               previewFrame: rectFor(".preview-frame"),
@@ -152,7 +153,29 @@ async function main() {
           );
 
           await page.click("#show-llm-diagnostics");
-          await page.waitForFunction(() => Boolean((document.querySelector("#workflow-debug-details") as HTMLDetailsElement | null)?.open));
+          await page.waitForFunction(() => {
+            const popover = document.querySelector("#llm-status-popover") as HTMLElement | null;
+            return Boolean(popover && !popover.hidden);
+          });
+          const llmPopoverMetrics = await page.evaluate(() => {
+            const popover = document.querySelector("#llm-status-popover") as HTMLElement | null;
+            const button = document.querySelector("#show-llm-diagnostics");
+            const rect = popover ? popover.getBoundingClientRect() : null;
+
+            return {
+              ariaExpanded: button?.getAttribute("aria-expanded") || "",
+              hidden: popover ? popover.hidden : true,
+              right: rect ? rect.right : 0,
+              width: rect ? rect.width : 0
+            };
+          });
+          assert.equal(llmPopoverMetrics.hidden, false, "LLM status should open an in-place popover");
+          assert.equal(llmPopoverMetrics.ariaExpanded, "true", "LLM status button should expose popover state");
+          assert.ok(llmPopoverMetrics.width > 0, "LLM popover should have visible width");
+          assert.ok(
+            llmPopoverMetrics.right <= metrics.viewportWidth + 1,
+            `LLM popover should stay inside the viewport at ${viewport.width}x${viewport.height}`
+          );
 
           const thumbnailSelectionMetrics = await page.evaluate(async () => {
             const rail = document.querySelector("#thumb-rail") as HTMLElement | null;

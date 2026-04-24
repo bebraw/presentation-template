@@ -57,10 +57,20 @@
             class="nav-llm-button"
             id="show-llm-diagnostics"
             type="button"
-            aria-controls="workflow-debug-details"
+            aria-controls="llm-status-popover"
+            aria-expanded="false"
           >
             <span class="nav-llm" id="llm-nav-status">LLM status</span>
           </button>
+          <div class="nav-llm-popover" id="llm-status-popover" hidden>
+            <div class="nav-llm-popover-head">
+              <p class="eyebrow">LLM</p>
+              <button id="check-llm-button" class="secondary utility-button" type="button">Check</button>
+            </div>
+            <p class="llm-status-note" id="llm-status-note">
+              LLM provider status appears here after loading.
+            </p>
+          </div>
         </div>
       </header>
 
@@ -390,16 +400,6 @@
                 </summary>
 
                 <div class="workflow-debug-panel">
-                  <div class="workflow-debug-section">
-                    <div class="workflow-debug-section-head">
-                      <p class="eyebrow">LLM State</p>
-                      <button id="check-llm-button" class="secondary utility-button">Check LLM</button>
-                    </div>
-                    <p class="llm-status-note" id="llm-status-note">
-                      LLM provider status appears here after a verification check.
-                    </p>
-                  </div>
-
                   <div class="workflow-debug-section">
                     <p class="eyebrow">Operation</p>
                     <p class="operation-note" id="operation-status">

@@ -207,6 +207,7 @@ input[type="color"]::-moz-color-swatch {
 }
 
 .masthead-meta {
+  position: relative;
   display: flex;
   flex: 1 1 auto;
   gap: 0.55rem;
@@ -382,6 +383,38 @@ html[data-app-theme="dark"] .theme-toggle-knob {
 .nav-validation[data-state="warn"]::before,
 .nav-llm[data-state="warn"]::before {
   background: var(--app-accent);
+}
+
+.nav-llm-popover {
+  position: absolute;
+  top: calc(100% + 0.55rem);
+  right: 0;
+  z-index: 35;
+  display: grid;
+  width: min(24rem, calc(100vw - 3rem));
+  gap: 0.65rem;
+  padding: 0.9rem;
+  border: 1px solid var(--app-line);
+  border-radius: 0.5rem;
+  background: var(--app-elevated-bg);
+  box-shadow: 0 1rem 2.5rem rgba(24, 49, 83, 0.16);
+  color: var(--app-text);
+  line-height: 1.45;
+}
+
+.nav-llm-popover[hidden] {
+  display: none;
+}
+
+.nav-llm-popover-head {
+  display: flex;
+  gap: 0.8rem;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.nav-llm-popover .llm-status-note {
+  margin: 0;
 }
 
 .button-row {
@@ -3576,6 +3609,12 @@ html[data-app-theme="dark"] .json-token-literal {
 
   .masthead-meta {
     width: 100%;
+  }
+
+  .nav-llm-popover {
+    right: auto;
+    left: 0;
+    width: min(100%, calc(100vw - 3rem));
   }
 
   .nav-current-slide {

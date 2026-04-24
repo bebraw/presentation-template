@@ -103,6 +103,7 @@ const elements = {
   slideMustInclude: document.getElementById("slide-must-include"),
   slideNotes: document.getElementById("slide-notes"),
   slideTitle: document.getElementById("slide-title"),
+  slideSpecHighlight: document.getElementById("slide-spec-highlight"),
   planningPage: document.getElementById("planning-page"),
   showValidationPageButton: document.getElementById("show-validation-page"),
   studioPage: document.getElementById("studio-page"),
@@ -181,6 +182,47 @@ function escapeHtml(value) {
     .replace(/</g, "&lt;")
     .replace(/>/g, "&gt;")
     .replace(/"/g, "&quot;");
+}
+
+function highlightJsonSource(source) {
+  const text = String(source || "");
+  const tokenPattern = /("(?:\\.|[^"\\])*")(\s*:)?|\b(?:true|false|null)\b|-?\d+(?:\.\d+)?(?:[eE][+-]?\d+)?/g;
+  let cursor = 0;
+  let markup = "";
+
+  text.replace(tokenPattern, (token, quoted, keySuffix, offset) => {
+    markup += escapeHtml(text.slice(cursor, offset));
+
+    if (quoted) {
+      const tokenClass = keySuffix ? "json-token-key" : "json-token-string";
+      markup += `<span class="${tokenClass}">${escapeHtml(quoted)}</span>${escapeHtml(keySuffix || "")}`;
+    } else if (/^-?\d/.test(token)) {
+      markup += `<span class="json-token-number">${escapeHtml(token)}</span>`;
+    } else {
+      markup += `<span class="json-token-literal">${escapeHtml(token)}</span>`;
+    }
+
+    cursor = offset + token.length;
+    return token;
+  });
+
+  markup += escapeHtml(text.slice(cursor));
+  return markup || " ";
+}
+
+function formatSourceCode(source, format = "plain") {
+  return format === "json" ? highlightJsonSource(source) : escapeHtml(source);
+}
+
+function updateSlideSpecHighlight() {
+  const highlightCode = elements.slideSpecHighlight ? elements.slideSpecHighlight.querySelector("code") : null;
+  if (!highlightCode) {
+    return;
+  }
+
+  highlightCode.innerHTML = highlightJsonSource(elements.slideSpecEditor.value);
+  elements.slideSpecHighlight.scrollTop = elements.slideSpecEditor.scrollTop;
+  elements.slideSpecHighlight.scrollLeft = elements.slideSpecEditor.scrollLeft;
 }
 
 function getDomRenderer() {
@@ -1772,6 +1814,7 @@ function renderSlideFields() {
     elements.saveSlideSpecButton.disabled = false;
     elements.captureVariantButton.disabled = false;
     elements.slideSpecEditor.value = JSON.stringify(state.selectedSlideSpec, null, 2);
+    updateSlideSpecHighlight();
     elements.slideSpecStatus.textContent = "Valid JSON changes preview immediately. Save persists the spec without rebuilding.";
     return;
   }
@@ -1781,6 +1824,7 @@ function renderSlideFields() {
   elements.saveSlideSpecButton.disabled = true;
   elements.captureVariantButton.disabled = false;
   elements.slideSpecEditor.value = "";
+  updateSlideSpecHighlight();
   elements.slideSpecStatus.textContent = state.selectedSlideSpecError
     ? `Structured editing is unavailable for this slide: ${state.selectedSlideSpecError}`
     : "Structured editing is unavailable for this slide.";
@@ -1986,6 +2030,8 @@ function renderVariantComparison() {
     structuredComparison,
     diff
   );
+  const beforeSourceFormat = state.selectedSlideStructured ? "json" : "plain";
+  const afterSourceFormat = variant.slideSpec ? "json" : "plain";
   const compareSummaryItems = Array.isArray(variant.changeSummary) && variant.changeSummary.length
     ? variant.changeSummary.slice()
     : [variant.promptSummary || variant.notes || "No change summary available."];
@@ -2047,7 +2093,7 @@ function renderVariantComparison() {
         ${sourceRows.map((row) => `
           <div class="source-line${row.changed ? " changed" : ""}">
             <span class="source-line-no">${row.line}</span>
-            <code>${escapeHtml(row.before)}</code>
+            <code>${formatSourceCode(row.before, beforeSourceFormat)}</code>
           </div>
         `).join("")}
       </div>
@@ -2058,7 +2104,7 @@ function renderVariantComparison() {
         ${sourceRows.map((row) => `
           <div class="source-line${row.changed ? " changed" : ""}">
             <span class="source-line-no">${row.line}</span>
-            <code>${escapeHtml(row.after)}</code>
+            <code>${formatSourceCode(row.after, afterSourceFormat)}</code>
           </div>
         `).join("")}
       </div>
@@ -2472,6 +2518,8 @@ function previewSlideSpecEditorDraft() {
 }
 
 function scheduleSlideSpecEditorPreview() {
+  updateSlideSpecHighlight();
+
   if (slideSpecPreviewFrame !== null && typeof window.cancelAnimationFrame === "function") {
     window.cancelAnimationFrame(slideSpecPreviewFrame);
   }
@@ -2842,6 +2890,7 @@ elements.compareApplyValidateButton.addEventListener("click", () => {
 });
 elements.saveSlideSpecButton.addEventListener("click", () => saveSlideSpec().catch((error) => window.alert(error.message)));
 elements.slideSpecEditor.addEventListener("input", scheduleSlideSpecEditorPreview);
+elements.slideSpecEditor.addEventListener("scroll", updateSlideSpecHighlight);
 elements.activePreview.addEventListener("dblclick", (event) => {
   const target = event.target.closest("[data-edit-path]");
   if (!target || !elements.activePreview.contains(target)) {

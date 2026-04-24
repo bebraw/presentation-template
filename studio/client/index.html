@@ -611,7 +611,10 @@
 
         <label class="field field-grow structured-draft-field-grow">
           <span>Slide spec JSON</span>
-          <textarea id="slide-spec-editor" spellcheck="false"></textarea>
+          <div class="json-editor-shell">
+            <pre class="json-editor-highlight" id="slide-spec-highlight" aria-hidden="true"><code></code></pre>
+            <textarea id="slide-spec-editor" spellcheck="false"></textarea>
+          </div>
         </label>
       </div>
     </aside>

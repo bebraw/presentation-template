@@ -18,6 +18,7 @@ The browser studio baseline is complete.
 - Deck and slide context, design constraints, validation settings, visual theme values, assistant sessions, and manual snapshots persist in repo-local studio state; generated slide candidates stay session-only until applied.
 - Slide-level workflows, deck-planning workflows, assistant-triggered actions, session-only candidates, safe apply flows, and compare views are available from the browser.
 - Supported structured slides allow direct text edits and valid JSON spec edits to update the active DOM preview immediately while saving through the server-controlled slide-spec path without a render pass.
+- Structured JSON editing and compare source blocks use lightweight syntax highlighting for keys, strings, numbers, and literals.
 - The browser UI uses a compact sticky top navigation with the project name first, page controls, current slide identity, and validation state kept available without a large pitch header.
 - Slide variant generation now uses a compact workbench with explicit generation modes, a candidate-count control defaulting to five, progress steps, and selected-candidate review state.
 - Generation diagnostics are collapsed by default and group LLM provider state, current operation text, and recent workflow events behind one inspectable panel.

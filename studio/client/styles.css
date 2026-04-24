@@ -1309,9 +1309,71 @@ input[type="color"]::-moz-color-swatch {
   margin-bottom: 0;
 }
 
+.json-editor-shell {
+  position: relative;
+  width: 100%;
+}
+
+.json-editor-highlight,
+.json-editor-shell textarea {
+  min-height: min(36rem, calc(100vh - 21rem));
+  font-family: "SFMono-Regular", Consolas, monospace;
+  font-size: 0.82rem;
+  line-height: 1.45;
+  tab-size: 2;
+  white-space: pre-wrap;
+  word-break: break-word;
+}
+
+.json-editor-highlight {
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  overflow: hidden;
+  margin: 0;
+  padding: 0.8rem 0.9rem;
+  border: 1px solid transparent;
+  border-radius: 0.45rem;
+  background: #fbfcfe;
+  color: var(--app-text);
+  pointer-events: none;
+}
+
+.json-editor-highlight code {
+  font: inherit;
+}
+
+.json-editor-shell textarea {
+  position: relative;
+  z-index: 1;
+  background: transparent;
+  caret-color: var(--app-text);
+  color: transparent;
+  -webkit-text-fill-color: transparent;
+}
+
+.json-editor-shell textarea::selection {
+  background: rgba(29, 95, 209, 0.18);
+}
+
+.json-token-key {
+  color: #875400;
+}
+
+.json-token-string {
+  color: #1f6f43;
+}
+
+.json-token-number {
+  color: #315fc4;
+}
+
+.json-token-literal {
+  color: #8d3f8f;
+}
+
 .structured-draft-field-grow textarea {
   min-height: min(36rem, calc(100vh - 21rem));
-  background: rgba(255, 255, 255, 0.9);
 }
 
 .preview-frame {

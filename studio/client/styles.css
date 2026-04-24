@@ -585,33 +585,34 @@ input[type="color"]::-moz-color-swatch {
   min-height: 5.2rem;
 }
 
-.planning-subsection-head {
-  display: flex;
-  gap: 0.75rem;
-  align-items: baseline;
-  margin: 1.15rem 0 0.7rem;
-  padding-top: 1rem;
-  border-top: 1px solid var(--app-line);
-}
-
-.planning-subsection-head h3 {
-  margin: 0;
-  font-size: 1rem;
-  font-weight: 650;
-}
-
+.planning-palette-details,
 .planning-guardrails-details {
   margin-top: 0.4rem;
   padding-top: 0.8rem;
   border-top: 1px solid var(--app-line);
 }
 
-.planning-guardrails-details summary {
-  cursor: pointer;
-  color: var(--app-text);
-  font-weight: 650;
+.planning-palette-details {
+  margin-top: 0.7rem;
 }
 
+.planning-palette-details summary,
+.planning-guardrails-details summary {
+  display: flex;
+  gap: 1rem;
+  align-items: center;
+  justify-content: space-between;
+  cursor: pointer;
+  color: var(--app-text);
+  list-style: none;
+}
+
+.planning-palette-details summary::-webkit-details-marker,
+.planning-guardrails-details summary::-webkit-details-marker {
+  display: none;
+}
+
+.planning-palette-details .field-grid,
 .planning-guardrails-details .field-grid {
   margin-top: 0.85rem;
 }
@@ -2693,6 +2694,8 @@ input[type="color"]::-moz-color-swatch {
 
 .manual-delete-details[open] .disclosure-action,
 .manual-system-details[open] .disclosure-action,
+.planning-guardrails-details[open] .disclosure-action,
+.planning-palette-details[open] .disclosure-action,
 .validation-settings-details[open] .disclosure-action,
 .validation-rule-details[open] .disclosure-action,
 .workflow-debug-details[open] .disclosure-action {
@@ -2706,6 +2709,8 @@ input[type="color"]::-moz-color-swatch {
 
 .manual-delete-details[open] .disclosure-action-closed,
 .manual-system-details[open] .disclosure-action-closed,
+.planning-guardrails-details[open] .disclosure-action-closed,
+.planning-palette-details[open] .disclosure-action-closed,
 .validation-settings-details[open] .disclosure-action-closed,
 .validation-rule-details[open] .disclosure-action-closed,
 .workflow-debug-details[open] .disclosure-action-closed {
@@ -2714,6 +2719,8 @@ input[type="color"]::-moz-color-swatch {
 
 .manual-delete-details[open] .disclosure-action-open,
 .manual-system-details[open] .disclosure-action-open,
+.planning-guardrails-details[open] .disclosure-action-open,
+.planning-palette-details[open] .disclosure-action-open,
 .validation-settings-details[open] .disclosure-action-open,
 .validation-rule-details[open] .disclosure-action-open,
 .workflow-debug-details[open] .disclosure-action-open {
@@ -2726,6 +2733,8 @@ input[type="color"]::-moz-color-swatch {
 
 .manual-delete-details[open] .disclosure-action-mark::before,
 .manual-system-details[open] .disclosure-action-mark::before,
+.planning-guardrails-details[open] .disclosure-action-mark::before,
+.planning-palette-details[open] .disclosure-action-mark::before,
 .validation-settings-details[open] .disclosure-action-mark::before,
 .validation-rule-details[open] .disclosure-action-mark::before,
 .workflow-debug-details[open] .disclosure-action-mark::before {

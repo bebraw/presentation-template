@@ -16,7 +16,7 @@ The browser studio baseline is complete.
 - Slide-spec JSON is the source content model for supported `cover`, `toc`, `content`, and `summary` slides.
 - The shared DOM renderer powers browser preview, thumbnails, compare views, preview PNGs, PDF export, and CLI builds.
 - Deck and slide context, design constraints, validation settings, visual theme values, assistant sessions, and manual snapshots persist in repo-local studio state; generated slide candidates stay session-only until applied.
-- Slide-level workflows, deck-planning workflows, assistant-triggered actions, session-only candidates, safe apply flows, and compare views are available from the browser.
+- Slide-level workflows, manual slide add/remove controls, deck-planning workflows, assistant-triggered actions, session-only candidates, safe apply flows, and compare views are available from the browser.
 - Supported structured slides allow direct text edits and valid JSON spec edits to update the active DOM preview immediately while saving through the server-controlled slide-spec path without a render pass.
 - Structured JSON editing and compare source blocks use lightweight syntax highlighting for keys, strings, numbers, and literals.
 - The browser UI uses a compact sticky top navigation with the project name first, page controls, current slide identity, and validation state kept available without a large pitch header.
@@ -24,7 +24,7 @@ The browser studio baseline is complete.
 - Generation diagnostics are collapsed by default and group LLM provider state, current operation text, and recent workflow events behind one inspectable panel.
 - The validation page is consolidated into a check console plus compact settings section, with rule-severity overrides behind a disclosure and reports focused on actionable details.
 - Validation rule severity overrides use an explicit show/hide disclosure control so the advanced settings are discoverable without staying open.
-- Deck planning is consolidated into a compact planning console with manual system-slide insertion and slide removal, visible palette swatches, tucked-away design guardrails, and deck-plan details hidden until inspection.
+- Deck planning is consolidated into a compact planning console with visible palette swatches, tucked-away design guardrails, and deck-plan details hidden until inspection.
 - Slide candidate review and visual comparison share one workspace: direct-select rows drive the adjacent current-versus-candidate preview and diff pane.
 - Selected-slide context is collapsed by default into a compact disclosure, leaving the active preview and workflow surfaces higher on the page.
 - Workflow chat uses compact drawer copy, shorter empty state and message labels, and shorter canned workflow replies.

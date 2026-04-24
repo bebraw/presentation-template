@@ -344,6 +344,14 @@ input[type="color"]::-moz-color-swatch {
   padding-top: 0.75rem;
 }
 
+.slide-operations-panel .section-heading {
+  margin-bottom: 0.2rem;
+}
+
+.slide-operations-panel .manual-system-details {
+  margin-top: 0.65rem;
+}
+
 .slide-context-details summary {
   display: flex;
   gap: 1rem;

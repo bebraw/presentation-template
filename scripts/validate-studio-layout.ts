@@ -69,6 +69,7 @@ async function main() {
 
             return {
               checksButton: rectFor("#show-validation-page"),
+              currentSlideLabel: rectFor("#selected-slide-label"),
               documentClientWidth: document.documentElement.clientWidth,
               documentScrollWidth: document.documentElement.scrollWidth,
               appTheme: document.documentElement.dataset.appTheme,
@@ -100,6 +101,14 @@ async function main() {
           assert.equal(metrics.themeLabel, "Light", "Theme toggle should show the current light theme");
           assert.equal(metrics.themePressed, "false", "Theme toggle should expose its inactive pressed state in light mode");
           assert.ok(metrics.themeToggle, "Studio should expose an app theme toggle in the masthead");
+          assert.ok(metrics.currentSlideLabel, "Studio should expose the current slide label in the masthead");
+          if (viewport.width > 1180) {
+            const currentSlideCenter = (metrics.currentSlideLabel.left + metrics.currentSlideLabel.right) / 2;
+            assert.ok(
+              Math.abs(currentSlideCenter - (metrics.viewportWidth / 2)) <= 8,
+              `Current slide label should be centered in the masthead at ${viewport.width}x${viewport.height}`
+            );
+          }
           assert.ok(
             metrics.themeToggle.right <= metrics.viewportWidth + 1,
             `Theme toggle should stay inside the viewport at ${viewport.width}x${viewport.height}`

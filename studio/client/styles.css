@@ -319,6 +319,18 @@ html[data-app-theme="dark"] .theme-toggle-knob {
   white-space: nowrap;
 }
 
+.nav-current-slide {
+  position: absolute;
+  left: 50%;
+  width: min(36rem, 34vw);
+  max-width: min(36rem, 34vw);
+  color: var(--app-text);
+  font-weight: 650;
+  text-align: center;
+  transform: translateX(-50%);
+  pointer-events: none;
+}
+
 .nav-checks-button,
 .nav-llm-button {
   display: inline-flex;
@@ -341,12 +353,6 @@ html[data-app-theme="dark"] .theme-toggle-knob {
   background: var(--app-hover);
   color: var(--app-text);
   transform: none;
-}
-
-.nav-current-slide {
-  max-width: min(28vw, 22rem);
-  color: var(--app-text);
-  font-weight: 650;
 }
 
 .nav-validation,
@@ -3654,9 +3660,19 @@ html[data-app-theme="dark"] .json-editor-highlight .json-token-literal {
     flex-wrap: wrap;
   }
 
+  .nav-current-slide {
+    position: static;
+    order: 3;
+    flex: 1 1 100%;
+    width: 100%;
+    max-width: none;
+    transform: none;
+  }
+
   .masthead-meta {
+    order: 4;
     flex-basis: 100%;
-    justify-content: flex-start;
+    justify-content: center;
   }
 
   .workspace-section {
@@ -3794,10 +3810,6 @@ html[data-app-theme="dark"] .json-editor-highlight .json-token-literal {
     right: auto;
     left: 0;
     width: min(100%, calc(100vw - 3rem));
-  }
-
-  .nav-current-slide {
-    max-width: none;
   }
 
   .variant-workbench {

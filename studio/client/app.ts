@@ -1975,6 +1975,44 @@ function getPresentationState() {
   };
 }
 
+function formatPresentationDate(value) {
+  if (!value) {
+    return "";
+  }
+
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) {
+    return "";
+  }
+
+  try {
+    return new Intl.DateTimeFormat(undefined, {
+      day: "numeric",
+      month: "short"
+    }).format(date);
+  } catch (error) {
+    return date.toISOString().slice(0, 10);
+  }
+}
+
+function buildPresentationFacts(presentation) {
+  const facts = [
+    `${presentation.slideCount || 0} slide${presentation.slideCount === 1 ? "" : "s"}`
+  ];
+  const updated = formatPresentationDate(presentation.updatedAt);
+  if (updated) {
+    facts.push(`Updated ${updated}`);
+  }
+  if (presentation.audience) {
+    facts.push(presentation.audience);
+  }
+  if (presentation.tone) {
+    facts.push(presentation.tone);
+  }
+
+  return facts.slice(0, 4);
+}
+
 function renderPresentations() {
   const presentationState = getPresentationState();
   const presentations = presentationState.presentations;
@@ -1992,6 +2030,7 @@ function renderPresentations() {
 
   presentations.forEach((presentation) => {
     const active = presentation.id === presentationState.activePresentationId;
+    const facts = buildPresentationFacts(presentation);
     const card = document.createElement("article");
     card.className = `presentation-card${active ? " active" : ""}`;
     card.dataset.presentationId = presentation.id;
@@ -2003,7 +2042,9 @@ function renderPresentations() {
           ${active ? "<span class=\"presentation-active-pill\">Active</span>" : ""}
         </div>
         <p>${escapeHtml(presentation.description || "No brief saved yet.")}</p>
-        <span class="presentation-card-meta">${presentation.slideCount || 0} slide${presentation.slideCount === 1 ? "" : "s"}</span>
+        <div class="presentation-card-facts" aria-label="Presentation metadata">
+          ${facts.map((fact) => `<span>${escapeHtml(fact)}</span>`).join("")}
+        </div>
       </div>
       <div class="presentation-card-actions">
         <button class="secondary presentation-select-button" type="button">${active ? "Open" : "Select"}</button>

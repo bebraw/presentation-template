@@ -142,6 +142,8 @@ async function main() {
               documentClientWidth: document.documentElement.clientWidth,
               documentScrollWidth: document.documentElement.scrollWidth,
               firstTitle,
+              factCount: document.querySelectorAll(".presentation-card:first-child .presentation-card-facts span").length,
+              facts: rectFor(".presentation-card:first-child .presentation-card-facts"),
               pageHidden: (document.querySelector("#presentations-page") as HTMLElement | null)?.hidden,
               preview: rectFor(".presentation-card-preview"),
               studioHidden: (document.querySelector("#studio-page") as HTMLElement | null)?.hidden,
@@ -154,6 +156,7 @@ async function main() {
           assert.ok(presentationMetrics.cardCount > 0, "Presentations page should render at least one presentation card");
           assert.equal(presentationMetrics.activeCardCount, 1, "Presentations page should mark exactly one active presentation");
           assert.ok(presentationMetrics.firstTitle.trim().length > 0, "Presentation cards should show the presentation name");
+          assert.ok(presentationMetrics.factCount >= 2, "Presentation cards should show compact metadata facts");
           assert.equal(presentationMetrics.createOpen, false, "Presentation creation constraints should stay collapsed by default");
           assert.ok(
             presentationMetrics.documentScrollWidth <= presentationMetrics.documentClientWidth + 1,
@@ -174,6 +177,11 @@ async function main() {
             `Presentation preview should preserve a slide-like aspect ratio at ${viewport.width}x${viewport.height}`
           );
           assert.ok(presentationMetrics.cardActions, "Presentation cards should expose select, duplicate, and delete actions");
+          assert.ok(presentationMetrics.facts, "Presentation cards should expose metadata facts");
+          assert.ok(
+            presentationMetrics.facts.right <= presentationMetrics.viewportWidth + 1,
+            `Presentation metadata should stay inside the viewport at ${viewport.width}x${viewport.height}`
+          );
 
           await page.click("#show-studio-page");
           await page.waitForSelector("#active-preview .dom-slide-viewport, #active-preview img", {

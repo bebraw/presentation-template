@@ -361,6 +361,14 @@ function getUniquePresentationId(title) {
   return candidate;
 }
 
+function readFileMtime(fileName) {
+  try {
+    return fs.statSync(fileName).mtime.getTime();
+  } catch (error) {
+    return 0;
+  }
+}
+
 function readPresentationSummary(id) {
   const paths = getPresentationPaths(id);
   const meta = readJson(paths.metaFile, createDefaultPresentationMeta({ id }));
@@ -370,13 +378,23 @@ function readPresentationSummary(id) {
     ? fs.readdirSync(paths.slidesDir).filter((fileName) => /^slide-\d+\.json$/.test(fileName)).sort((left, right) => left.localeCompare(right, undefined, { numeric: true }))
     : [];
   const firstSlideSpec = slideFiles.length ? readJson(path.join(paths.slidesDir, slideFiles[0]), null) : null;
+  const slidePaths = slideFiles.map((fileName) => path.join(paths.slidesDir, fileName));
+  const updatedAtMs = [
+    paths.metaFile,
+    paths.deckContextFile,
+    ...slidePaths
+  ].reduce((latest, fileName) => Math.max(latest, readFileMtime(fileName)), 0);
 
   return {
+    audience: deck.audience || "",
     id,
     title: deck.title || meta.title || id,
-    description: meta.description || deck.subject || deck.objective || "",
+    description: deck.objective || meta.description || deck.subject || "",
     createdAt: meta.createdAt || "",
-    updatedAt: meta.updatedAt || "",
+    objective: deck.objective || "",
+    subject: deck.subject || "",
+    tone: deck.tone || "",
+    updatedAt: updatedAtMs ? new Date(updatedAtMs).toISOString() : (meta.updatedAt || ""),
     slideCount: slideFiles.filter((fileName) => {
       const slide = readJson(path.join(paths.slidesDir, fileName), {});
       return slide && slide.archived !== true;

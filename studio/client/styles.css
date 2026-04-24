@@ -584,10 +584,26 @@ input[type="color"]::-moz-color-swatch {
   -webkit-line-clamp: 2;
 }
 
-.presentation-card-meta {
+.presentation-card-facts {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.35rem;
+  min-width: 0;
+}
+
+.presentation-card-facts span {
   display: inline-flex;
+  max-width: 100%;
+  min-width: 0;
+  border: 1px solid var(--app-line);
+  border-radius: 999px;
+  padding: 0.2rem 0.45rem;
+  overflow: hidden;
   color: var(--app-soft-text);
-  font-size: 0.78rem;
+  font-size: 0.72rem;
+  line-height: 1.1;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .presentation-active-pill {

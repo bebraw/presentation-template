@@ -21,7 +21,7 @@ The browser studio baseline is complete.
 - Supported structured slides allow direct text edits and valid JSON spec edits to update the active DOM preview immediately while saving through the server-controlled slide-spec path without a render pass.
 - Structured JSON editing and compare source blocks use lightweight syntax highlighting for keys, strings, numbers, and literals.
 - The browser UI uses a compact sticky top navigation with the project name first, page controls, current slide identity, and check state kept available without a large pitch header.
-- Slide variant generation now uses a compact workbench with explicit generation modes, a candidate-count control defaulting to five, progress steps, selected-candidate review state, and visual theme candidates that preview font and color changes before apply.
+- Slide variant generation sits directly below the active preview and selector, and now uses a compact workbench with explicit generation modes, a candidate-count control defaulting to five, progress steps, selected-candidate review state, and visual theme candidates that preview font and color changes before apply.
 - Generation diagnostics are collapsed by default and group LLM provider state, current operation text, and recent workflow events behind one inspectable panel.
 - Deck checks are available from a compact masthead control that opens an inspectable check console, settings section, and focused report without becoming a primary workspace page.
 - Check rule severity overrides use an explicit show/hide disclosure control so the advanced settings are discoverable without staying open.
@@ -36,7 +36,7 @@ The browser studio baseline is complete.
 
 ## Maintenance Focus
 
-- Apply the pragmatic UI review in small slices: keep Slide Studio anchored around preview, slide selection, and variant generation before lower-frequency context and slide-management controls; collapse empty or advanced surfaces; and reduce drawer and thumbnail rail intrusion.
+- Apply the remaining pragmatic UI review slices by collapsing empty or advanced surfaces and reducing drawer and thumbnail rail intrusion.
 - Keep new deck-planning modes tied to shared deck-context patches when they change narrative direction, theme, constraints, or other deck-level decisions.
 - Deepen DOM media validation only when new media-heavy slide families expose concrete screenshot, chart, diagram, or legibility gaps beyond the current size, bounds, spacing, labeling, loading, and caption/source attachment checks.
 - Correct stale documentation opportunistically if it refers to removed rendering, validation, or authoring paths as active implementation.

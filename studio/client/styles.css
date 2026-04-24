@@ -410,8 +410,17 @@ input[type="color"]::-moz-color-swatch {
   grid-column: 1 / -1;
 }
 
+.variant-generation-panel {
+  order: 1;
+}
+
 .slide-context-panel {
+  order: 2;
   padding-top: 0.75rem;
+}
+
+.slide-operations-panel {
+  order: 3;
 }
 
 .slide-operations-panel .section-heading {

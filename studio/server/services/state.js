@@ -176,7 +176,6 @@ function applyDeckStructurePlan(candidate) {
     }
 
     nextSlides[entry.slideId] = {
-      title: "",
       intent: "",
       mustInclude: "",
       notes: "",

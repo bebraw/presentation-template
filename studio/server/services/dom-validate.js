@@ -353,6 +353,7 @@ function evaluateSlideInDom(slideEntry, previewState) {
       const mediaItems = Array.from(new Set(Array.from(document.querySelectorAll(mediaSelector))))
         .filter((element) => !isDecorativeMedia(element))
         .map((element) => {
+          const mediaElement = /** @type {any} */ (element);
           const tagName = element.tagName.toLowerCase();
           const accessibleLabel = element.getAttribute("aria-label") ||
             element.getAttribute("alt") ||
@@ -367,10 +368,10 @@ function evaluateSlideInDom(slideEntry, previewState) {
             accessibleLabel,
             alt: element.getAttribute("alt") || "",
             className: getClassName(element),
-            complete: typeof element.complete === "boolean" ? element.complete : true,
+            complete: typeof mediaElement.complete === "boolean" ? mediaElement.complete : true,
             label,
-            naturalHeight: Number(element.naturalHeight || element.videoHeight || 0),
-            naturalWidth: Number(element.naturalWidth || element.videoWidth || 0),
+            naturalHeight: Number(mediaElement.naturalHeight || mediaElement.videoHeight || 0),
+            naturalWidth: Number(mediaElement.naturalWidth || mediaElement.videoWidth || 0),
             rect: getSerializableRect(element),
             tagName
           };

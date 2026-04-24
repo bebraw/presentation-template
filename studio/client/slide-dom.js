@@ -387,6 +387,6 @@
   }
 
   if (globalScope && typeof globalScope === "object") {
-    globalScope.SlideDomRenderer = api;
+    /** @type {any} */ (globalScope).SlideDomRenderer = api;
   }
 }(typeof globalThis !== "undefined" ? globalThis : this));

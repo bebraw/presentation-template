@@ -43,6 +43,7 @@ function normalizeMediaValidationMode(value) {
 }
 
 function normalizeValidationSettings(input = {}) {
+  /** @type {any} */
   const source = input && typeof input === "object" ? input : {};
   const rawRules = source.rules && typeof source.rules === "object" ? source.rules : {};
   const rules = Object.fromEntries(

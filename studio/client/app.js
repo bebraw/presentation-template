@@ -1,3 +1,4 @@
+/** @type {any} */
 const state = {
   assistant: {
     selection: null,
@@ -35,6 +36,7 @@ const state = {
   variants: []
 };
 
+/** @type {Record<string, any>} */
 const elements = {
   assistantDrawer: document.getElementById("assistant-drawer"),
   activePreview: document.getElementById("active-preview"),
@@ -151,6 +153,7 @@ const domSlideResizeObserver = typeof ResizeObserver === "function"
 let activeInlineTextEdit = null;
 let slideSpecPreviewFrame = null;
 
+/** @returns {any[]} */
 function getValidationRuleSelects() {
   return Array.from(document.querySelectorAll("[data-validation-rule]"));
 }
@@ -232,7 +235,7 @@ function updateSlideSpecHighlight() {
 }
 
 function getDomRenderer() {
-  return window.SlideDomRenderer || null;
+  return /** @type {any} */ (window).SlideDomRenderer || null;
 }
 
 function getDomTheme() {
@@ -1761,7 +1764,7 @@ function renderDeckStructureCandidates() {
     const sharedSettingsToggle = card.querySelector("[data-action=\"toggle-shared-settings\"]");
     if (sharedSettingsToggle) {
       sharedSettingsToggle.addEventListener("change", (event) => {
-        state.ui.deckPlanApplySharedSettings[candidate.id] = Boolean(event.currentTarget.checked);
+        state.ui.deckPlanApplySharedSettings[candidate.id] = Boolean(/** @type {any} */ (event.currentTarget).checked);
       });
     }
 
@@ -1984,7 +1987,7 @@ function renderVariants() {
     `;
 
     card.addEventListener("click", (event) => {
-      if (event.target.closest("button")) {
+      if (/** @type {any} */ (event.target).closest("button")) {
         return;
       }
 
@@ -1992,7 +1995,7 @@ function renderVariants() {
     });
 
     card.addEventListener("keydown", (event) => {
-      if (event.target.closest("button")) {
+      if (/** @type {any} */ (event.target).closest("button")) {
         return;
       }
 

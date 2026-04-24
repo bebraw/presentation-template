@@ -47,6 +47,7 @@ function saveSessionsStore(nextStore) {
   return nextStore;
 }
 
+/** @returns {any} */
 function createMessage(role, content, extra = {}) {
   return {
     content,

@@ -299,6 +299,7 @@ Current implementation uses a centered white-canvas workspace with page-level se
 - selected active-slide text can be attached to workflow chat turns as local context
 - collapsed selected-slide context on the studio page so slide metadata is available without occupying persistent editing space
 - manual slide add/remove controls live with the operative Slide Studio workflows while deck planning stays focused on shared deck context
+- TypeScript checking now runs as a no-emit quality gate across the existing JavaScript runtime; keep new code type-check clean and tighten declarations opportunistically.
 - a compact slide-candidate workbench that keeps generation modes, workflow progress, candidate counts, and review state close together while hiding provider diagnostics and workflow event output behind an inspectable debug panel
 - an integrated slide-candidate review and compare workspace for fast visual inspection of alternatives
 - a consolidated validation console that keeps run actions, summary status, actionable report details, and compact settings on one focused page

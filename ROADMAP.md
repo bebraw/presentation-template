@@ -293,7 +293,7 @@ Delivered in this order:
 
 ## UX Shape
 
-Current implementation uses a centered white-canvas workspace with page-level separation:
+Current implementation uses a centered slide-preview workspace with page-level separation:
 
 - `Studio` page for preview, slide context, workflow generation, and compare/apply
 - `Deck Planning` page for deck brief, manual system-slide insertion/removal, and deck-plan ideation
@@ -310,11 +310,13 @@ Current implementation uses a centered white-canvas workspace with page-level se
 - a compact checks panel that keeps run actions, summary status, actionable report details, and settings available from the masthead
 - an explicit check override disclosure control for rule-severity settings
 - a compact deck-planning console that keeps brief, outline, palette swatches, guardrails, and deck-plan results close without expanding every plan detail by default
+- a persisted light/dark app-chrome toggle in the masthead; slide canvases continue rendering from the deck theme so preview and export stay faithful
 
 Visual rules for the current studio UI:
 
 - default to sans-serif typography throughout the app shell
-- keep the background clean white rather than tinted or textured
+- keep the app chrome quiet in both light and dark modes rather than tinted or textured
+- keep rendered slide canvases visually governed by the active deck theme, not by the app chrome theme
 - avoid visual containers such as cards or panels; use spacing, alignment, and light dividers to separate regions instead
 - keep variant-generation controls task-shaped and compact so the preview and compare surfaces remain the main work area
 

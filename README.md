@@ -31,6 +31,8 @@ Current local PDF output is written to `slides/output/demo-presentation.pdf`. Th
 
 The local studio lives under `studio/` and runs as a small Node server with a static browser client.
 
+![Browser studio screenshot](docs/assets/studio-home.png)
+
 The UI currently includes:
 
 - a compact sticky navigation with the project name first

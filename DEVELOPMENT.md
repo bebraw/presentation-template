@@ -10,6 +10,8 @@ Install dependencies:
 npm install
 ```
 
+`npm install` also configures the repo-managed Git hooks in `.githooks/`. The pre-push hook runs `npm run quality:gate:fast` so local structural validation passes before code leaves the machine.
+
 Start the local browser studio:
 
 ```bash
@@ -42,10 +44,22 @@ Run geometry, text, media-fixture, and deck-plan validation:
 npm run validate
 ```
 
+Run the fast local quality gate used by the pre-push hook:
+
+```bash
+npm run quality:gate:fast
+```
+
 Run the full project quality gate, including render-baseline validation:
 
 ```bash
 npm run quality:gate
+```
+
+Refresh the README studio screenshot:
+
+```bash
+npm run screenshot:home
 ```
 
 Refresh the approved render baseline after an intentional visual change:
@@ -59,9 +73,12 @@ npm run baseline:render
 - `slides/output/demo-presentation.pdf` is generated locally by `npm run build`.
 - `slides/output/` is git-ignored.
 - `studio/baseline/` stores approved render-baseline PNGs used by the visual regression gate.
+- `docs/assets/studio-home.png` is refreshed manually by `npm run screenshot:home`.
 - `archive/demo-presentation.pdf` is the checked-in archive snapshot and should be refreshed only as a publishing decision.
 
 When slide visuals or theme output intentionally change, run `npm run baseline:render` before `npm run quality:gate`.
+
+The README screenshot refresh is local-only. The command starts or reuses the studio at `http://127.0.0.1:4173/`; override `SCREENSHOT_URL`, `SCREENSHOT_OUTPUT_PATH`, `SCREENSHOT_SERVER_COMMAND`, or `SCREENSHOT_SERVER_READY_URL` only when capturing a different local surface.
 
 ## LLM Provider Setup
 
@@ -135,4 +152,3 @@ Use slide-clarity-drill on slide 3.
 ```text
 Tighten slide 2, then patch the slide and run the deck validation flow.
 ```
-

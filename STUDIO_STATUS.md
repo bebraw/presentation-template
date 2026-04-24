@@ -20,6 +20,7 @@ The browser studio baseline is complete.
 - Supported structured slides allow direct text edits and valid JSON spec edits to update the active DOM preview immediately while saving through the server-controlled slide-spec path without a render pass.
 - The browser UI uses a compact sticky top navigation with the project name first and page controls kept available without a large pitch header.
 - Slide variant generation now uses a compact workbench with explicit generation modes, a candidate-count control defaulting to five, progress steps, and selected-candidate review state.
+- Generation diagnostics are collapsed by default and group LLM provider state, current operation text, and recent workflow events behind one inspectable panel.
 - The validation page is consolidated into a check console plus compact settings section, with rule-severity overrides behind a disclosure and reports focused on actionable details.
 - Validation rule severity overrides use an explicit show/hide disclosure control so the advanced settings are discoverable without staying open.
 - Deck planning is consolidated into a compact planning console with visible palette swatches, tucked-away design guardrails, and deck-plan details hidden until inspection.

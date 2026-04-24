@@ -297,7 +297,7 @@ Current implementation uses a centered white-canvas workspace with page-level se
 - compact workflow chat for command-style assistant actions
 - selected active-slide text can be attached to workflow chat turns as local context
 - collapsed selected-slide context on the studio page so slide metadata is available without occupying persistent editing space
-- a compact slide-candidate workbench that keeps generation modes, provider controls, workflow progress, candidate counts, and review state close together
+- a compact slide-candidate workbench that keeps generation modes, workflow progress, candidate counts, and review state close together while hiding provider diagnostics and workflow event output behind an inspectable debug panel
 - an integrated slide-candidate review and compare workspace for fast visual inspection of alternatives
 - a consolidated validation console that keeps run actions, summary status, actionable report details, and compact settings on one focused page
 - an explicit validation override disclosure control for rule-severity settings

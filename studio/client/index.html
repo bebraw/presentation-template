@@ -127,7 +127,6 @@
                       <span>Count</span>
                       <input id="ideate-candidate-count" type="number" min="1" max="8" step="1" value="5">
                     </label>
-                    <button id="check-llm-button" class="secondary utility-button">Check LLM</button>
                   </div>
                 </div>
 
@@ -155,15 +154,43 @@
                 </div>
               </div>
 
-              <p class="llm-status-note" id="llm-status-note">
-                LLM provider status appears here after a verification check.
-              </p>
+              <details class="workflow-debug-details">
+                <summary>
+                  <span class="disclosure-copy">
+                    <strong>Generation diagnostics</strong>
+                    <small>Provider state, current operation, and recent workflow events</small>
+                  </span>
+                  <span class="disclosure-action" aria-hidden="true">
+                    <span class="disclosure-action-closed">Inspect debug</span>
+                    <span class="disclosure-action-open">Hide debug</span>
+                    <span class="disclosure-action-mark"></span>
+                  </span>
+                </summary>
 
-              <p class="operation-note" id="operation-status">
-                Uses deck brief, slide intent, layout hint, notes, outline, and constraints as workflow inputs.
-              </p>
+                <div class="workflow-debug-panel">
+                  <div class="workflow-debug-section">
+                    <div class="workflow-debug-section-head">
+                      <p class="eyebrow">LLM State</p>
+                      <button id="check-llm-button" class="secondary utility-button">Check LLM</button>
+                    </div>
+                    <p class="llm-status-note" id="llm-status-note">
+                      LLM provider status appears here after a verification check.
+                    </p>
+                  </div>
 
-              <div class="workflow-history" id="workflow-history"></div>
+                  <div class="workflow-debug-section">
+                    <p class="eyebrow">Operation</p>
+                    <p class="operation-note" id="operation-status">
+                      Uses deck brief, slide intent, layout hint, notes, outline, and constraints as workflow inputs.
+                    </p>
+                  </div>
+
+                  <div class="workflow-debug-section">
+                    <p class="eyebrow">Recent Events</p>
+                    <div class="workflow-history" id="workflow-history"></div>
+                  </div>
+                </div>
+              </details>
 
               <div class="workflow-variants">
                 <div class="workflow-variants-head">

@@ -482,13 +482,13 @@ input[type="color"]::-moz-color-swatch {
 }
 
 .operation-note {
-  margin: 0.85rem 0 0;
+  margin: 0;
   color: var(--app-soft-text);
   line-height: 1.5;
 }
 
 .llm-status-note {
-  margin: 0.95rem 0 0;
+  margin: 0;
   color: var(--app-soft-text);
   line-height: 1.5;
 }
@@ -687,6 +687,43 @@ input[type="color"]::-moz-color-swatch {
   overflow: auto;
   padding: 0 0.35rem 0 0;
   border-top: 0;
+}
+
+.workflow-debug-details {
+  margin-top: 0.9rem;
+  border-top: 1px solid var(--app-line);
+}
+
+.workflow-debug-details summary {
+  display: flex;
+  gap: 1rem;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0.72rem 0;
+  cursor: pointer;
+  list-style: none;
+}
+
+.workflow-debug-details summary::-webkit-details-marker {
+  display: none;
+}
+
+.workflow-debug-panel {
+  display: grid;
+  gap: 0.85rem;
+  padding: 0.3rem 0 0.95rem;
+}
+
+.workflow-debug-section {
+  display: grid;
+  gap: 0.42rem;
+}
+
+.workflow-debug-section-head {
+  display: flex;
+  gap: 0.75rem;
+  align-items: center;
+  justify-content: space-between;
 }
 
 .structured-draft-drawer {
@@ -2284,7 +2321,8 @@ input[type="color"]::-moz-color-swatch {
   line-height: 1;
 }
 
-.validation-rule-details[open] .disclosure-action {
+.validation-rule-details[open] .disclosure-action,
+.workflow-debug-details[open] .disclosure-action {
   border-color: var(--app-line-strong);
   background: rgba(18, 22, 28, 0.035);
 }
@@ -2293,11 +2331,13 @@ input[type="color"]::-moz-color-swatch {
   display: none;
 }
 
-.validation-rule-details[open] .disclosure-action-closed {
+.validation-rule-details[open] .disclosure-action-closed,
+.workflow-debug-details[open] .disclosure-action-closed {
   display: none;
 }
 
-.validation-rule-details[open] .disclosure-action-open {
+.validation-rule-details[open] .disclosure-action-open,
+.workflow-debug-details[open] .disclosure-action-open {
   display: inline;
 }
 
@@ -2305,7 +2345,8 @@ input[type="color"]::-moz-color-swatch {
   content: "+";
 }
 
-.validation-rule-details[open] .disclosure-action-mark::before {
+.validation-rule-details[open] .disclosure-action-mark::before,
+.workflow-debug-details[open] .disclosure-action-mark::before {
   content: "-";
 }
 

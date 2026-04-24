@@ -36,7 +36,7 @@ This document tracks the next practical steps for combining Slideotter's determi
    - Service/API coverage covers source create, delete, retrieval, and write-boundary behavior.
 
 4. **Retrieval Quality**
-   - Improve keyword retrieval before introducing embeddings.
+   - Status: first hardening pass implemented.
    - Add title and URL boosts, query-field weighting, duplicate chunk suppression, and stable scoring.
    - Keep embeddings or vector storage as a later option once real decks show keyword retrieval misses.
 
@@ -46,6 +46,7 @@ This document tracks the next practical steps for combining Slideotter's determi
    - Avoid visible citation clutter until the slide language and layout rules are ready for it.
 
 6. **URL Fetch Hardening**
+   - Status: first hardening pass implemented.
    - Enforce content-size limits, acceptable content types, and safer URL handling.
    - Reject local/private-network URLs before fetching.
    - Keep fetched text normalized and bounded so prompts remain predictable.

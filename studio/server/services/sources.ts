@@ -8,7 +8,14 @@ const {
 } = require("./write-boundary.ts");
 
 const maxSourceChars = 60000;
+const maxFetchBytes = 256000;
 const maxChunkChars = 900;
+const acceptedFetchContentTypes = [
+  "application/json",
+  "application/xhtml+xml",
+  "application/xml",
+  "text/"
+];
 const stopWords = new Set([
   "about",
   "after",
@@ -71,6 +78,38 @@ function normalizeUrl(value) {
   } catch (error) {
     throw new Error(`Invalid source URL: ${raw}`);
   }
+}
+
+function assertFetchableUrl(urlString) {
+  const url = new URL(urlString);
+  const hostname = url.hostname.toLowerCase();
+  const ipv4 = hostname.match(/^(\d+)\.(\d+)\.(\d+)\.(\d+)$/);
+
+  if (
+    hostname === "localhost"
+    || hostname === "0.0.0.0"
+    || hostname === "::1"
+    || hostname.endsWith(".localhost")
+    || hostname.endsWith(".local")
+  ) {
+    throw new Error("Source URL cannot point to a local host.");
+  }
+
+  if (ipv4) {
+    const first = Number(ipv4[1]);
+    const second = Number(ipv4[2]);
+    if (
+      first === 10
+      || first === 127
+      || first === 169 && second === 254
+      || first === 172 && second >= 16 && second <= 31
+      || first === 192 && second === 168
+    ) {
+      throw new Error("Source URL cannot point to a private network address.");
+    }
+  }
+
+  return url.toString();
 }
 
 function stripHtml(value) {
@@ -218,17 +257,46 @@ function tokenize(value) {
     .slice(0, 80) || [];
 }
 
-function countTokenMatches(text, tokens) {
+function buildTokenWeights(query, queryFields: any = []): Map<string, number> {
+  const weights = new Map();
+  const addTokens = (value, weight) => {
+    tokenize(value).forEach((token) => {
+      weights.set(token, (weights.get(token) || 0) + weight);
+    });
+  };
+
+  addTokens(query, 1);
+  queryFields.forEach((field) => {
+    if (!field || !field.value) {
+      return;
+    }
+
+    const weight = Number.isFinite(Number(field.weight)) ? Number(field.weight) : 1;
+    addTokens(field.value, Math.max(0.25, weight));
+  });
+
+  return weights;
+}
+
+function countTokenMatches(text, tokenWeights: Map<string, number>): number {
   const haystack = ` ${String(text || "").toLowerCase()} `;
-  return tokens.reduce((score, token) => {
+  return Array.from(tokenWeights.entries()).reduce((score, entry) => {
+    const [token, weight] = entry;
     const pattern = new RegExp(`\\b${token.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")}\\b`, "g");
-    return score + (haystack.match(pattern) || []).length;
+    return score + ((haystack.match(pattern) || []).length * weight);
   }, 0);
 }
 
+function dedupeKey(value) {
+  return normalizeWhitespace(value)
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, " ")
+    .slice(0, 220);
+}
+
 function retrieveSourceSnippets(query, options: any = {}) {
-  const tokens = Array.from(new Set(tokenize(query)));
-  if (!tokens.length) {
+  const tokenWeights = buildTokenWeights(query, options.queryFields || []);
+  if (!tokenWeights.size) {
     return [];
   }
 
@@ -241,9 +309,9 @@ function retrieveSourceSnippets(query, options: any = {}) {
 
   sources.forEach((source) => {
     chunkText(source.text).forEach((chunk, index) => {
-      const score = countTokenMatches(chunk, tokens)
-        + (countTokenMatches(source.title, tokens) * 2)
-        + countTokenMatches(source.url, tokens);
+      const score = countTokenMatches(chunk, tokenWeights)
+        + (countTokenMatches(source.title, tokenWeights) * 3)
+        + (countTokenMatches(source.url, tokenWeights) * 1.5);
 
       if (score <= 0) {
         return;
@@ -260,9 +328,27 @@ function retrieveSourceSnippets(query, options: any = {}) {
     });
   });
 
-  return scored
-    .sort((left, right) => right.score - left.score)
-    .slice(0, limit);
+  const seen = new Set();
+  const results = [];
+  scored
+    .sort((left, right) => {
+      if (right.score !== left.score) {
+        return right.score - left.score;
+      }
+
+      return `${left.title}:${left.chunkIndex}`.localeCompare(`${right.title}:${right.chunkIndex}`);
+    })
+    .forEach((snippet) => {
+      const key = dedupeKey(snippet.text);
+      if (!key || seen.has(key) || results.length >= limit) {
+        return;
+      }
+
+      seen.add(key);
+      results.push(snippet);
+    });
+
+  return results;
 }
 
 function buildRetrievalQuery(fields: any = {}) {
@@ -276,6 +362,17 @@ function buildRetrievalQuery(fields: any = {}) {
   ].filter(Boolean).join(" ");
 }
 
+function buildRetrievalQueryFields(fields: any = {}) {
+  return [
+    { value: fields.title, weight: 3 },
+    { value: fields.objective, weight: 3 },
+    { value: fields.audience, weight: 1.5 },
+    { value: fields.constraints, weight: 1.25 },
+    { value: fields.themeBrief, weight: 0.5 },
+    { value: fields.outline, weight: 1.5 }
+  ];
+}
+
 function getGenerationSourceContext(fields: any = {}) {
   const inlineSources = [
     ...normalizeInlineSources(fields.presentationSourceText),
@@ -284,6 +381,7 @@ function getGenerationSourceContext(fields: any = {}) {
   const snippets = retrieveSourceSnippets(buildRetrievalQuery(fields), {
     includeActiveSources: fields.includeActiveSources !== false,
     limit: 6,
+    queryFields: buildRetrievalQueryFields(fields),
     sources: inlineSources
   });
   return {
@@ -296,6 +394,7 @@ function getGenerationSourceContext(fields: any = {}) {
 }
 
 async function fetchTextFromUrl(url) {
+  assertFetchableUrl(url);
   const response = await fetch(url, {
     headers: {
       Accept: "text/html,text/plain,application/json;q=0.8,*/*;q=0.2",
@@ -308,8 +407,22 @@ async function fetchTextFromUrl(url) {
     throw new Error(`Source URL request failed with status ${response.status}`);
   }
 
-  const raw = await response.text();
+  assertFetchableUrl(response.url);
+  const contentLength = Number(response.headers.get("content-length"));
+  if (Number.isFinite(contentLength) && contentLength > maxFetchBytes) {
+    throw new Error(`Source URL response is too large. Limit is ${maxFetchBytes} bytes.`);
+  }
+
   const contentType = response.headers.get("content-type") || "";
+  if (contentType && !acceptedFetchContentTypes.some((accepted) => contentType.toLowerCase().startsWith(accepted))) {
+    throw new Error(`Source URL content type is not supported: ${contentType}`);
+  }
+
+  const raw = await response.text();
+  if (raw.length > maxFetchBytes) {
+    throw new Error(`Source URL response is too large. Limit is ${maxFetchBytes} characters.`);
+  }
+
   return {
     text: normalizeSourceText(/html/i.test(contentType) ? stripHtml(raw) : raw),
     title: /html/i.test(contentType) ? extractHtmlTitle(raw) : ""

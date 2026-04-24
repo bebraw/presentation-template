@@ -376,13 +376,23 @@ test("presentation sources are presentation-scoped and retrieved during local ge
     ].join(" "),
     title: "HTMX implementation notes"
   });
+  const duplicateSource = await createSource({
+    text: "HTMX swaps HTML fragments into the page so the server can own more interface behavior.",
+    title: "Duplicate HTMX notes"
+  });
 
   assert.ok(fs.existsSync(paths.sourcesFile), "sources should persist beside the active presentation state");
-  assert.equal(listSources().length, 1, "created source should be listed for the active presentation");
+  assert.equal(listSources().length, 2, "created sources should be listed for the active presentation");
 
-  const snippets = retrieveSourceSnippets("HTMX HTML fragments progressive enhancement", { limit: 2 });
+  const snippets = retrieveSourceSnippets("HTMX HTML fragments progressive enhancement", { limit: 4 });
   assert.equal(snippets[0].sourceId, source.id, "retrieval should return matching source snippets");
   assert.match(snippets[0].text, /HTML fragments/, "retrieved snippet should carry grounded source text");
+  assert.equal(
+    new Set(snippets.map((snippet) => snippet.text)).size,
+    snippets.length,
+    "retrieval should suppress duplicate chunks"
+  );
+  deleteSource(duplicateSource.id);
 
   const generated = await generateInitialPresentation({
     generationMode: "local",
@@ -404,8 +414,27 @@ test("presentation sources are presentation-scoped and retrieved during local ge
     "local generation should use retrieved source snippets as candidate content"
   );
 
+  const generatedWithoutActiveSources = await generateInitialPresentation({
+    generationMode: "local",
+    includeActiveSources: false,
+    objective: "Explain how HTMX handles HTML fragment swaps.",
+    targetSlideCount: 3,
+    title: "Intro to HTMX"
+  });
+  assert.equal(
+    generatedWithoutActiveSources.retrieval.snippets.length,
+    0,
+    "new presentation generation can opt out of previously active presentation sources"
+  );
+
+  await assert.rejects(
+    () => createSource({ url: "http://localhost/source.html" }),
+    /local host/,
+    "source URL fetching should reject local hosts before making a request"
+  );
+
   deleteSource(source.id);
-  assert.equal(listSources().length, 0, "deleted source should be removed from the active presentation");
+  assert.equal(listSources().length, 0, "deleted sources should be removed from the active presentation");
 });
 
 test("materials accept only bounded image data and keep paths presentation-scoped", () => {

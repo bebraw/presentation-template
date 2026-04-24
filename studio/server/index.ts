@@ -13,7 +13,15 @@ const { getDomPreviewState, renderDomPreviewDocument } = require("./services/dom
 const { getLlmStatus, verifyLlmConnection } = require("./services/llm/client.ts");
 const { createMaterialFromDataUrl, getMaterial, getMaterialFilePath, listMaterials } = require("./services/materials.ts");
 const { clientDir, outputDir } = require("./services/paths.ts");
-const { createPresentation, deletePresentation, duplicatePresentation, listPresentations, setActivePresentation } = require("./services/presentations.ts");
+const {
+  createPresentation,
+  deletePresentation,
+  duplicatePresentation,
+  listPresentations,
+  readPresentationDeckContext,
+  regeneratePresentationSlides,
+  setActivePresentation
+} = require("./services/presentations.ts");
 const { generateInitialPresentation } = require("./services/presentation-generation.ts");
 const { applyDeckStructurePlan, ensureState, getDeckContext, updateDeckFields, updateSlideContext } = require("./services/state.ts");
 const { archiveStructuredSlide, getSlide, getSlides, insertStructuredSlide, readSlideSource, readSlideSpec, writeSlideSource, writeSlideSpec } = require("./services/slides.ts");
@@ -434,6 +442,48 @@ async function handlePresentationDuplicate(req, res) {
     title: body.title
   });
   resetPresentationRuntime();
+  createJsonResponse(res, 200, createPresentationPayload({ presentation }));
+}
+
+async function handlePresentationRegenerate(req, res) {
+  const body = await readJsonBody(req);
+  if (typeof body.presentationId !== "string" || !body.presentationId) {
+    throw new Error("Expected presentationId");
+  }
+
+  const context = readPresentationDeckContext(body.presentationId);
+  const deck = context && context.deck ? context.deck : {};
+  const targetSlideCount = body.targetSlideCount
+    ?? (deck.lengthProfile && deck.lengthProfile.targetCount)
+    ?? body.targetCount;
+  resetPresentationRuntime();
+  const reportProgress = createWorkflowProgressReporter({
+    operation: "regenerate-presentation"
+  });
+  reportProgress({
+    message: "Regenerating presentation slides from saved context...",
+    stage: "generating-slides"
+  });
+  const generated = await generateInitialPresentation({
+    ...deck,
+    generationMode: body.generationMode || "auto",
+    targetSlideCount
+  });
+  const presentation = regeneratePresentationSlides(body.presentationId, generated.slideSpecs, {
+    outline: generated.outline,
+    targetSlideCount: generated.targetSlideCount
+  });
+  setActivePresentation(body.presentationId);
+  updateWorkflowState({
+    generation: generated.generation,
+    message: `Regenerated ${generated.slideSpecs.length} slide${generated.slideSpecs.length === 1 ? "" : "s"} from the saved presentation context.`,
+    ok: true,
+    operation: "regenerate-presentation",
+    stage: "completed",
+    status: "completed"
+  });
+  runtimeState.lastError = null;
+  publishRuntimeState();
   createJsonResponse(res, 200, createPresentationPayload({ presentation }));
 }
 
@@ -1386,6 +1436,11 @@ async function handleApi(req, res, url) {
 
   if (req.method === "POST" && url.pathname === "/api/presentations/duplicate") {
     await handlePresentationDuplicate(req, res);
+    return;
+  }
+
+  if (req.method === "POST" && url.pathname === "/api/presentations/regenerate") {
+    await handlePresentationRegenerate(req, res);
     return;
   }
 

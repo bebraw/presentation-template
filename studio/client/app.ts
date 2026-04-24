@@ -2328,6 +2328,7 @@ function renderPresentations() {
       </div>
       <div class="presentation-card-actions">
         <button class="secondary presentation-select-button" type="button">${active ? "Open" : "Select"}</button>
+        <button class="secondary presentation-regenerate-button" type="button">Regenerate</button>
         <button class="secondary presentation-duplicate-button" type="button">Duplicate</button>
         <button class="secondary presentation-delete-button" type="button"${presentations.length <= 1 ? " disabled" : ""}>Delete</button>
       </div>
@@ -2343,6 +2344,7 @@ function renderPresentations() {
     }
 
     const selectButton = card.querySelector(".presentation-select-button");
+    const regenerateButton = card.querySelector(".presentation-regenerate-button");
     const duplicateButton = card.querySelector(".presentation-duplicate-button");
     const deleteButton = card.querySelector(".presentation-delete-button");
 
@@ -2351,6 +2353,9 @@ function renderPresentations() {
     });
     duplicateButton.addEventListener("click", () => {
       duplicatePresentation(presentation, duplicateButton).catch((error) => window.alert(error.message));
+    });
+    regenerateButton.addEventListener("click", () => {
+      regeneratePresentation(presentation, regenerateButton).catch((error) => window.alert(error.message));
     });
     deleteButton.addEventListener("click", () => {
       deletePresentation(presentation, deleteButton).catch((error) => window.alert(error.message));
@@ -2842,6 +2847,31 @@ async function duplicatePresentation(presentation, button = null) {
       body: JSON.stringify({
         presentationId: presentation.id,
         title
+      }),
+      method: "POST"
+    });
+    resetPresentationSelection();
+    await refreshState();
+    setCurrentPage("studio");
+  } finally {
+    if (done) {
+      done();
+    }
+  }
+}
+
+async function regeneratePresentation(presentation, button = null) {
+  const confirmed = window.confirm(`Regenerate "${presentation.title || presentation.id}" from its saved context? This replaces the current slide files.`);
+  if (!confirmed) {
+    return;
+  }
+
+  const done = button ? setBusy(button, "Regenerating...") : null;
+  try {
+    await request("/api/presentations/regenerate", {
+      body: JSON.stringify({
+        generationMode: "auto",
+        presentationId: presentation.id
       }),
       method: "POST"
     });

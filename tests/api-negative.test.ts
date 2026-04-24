@@ -92,6 +92,10 @@ test("API reports malformed JSON and missing required identifiers", async () => 
     assert.equal(missingPresentationId.status, 500);
     assert.match(missingPresentationId.body.error, /Expected presentationId/);
 
+    const missingRegenerateId = await postJson(baseUrl, "/api/presentations/regenerate", {});
+    assert.equal(missingRegenerateId.status, 500);
+    assert.match(missingRegenerateId.body.error, /Expected presentationId/);
+
     const missingSlideId = await postJson(baseUrl, "/api/slides/delete", {});
     assert.equal(missingSlideId.status, 500);
     assert.match(missingSlideId.body.error, /Expected a slideId/);
@@ -121,6 +125,16 @@ test("API rejects unknown ids and invalid payload shapes without mutating active
     assert.equal(created.body.slides.length, 5);
     assert.equal(created.body.presentation.targetSlideCount, 5);
     createdPresentationIds.add(created.body.presentation.id);
+
+    const regenerated = await postJson(baseUrl, "/api/presentations/regenerate", {
+      generationMode: "local",
+      presentationId: created.body.presentation.id
+    });
+    assert.equal(regenerated.status, 200);
+    assert.equal(regenerated.body.presentations.activePresentationId, created.body.presentation.id);
+    assert.equal(regenerated.body.slides.length, 5);
+    assert.equal(regenerated.body.presentation.targetSlideCount, 5);
+    assert.match(regenerated.body.runtime.workflow.message, /Regenerated 5 slides/);
 
     const unknownPresentation = await postJson(baseUrl, "/api/presentations/select", {
       presentationId: "missing-presentation"

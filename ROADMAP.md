@@ -409,6 +409,7 @@ Current backend routes:
 - `POST /api/presentations`
 - `POST /api/presentations/select`
 - `POST /api/presentations/duplicate`
+- `POST /api/presentations/regenerate`
 - `POST /api/presentations/delete`
 - `POST /api/context`
 - `POST /api/context/deck-structure/apply`

@@ -83,6 +83,17 @@ function writeSlideFile(paths, index, slideSpec) {
   });
 }
 
+function removeSlideFiles(paths) {
+  const files = fs.existsSync(paths.slidesDir) ? fs.readdirSync(paths.slidesDir) : [];
+  files
+    .filter((fileName) => /^slide-\d+\.(json|js)$/.test(fileName))
+    .forEach((fileName) => {
+      fs.rmSync(path.join(paths.slidesDir, fileName), {
+        force: true
+      });
+    });
+}
+
 function normalizeTargetSlideCount(value) {
   const parsed = Number.parseInt(value, 10);
   if (!Number.isFinite(parsed)) {
@@ -383,6 +394,15 @@ function updatePresentationMeta(id, fields) {
   return next;
 }
 
+function readPresentationDeckContext(id) {
+  const paths = getPresentationPaths(id);
+  if (!fs.existsSync(paths.rootDir)) {
+    throw new Error(`Unknown presentation: ${id}`);
+  }
+
+  return readJson(paths.deckContextFile, createDefaultDeckContext({ id }));
+}
+
 function getUniquePresentationId(title) {
   const registry = ensurePresentationsState();
   const base = createSlug(title, "presentation");
@@ -495,6 +515,46 @@ function createPresentation(fields: any = {}) {
   return readPresentationSummary(id);
 }
 
+function regeneratePresentationSlides(id, slideSpecs, fields: any = {}) {
+  const safeId = assertPresentationId(id);
+  const registry = ensurePresentationsState();
+  if (!registry.presentations.some((entry) => entry.id === safeId)) {
+    throw new Error(`Unknown presentation: ${safeId}`);
+  }
+  if (!Array.isArray(slideSpecs) || !slideSpecs.length) {
+    throw new Error("Expected generated slide specs");
+  }
+
+  const paths = getPresentationPaths(safeId);
+  const currentContext = readJson(paths.deckContextFile, createDefaultDeckContext({ id: safeId }));
+  const currentDeck = currentContext && currentContext.deck ? currentContext.deck : {};
+  const timestamp = new Date().toISOString();
+  const targetCount = normalizeTargetSlideCount(
+    fields.targetSlideCount ?? fields.targetCount ?? (currentDeck.lengthProfile && currentDeck.lengthProfile.targetCount)
+  ) || slideSpecs.length;
+
+  removeSlideFiles(paths);
+  slideSpecs.forEach((slideSpec, index) => {
+    writeSlideFile(paths, index + 1, slideSpec);
+  });
+  writeJson(paths.deckContextFile, {
+    ...currentContext,
+    deck: {
+      ...currentDeck,
+      lengthProfile: {
+        activeCount: slideSpecs.length,
+        skippedCount: 0,
+        targetCount,
+        updatedAt: timestamp
+      },
+      outline: fields.outline || currentDeck.outline || ""
+    }
+  });
+  updatePresentationMeta(safeId, {});
+
+  return readPresentationSummary(safeId);
+}
+
 function duplicateDirectory(sourceDir, targetDir) {
   ensureAllowedDir(targetDir);
   fs.cpSync(sourceDir, targetDir, {
@@ -586,6 +646,8 @@ module.exports = {
   getActivePresentationId,
   getActivePresentationPaths,
   getPresentationPaths,
+  readPresentationDeckContext,
+  regeneratePresentationSlides,
   listPresentations,
   presentationsRegistryFile,
   setActivePresentation,

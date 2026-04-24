@@ -4,19 +4,19 @@
   "index": 4,
   "title": "A simple authoring loop",
   "eyebrow": "Workflow",
-  "summary": "Most work follows four steps, and each step leaves readable local state behind.",
+  "summary": "Most work follows four steps and leaves readable local state.",
   "signalsTitle": "Daily flow",
   "guardrailsTitle": "Why it stays calm",
   "signals": [
     {
       "id": "signal-plan",
       "title": "Plan",
-      "body": "Capture objective, outline, audience, constraints."
+      "body": "Capture objective, outline, audience."
     },
     {
       "id": "signal-edit",
       "title": "Edit",
-      "body": "Change text or JSON beside the preview."
+      "body": "Change text or JSON beside preview."
     },
     {
       "id": "signal-review",
@@ -33,17 +33,17 @@
     {
       "id": "guardrail-local",
       "title": "Local",
-      "body": "The studio runs against this repository."
+      "body": "Runs against this repository."
     },
     {
       "id": "guardrail-explicit",
       "title": "Explicit",
-      "body": "Buttons request bounded server actions."
+      "body": "Buttons request bounded actions."
     },
     {
       "id": "guardrail-inspect",
       "title": "Inspectable",
-      "body": "State remains readable on disk."
+      "body": "State stays readable on disk."
     }
   ]
 }

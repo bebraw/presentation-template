@@ -3,18 +3,18 @@
   "index": 2,
   "title": "What you will learn",
   "eyebrow": "Tour map",
-  "summary": "The deck follows the path a new author takes: choose a presentation, shape the content, review changes, and ship a checked archive.",
-  "note": "The same concepts apply whether you are editing the included demo or creating a new deck.",
+  "summary": "Choose a deck, ground it, review changes, and ship a checked archive.",
+  "note": "The flow works for the demo or a new deck.",
   "cards": [
     {
       "id": "toc-start",
       "title": "Start",
-      "body": "Pick or create a presentation, then give it useful constraints."
+      "body": "Pick or create a deck with constraints and sources."
     },
     {
       "id": "toc-author",
       "title": "Author",
-      "body": "Edit structured slides, attach materials, and keep context close."
+      "body": "Edit JSON, attach materials, keep context close."
     },
     {
       "id": "toc-ship",

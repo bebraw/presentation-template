@@ -2,48 +2,48 @@
   "type": "content",
   "layout": "callout",
   "index": 6,
-  "title": "Give the deck a brief",
+  "title": "Give the deck a brief and sources",
   "eyebrow": "Context",
-  "summary": "Before generating or reorganizing, write what the deck should do. Studio workflows reuse that context.",
+  "summary": "Before generation, state the goal and trusted material.",
   "signalsTitle": "Useful brief fields",
   "guardrailsTitle": "Where the brief helps",
   "signals": [
     {
       "id": "signal-audience",
       "title": "Audience",
-      "body": "Who needs to understand or decide?"
+      "body": "Who needs this?"
     },
     {
       "id": "signal-objective",
       "title": "Objective",
-      "body": "What should become clearer?"
+      "body": "What should change?"
     },
     {
-      "id": "signal-tone",
-      "title": "Tone",
-      "body": "Direct, technical, executive, tutorial."
+      "id": "signal-length",
+      "title": "Target length",
+      "body": "First-draft slide count."
     },
     {
-      "id": "signal-constraints",
-      "title": "Constraints",
-      "body": "Non-negotiables for words and visuals."
+      "id": "signal-sources",
+      "title": "Starter sources",
+      "body": "Notes, excerpts, URLs."
     }
   ],
   "guardrails": [
     {
       "id": "guardrail-planning",
       "title": "Planning",
-      "body": "Deck plans use the saved brief and outline."
+      "body": "Uses brief and outline."
     },
     {
       "id": "guardrail-variants",
-      "title": "Variants",
-      "body": "Generated options can respect the same intent."
+      "title": "Grounding",
+      "body": "Uses bounded snippets."
     },
     {
       "id": "guardrail-checks",
-      "title": "Checks",
-      "body": "Validation settings travel with the deck."
+      "title": "Scaling",
+      "body": "Skip, restore, add detail."
     }
   ]
 }

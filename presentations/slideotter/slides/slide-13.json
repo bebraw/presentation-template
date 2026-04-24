@@ -4,36 +4,36 @@
   "index": 13,
   "title": "Plan the deck above slide level",
   "eyebrow": "Deck Planning",
-  "summary": "Deck Planning is for outline, order, missing sections, and shared context, not single-slide edits.",
+  "summary": "Deck Planning handles outline, sources, length, and shared context.",
   "signalsTitle": "Plan candidate contents",
   "guardrailsTitle": "Promotion rules",
   "signals": [
     {
-      "id": "signal-outline",
-      "title": "Outline",
-      "body": "Proposed order and section roles."
+      "id": "signal-sources",
+      "title": "Sources",
+      "body": "Add notes, excerpts, URLs."
     },
     {
-      "id": "signal-actions",
-      "title": "Actions",
-      "body": "Insert, retitle, replace, archive, move."
+      "id": "signal-length",
+      "title": "Scale length",
+      "body": "Skip, restore, or add detail."
     },
     {
       "id": "signal-context",
       "title": "Context",
-      "body": "Optional brief, theme, or constraints patch."
+      "body": "Brief, theme, or constraints patch."
     },
     {
       "id": "signal-preview",
       "title": "Preview",
-      "body": "Before and proposed deck strips."
+      "body": "Current and proposed strips."
     }
   ],
   "guardrails": [
     {
-      "id": "guardrail-toggle",
-      "title": "Shared patch optional",
-      "body": "Apply structure without context changes."
+      "id": "guardrail-skip",
+      "title": "Skip, do not delete",
+      "body": "Skipped slides can return."
     },
     {
       "id": "guardrail-paths",

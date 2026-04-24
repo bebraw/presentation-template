@@ -4,7 +4,7 @@
   "index": 5,
   "title": "Choose a presentation first",
   "eyebrow": "Workspace",
-  "summary": "slideotter can manage more than one deck. The selector shows the first slide, name, and facts before you open it.",
+  "summary": "slideotter manages multiple local decks with visual first-slide cards.",
   "signalsTitle": "What a deck owns",
   "guardrailsTitle": "What you can do there",
   "signals": [
@@ -19,21 +19,21 @@
       "body": "Brief, outline, theme, checks."
     },
     {
-      "id": "signal-materials",
-      "title": "Materials",
-      "body": "Images and metadata beside the deck."
+      "id": "signal-sources",
+      "title": "Sources",
+      "body": "Notes, excerpts, URLs."
     },
     {
-      "id": "signal-state",
-      "title": "State",
-      "body": "Variants, history, local choices."
+      "id": "signal-materials",
+      "title": "Materials",
+      "body": "Images, credits, metadata."
     }
   ],
   "guardrails": [
     {
       "id": "guardrail-create",
       "title": "Create",
-      "body": "Describe constraints before the scaffold appears."
+      "body": "Set brief, length, sources."
     },
     {
       "id": "guardrail-duplicate",

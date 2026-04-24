@@ -4,7 +4,7 @@
   "index": 14,
   "title": "Use chat for bounded tasks",
   "eyebrow": "Assistant",
-  "summary": "The chat panel launches workflows. It can use selected slide text and call known operations.",
+  "summary": "In Slide Studio, chat launches bounded workflows and keeps history in a Log tab.",
   "signalsTitle": "Inputs it sees",
   "guardrailsTitle": "How it stays inspectable",
   "signals": [
@@ -16,7 +16,7 @@
     {
       "id": "signal-selection",
       "title": "Selection",
-      "body": "Optional text from the preview."
+      "body": "Text from the preview."
     },
     {
       "id": "signal-slide",
@@ -24,26 +24,26 @@
       "body": "Current slide id and context."
     },
     {
-      "id": "signal-mode",
-      "title": "Mode",
-      "body": "Local, LLM, or automatic generation."
+      "id": "signal-log",
+      "title": "Log",
+      "body": "Workflow events stay separate."
     }
   ],
   "guardrails": [
     {
       "id": "guardrail-actions",
       "title": "Known actions",
-      "body": "Chat triggers studio workflows."
+      "body": "Triggers studio workflows."
     },
     {
       "id": "guardrail-history",
-      "title": "Local history",
-      "body": "Sessions remain repo-local."
+      "title": "Studio only",
+      "body": "Hidden while browsing decks."
     },
     {
       "id": "guardrail-debug",
-      "title": "Debug panel",
-      "body": "Provider state is hidden until needed."
+      "title": "Provider popover",
+      "body": "LLM details live in nav."
     }
   ]
 }

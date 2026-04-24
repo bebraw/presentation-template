@@ -25,12 +25,14 @@ Then open `http://127.0.0.1:4173`.
 
 ## What You Can Do
 
-- Work on multiple local presentations.
-- Set a target presentation length while creating a deck, generate the initial slide set, then scale toward it without deleting skipped slides.
+- Work on multiple local presentations with visual first-slide cards.
+- Create a deck from a brief, target length, visual direction, starter sources, and optional starter images.
+- Scale a presentation semantically: shrink by skipping slides, grow by restoring skipped slides or adding detail slides.
 - Edit supported slides as readable JSON specs.
 - Preview the active deck while you work.
-- Attach image materials to slides, provide a starter image, or import open-license images through Openverse or Wikimedia Commons during new presentation setup.
-- Generate local or LLM-assisted candidates.
+- Attach image materials to slides, provide a starter image, or import sourced open-license images through Openverse or Wikimedia Commons.
+- Ground generation with presentation-scoped notes, excerpts, URLs, and image material metadata.
+- Generate local or LLM-assisted candidates with OpenAI, LM Studio, or OpenRouter.
 - Compare candidate slides and deck plans before applying them.
 - Validate layout, text, media references, workflow behavior, and rendered output.
 - Build a PDF and refresh an archive copy when you are ready to publish.
@@ -41,7 +43,7 @@ The browser studio is the main working surface.
 
 ![Browser studio screenshot](docs/assets/studio-home.png)
 
-It includes presentation selection, slide preview, thumbnail navigation, material upload, candidate review, deck planning, validation settings, and light/dark mode.
+It includes presentation selection, slide preview, thumbnail navigation, source and material workflows, candidate review, semantic length scaling, deck planning, validation settings, provider status, and light/dark mode.
 
 ## Included Demo
 

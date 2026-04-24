@@ -9,7 +9,7 @@ This document tracks the next practical steps for combining Slideotter's determi
 - Generation builds a lightweight retrieval query from deck fields and retrieves matching source chunks through keyword scoring.
 - Retrieved chunks are injected into initial or regenerated deck generation. Local generation can use them directly, and LLM generation receives them as grounded context.
 - Retrieved source metadata is returned by generation and surfaced in the collapsed generation diagnostics panel.
-- Starter images and presentation material metadata can be included in generation. The generator may attach a semantically matching existing material to a slide, but it does not perform web image search.
+- Starter images, presentation material metadata, and optional image-search imports can be included in generation. The generator may attach a semantically matching material to a slide and preserve provider, creator, license, and source metadata.
 
 ## Product Goals
 
@@ -70,7 +70,7 @@ This document tracks the next practical steps for combining Slideotter's determi
 ## Non-Goals For Now
 
 - No vector database until keyword retrieval proves insufficient.
-- No automatic web search as part of generation.
+- No open-ended automatic web search as part of generation; current image search is an explicit create-time material import with provider and restriction controls.
 - No mandatory citations on every generated slide.
 - No source management system beyond presentation-scoped notes, excerpts, and URLs.
 

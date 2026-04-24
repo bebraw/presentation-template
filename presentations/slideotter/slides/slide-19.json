@@ -4,29 +4,29 @@
   "index": 19,
   "title": "Good next improvements",
   "eyebrow": "Roadmap",
-  "summary": "The useful path is smoother real deck work, not a bigger generic editor.",
+  "summary": "The useful path is smoother grounded deck work, not a bigger generic editor.",
   "signalsTitle": "Likely next slices",
   "guardrailsTitle": "Scope to avoid",
   "signals": [
     {
-      "id": "signal-multi",
-      "title": "Multi-deck polish",
-      "body": "Harden selection, copying, deletion."
+      "id": "signal-grounding",
+      "title": "Grounding quality",
+      "body": "Tune retrieval against real decks."
     },
     {
-      "id": "signal-media",
-      "title": "Media depth",
-      "body": "Improve image-heavy slide checks."
+      "id": "signal-citations",
+      "title": "Citation discipline",
+      "body": "Decide when source-backed claims surface."
     },
     {
-      "id": "signal-planning",
-      "title": "Planning modes",
-      "body": "Clarify high-level transformations."
+      "id": "signal-app",
+      "title": "Appification",
+      "body": "Make slideotter runnable from any workspace."
     },
     {
       "id": "signal-docs",
       "title": "Onboarding",
-      "body": "Keep examples and guidance current."
+      "body": "Keep examples, screenshots, and archive current."
     }
   ],
   "guardrails": [

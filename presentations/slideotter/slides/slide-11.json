@@ -4,7 +4,7 @@
   "index": 11,
   "title": "Generate options, not surprises",
   "eyebrow": "Variants",
-  "summary": "Generation creates review candidates. It does not silently replace the current slide.",
+  "summary": "Generation creates review candidates, reports status, and keeps the current slide unchanged until Apply.",
   "signalsTitle": "What you control",
   "guardrailsTitle": "Apply discipline",
   "signals": [
@@ -20,13 +20,13 @@
     },
     {
       "id": "signal-provider",
-      "title": "How generated",
-      "body": "Use local, LLM, or auto mode."
+      "title": "Provider",
+      "body": "Use local rules, OpenAI, LM Studio, or OpenRouter."
     },
     {
-      "id": "signal-preview",
-      "title": "How reviewed",
-      "body": "Preview and diff every option."
+      "id": "signal-progress",
+      "title": "Progress",
+      "body": "LLM substatus shows requests and streamed chunks."
     }
   ],
   "guardrails": [
@@ -36,14 +36,14 @@
       "body": "Candidates stay outside slide files until applied."
     },
     {
-      "id": "guardrail-media",
-      "title": "Media preserved",
-      "body": "Image attachments carry forward."
+      "id": "guardrail-grounding",
+      "title": "Grounded",
+      "body": "Briefs, sources, and materials feed prompts."
     },
     {
-      "id": "guardrail-author",
-      "title": "Author decides",
-      "body": "Promotion always needs a command."
+      "id": "guardrail-shortening",
+      "title": "Shortened",
+      "body": "Overlong text can be rewritten semantically."
     }
   ]
 }

@@ -4,7 +4,7 @@
   "index": 9,
   "title": "Attach images as materials",
   "eyebrow": "Media",
-  "summary": "Upload images into the active presentation, describe them, then attach one when it belongs on a slide.",
+  "summary": "Upload, search, or provide starter images. Materials stay with the deck and carry source information.",
   "signalsTitle": "Material flow",
   "guardrailsTitle": "Practical rules",
   "signals": [
@@ -14,19 +14,19 @@
       "body": "Files land in presentations/<id>/materials."
     },
     {
-      "id": "signal-register",
-      "title": "Describe",
-      "body": "Metadata records alt text and caption."
+      "id": "signal-search",
+      "title": "Search",
+      "body": "Openverse and Wikimedia can import images."
+    },
+    {
+      "id": "signal-credit",
+      "title": "Credit",
+      "body": "Provider, creator, license, and source are saved."
     },
     {
       "id": "signal-attach",
       "title": "Attach",
-      "body": "JSON stores an optional media object."
-    },
-    {
-      "id": "signal-render",
-      "title": "Render",
-      "body": "The DOM places image and caption together."
+      "body": "Generation or the author can attach one image."
     }
   ],
   "guardrails": [
@@ -36,9 +36,9 @@
       "body": "Make the image understandable."
     },
     {
-      "id": "guardrail-size",
-      "title": "Small files",
-      "body": "Server limits keep the repo manageable."
+      "id": "guardrail-source",
+      "title": "Source line",
+      "body": "Captions keep visible credit close."
     },
     {
       "id": "guardrail-explicit",

@@ -19,6 +19,7 @@ const {
 const {
   applyDeckLengthPlan,
   planDeckLength,
+  planDeckLengthSemantic,
   restoreSkippedSlides
 } = require("../studio/server/services/deck-length.ts");
 const {
@@ -307,6 +308,84 @@ test("deck length scaling marks slides as skipped and restores them without losi
     [1, 2, 3, 4, 5, 6],
     "restored slides should be compacted back into a contiguous active order"
   );
+});
+
+test("semantic deck length planning can insert detail slides when growing", async () => {
+  llmEnvKeys.forEach((key) => {
+    delete process.env[key];
+  });
+  createCoveragePresentation("semantic-length-grow");
+
+  const plan = await planDeckLengthSemantic({
+    mode: "semantic",
+    targetCount: 5
+  });
+  const insertActions = plan.actions.filter((action) => action.action === "insert");
+
+  assert.equal(plan.currentCount, 3, "semantic growth planning should start from the active deck length");
+  assert.equal(plan.nextCount, 5, "semantic growth planning should converge on the target length");
+  assert.equal(insertActions.length, 2, "semantic growth should add new detail slide actions when there are no skipped slides to restore");
+  assert.ok(insertActions.every((action) => action.slideSpec && action.slideSpec.type === "content"), "insert actions should carry valid structured slide specs");
+
+  const applied = applyDeckLengthPlan({
+    actions: plan.actions,
+    targetCount: plan.targetCount
+  });
+
+  assert.equal(applied.insertedSlides, 2, "applying semantic growth should insert generated detail slides");
+  assert.equal(getSlides().length, 5, "semantic growth should increase the active deck length");
+});
+
+test("semantic deck length planning can use LLM slide-ranking for shrink decisions", async () => {
+  llmEnvKeys.forEach((key) => {
+    delete process.env[key];
+  });
+  process.env.STUDIO_LLM_PROVIDER = "lmstudio";
+  process.env.LMSTUDIO_MODEL = "semantic-coverage-model";
+  createCoveragePresentation("semantic-length-shrink");
+  insertStructuredSlide(createContentSlideSpec("Optional technical detail", 4), 3);
+
+  global.fetch = async (_url, init) => {
+    const requestBody = JSON.parse(init.body);
+    assert.equal(requestBody.response_format.json_schema.name, "semantic_deck_length_plan");
+    assert.match(requestBody.messages[1].content, /Optional technical detail/);
+
+    return createLmStudioStreamResponse({
+      actions: [
+        {
+          action: "skip",
+          confidence: "high",
+          keyPoints: [],
+          reason: "This is optional implementation detail and can return when the deck has more room.",
+          slideId: "slide-04",
+          summary: "",
+          targetIndex: 0,
+          title: "Optional technical detail"
+        }
+      ],
+      summary: "Skip one optional technical detail slide."
+    });
+  };
+
+  try {
+    const plan = await planDeckLengthSemantic({
+      mode: "semantic",
+      targetCount: 3
+    });
+
+    assert.equal(plan.actions.length, 1, "semantic shrink planning should return one skip action");
+    assert.equal(plan.actions[0].slideId, "slide-04", "semantic shrink planning should honor the ranked LLM skip candidate");
+    assert.match(plan.actions[0].reason, /optional implementation detail/i);
+  } finally {
+    global.fetch = originalFetch;
+    llmEnvKeys.forEach((key) => {
+      if (originalLlmEnv[key] === undefined) {
+        delete process.env[key];
+      } else {
+        process.env[key] = originalLlmEnv[key];
+      }
+    });
+  }
 });
 
 test("initial presentation generation repairs weak LLM plan labels and avoids fake references", async () => {

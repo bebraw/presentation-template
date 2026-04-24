@@ -92,6 +92,7 @@ POST /api/slides/restore-skipped
 Modes:
 
 - `balanced`: preserve the narrative arc and remove supporting detail first
+- `semantic`: rank shrink candidates by narrative necessity and grow by restoring skipped slides before inserting new detail slides
 - `front-loaded`: keep early context and conclusion, skip mid-deck detail first
 - `appendix-first`: skip appendix/reference-like slides first
 - `manual`: only calculate current count, skipped count, and selectable candidates
@@ -123,10 +124,11 @@ Applying a scale plan should:
 1. validate that target slides still exist
 2. mark selected skip actions as `skipped: true`
 3. restore selected restore actions by clearing `skipped`
-4. compact active slide indices
-5. update deck context with a length profile
-6. rebuild previews
-7. return updated state and a summary
+4. insert generated detail slide actions when semantic growth needs more space than restored skipped slides provide
+5. compact active slide indices
+6. update deck context with a length profile
+7. rebuild previews
+8. return updated state and a summary
 
 Deck context can store:
 
@@ -198,6 +200,17 @@ Provide a dedicated restore surface:
 - allow restoring to original position or end of deck
 
 Restoring should rebuild previews and update the length profile.
+
+## Semantic Scaling
+
+Status: implemented for the browser studio.
+
+Semantic scaling keeps the reversible skip/restore model, but uses slide meaning more directly:
+
+- Shrinking asks the configured LLM to rank active slides by narrative necessity when available, then falls back to deterministic scoring if the provider is unavailable or the plan is invalid.
+- Growing restores skipped slides first. If the target is still larger than the active deck, it inserts structured detail slides that add examples, tradeoffs, evidence, or walkthrough depth.
+- Generated insertion actions carry complete structured slide specs and still require the normal explicit apply step.
+- Deterministic local insertions remain available as an offline fallback, so scaling up can still add useful detail without an LLM.
 
 ## Validation And Build Behavior
 

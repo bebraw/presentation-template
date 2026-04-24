@@ -1844,10 +1844,14 @@ function renderDeckLengthPlan() {
     actions.forEach((action) => {
       const card = document.createElement("div");
       card.className = "variant-card deck-length-card";
+      const actionLabel = action.action === "restore" ? "Restore" : action.action === "insert" ? "Insert" : "Skip";
+      const metaTarget = action.action === "insert"
+        ? `new slide at ${action.targetIndex || "end"}`
+        : action.slideId;
       card.innerHTML = `
-        <p class="variant-kind">${escapeHtml(action.action === "restore" ? "Restore" : "Skip")}</p>
+        <p class="variant-kind">${escapeHtml(actionLabel)}</p>
         <strong>${escapeHtml(action.title || action.slideId)}</strong>
-        <span class="variant-meta">${escapeHtml(action.confidence || "medium")} confidence · ${escapeHtml(action.slideId)}</span>
+        <span class="variant-meta">${escapeHtml(action.confidence || "medium")} confidence · ${escapeHtml(metaTarget || "")}</span>
         <span>${escapeHtml(action.reason || "No reason recorded.")}</span>
       `;
       elements.deckLengthPlanList.appendChild(card);

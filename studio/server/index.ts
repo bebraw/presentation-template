@@ -26,7 +26,7 @@ const { generateInitialPresentation } = require("./services/presentation-generat
 const { applyDeckStructurePlan, ensureState, getDeckContext, updateDeckFields, updateSlideContext } = require("./services/state.ts");
 const { archiveStructuredSlide, getSlide, getSlides, insertStructuredSlide, readSlideSource, readSlideSpec, writeSlideSource, writeSlideSpec } = require("./services/slides.ts");
 const { createSource, deleteSource, listSources } = require("./services/sources.ts");
-const { applyDeckLengthPlan, planDeckLength, restoreSkippedSlides } = require("./services/deck-length.ts");
+const { applyDeckLengthPlan, planDeckLengthSemantic, restoreSkippedSlides } = require("./services/deck-length.ts");
 const { applyDeckStructureCandidate, drillWordingSlide, ideateDeckStructure, ideateStructureSlide, ideateThemeSlide, ideateSlide, redoLayoutSlide } = require("./services/operations.ts");
 const { validateDeck } = require("./services/validate.ts");
 const {
@@ -768,7 +768,7 @@ async function handleDeckStructureApply(req, res) {
 async function handleDeckLengthPlan(req, res) {
   const body = await readJsonBody(req);
   createJsonResponse(res, 200, {
-    plan: planDeckLength(body || {})
+    plan: await planDeckLengthSemantic(body || {})
   });
 }
 
@@ -785,7 +785,7 @@ async function handleDeckLengthApply(req, res) {
     updatedAt: new Date().toISOString()
   };
   updateWorkflowState({
-    message: `Scaled deck to ${result.lengthProfile.activeCount} active slide${result.lengthProfile.activeCount === 1 ? "" : "s"} with ${result.skippedSlides} skipped and ${result.restoredSlides} restored.`,
+    message: `Scaled deck to ${result.lengthProfile.activeCount} active slide${result.lengthProfile.activeCount === 1 ? "" : "s"} with ${result.skippedSlides} skipped, ${result.restoredSlides} restored, and ${result.insertedSlides || 0} inserted.`,
     ok: true,
     operation: "scale-deck-length",
     stage: "completed",
@@ -799,6 +799,7 @@ async function handleDeckLengthApply(req, res) {
     domPreview: getDomPreviewState(),
     lengthProfile: result.lengthProfile,
     previews,
+    insertedSlides: result.insertedSlides || 0,
     restoredSlides: result.restoredSlides,
     runtime: serializeRuntimeState(),
     skippedSlides: getSlides({ includeSkipped: true }).filter((slide) => slide.skipped && !slide.archived),

@@ -1,12 +1,15 @@
 const {
   compactActiveSlideIndices,
   getSlides,
+  insertStructuredSlide,
   readSlideSpec,
   restoreSkippedSlide,
   skipStructuredSlide
 } = require("./slides.ts");
+const { createStructuredResponse, getLlmStatus } = require("./llm/client.ts");
+const { validateSlideSpec } = require("./slide-specs/index.ts");
 
-const allowedModes = new Set(["appendix-first", "balanced", "front-loaded", "manual"]);
+const allowedModes = new Set(["appendix-first", "balanced", "front-loaded", "manual", "semantic"]);
 
 function normalizeMode(value) {
   return allowedModes.has(value) ? value : "balanced";
@@ -115,6 +118,139 @@ function reasonForSkip(slide, slideSpec, mode) {
   return "Balanced scaling keeps the deck arc while trimming secondary material.";
 }
 
+function sentence(value, fallback, limit = 14) {
+  const words = String(value || fallback || "")
+    .replace(/\s+/g, " ")
+    .trim()
+    .split(/\s+/)
+    .filter(Boolean);
+
+  return words.slice(0, limit).join(" ") || fallback;
+}
+
+function slugPart(value, fallback = "item") {
+  const slug = String(value || "")
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/^-+|-+$/g, "")
+    .slice(0, 28);
+
+  return slug || fallback;
+}
+
+function getSlidePlanningContext(slides) {
+  return slides.map((slide) => {
+    const slideSpec = readSlideSpec(slide.id);
+    const visibleText = [
+      slideSpec.eyebrow,
+      slideSpec.title,
+      slideSpec.summary,
+      slideSpec.note,
+      ...(slideSpec.cards || []).flatMap((item) => [item.title, item.body]),
+      ...(slideSpec.signals || []).flatMap((item) => [item.title, item.body]),
+      ...(slideSpec.guardrails || []).flatMap((item) => [item.title, item.body]),
+      ...(slideSpec.bullets || []).flatMap((item) => [item.title, item.body]),
+      ...(slideSpec.resources || []).flatMap((item) => [item.title, item.body])
+    ].filter(Boolean).join(" ");
+
+    return {
+      id: slide.id,
+      index: slide.index,
+      title: slide.title,
+      type: slideSpec.type,
+      role: classifySlide(slide, slideSpec),
+      summary: sentence(visibleText, slide.title, 34)
+    };
+  });
+}
+
+function createSemanticLengthSchema() {
+  return {
+    additionalProperties: false,
+    properties: {
+      actions: {
+        items: {
+          additionalProperties: false,
+          properties: {
+            action: { enum: ["skip", "insert"], type: "string" },
+            confidence: { enum: ["high", "medium", "low"], type: "string" },
+            keyPoints: {
+              items: {
+                additionalProperties: false,
+                properties: {
+                  body: { type: "string" },
+                  title: { type: "string" }
+                },
+                required: ["title", "body"],
+                type: "object"
+              },
+              maxItems: 4,
+              type: "array"
+            },
+            reason: { type: "string" },
+            slideId: { type: "string" },
+            summary: { type: "string" },
+            targetIndex: { type: "number" },
+            title: { type: "string" }
+          },
+          required: ["action", "confidence", "keyPoints", "reason", "slideId", "summary", "targetIndex", "title"],
+          type: "object"
+        },
+        type: "array"
+      },
+      summary: { type: "string" }
+    },
+    required: ["summary", "actions"],
+    type: "object"
+  };
+}
+
+function toSemanticContentSlideSpec(action, index) {
+  const title = sentence(action.title, `Expansion ${index}`, 8);
+  const prefix = slugPart(title, `expansion-${index}`);
+  const points = Array.isArray(action.keyPoints) ? action.keyPoints : [];
+  const filledPoints = points.slice(0, 4);
+
+  while (filledPoints.length < 4) {
+    filledPoints.push({
+      body: `${title} adds useful detail without changing the deck's main arc.`,
+      title: `Point ${filledPoints.length + 1}`
+    });
+  }
+
+  return validateSlideSpec({
+    eyebrow: "Expansion",
+    guardrails: [
+      {
+        body: "Keep the added detail tied to the surrounding slide sequence.",
+        id: `${prefix}-guardrail-1`,
+        title: "Sequence"
+      },
+      {
+        body: "Use the extra space for concrete explanation, not filler.",
+        id: `${prefix}-guardrail-2`,
+        title: "Depth"
+      },
+      {
+        body: "Preserve the original deck promise while expanding the topic.",
+        id: `${prefix}-guardrail-3`,
+        title: "Promise"
+      }
+    ],
+    guardrailsTitle: "Expansion rules",
+    layout: "standard",
+    signals: filledPoints.map((point, pointIndex) => ({
+      body: sentence(point.body, "Explain the added detail concretely.", 13),
+      id: `${prefix}-signal-${pointIndex + 1}`,
+      title: sentence(point.title, `Point ${pointIndex + 1}`, 4)
+    })),
+    signalsTitle: "Added depth",
+    summary: sentence(action.summary || action.reason, "Add one concrete layer of detail.", 18),
+    title,
+    type: "content"
+  });
+}
+
 function createSkipActions(activeSlides, targetCount, mode) {
   const skipCount = Math.max(0, activeSlides.length - targetCount);
   if (!skipCount) {
@@ -156,6 +292,195 @@ function createRestoreActions(skippedSlides, restoreCount) {
   }));
 }
 
+function createLocalInsertActions(activeSlides, insertCount) {
+  if (!insertCount) {
+    return [];
+  }
+
+  const finalIndex = activeSlides.length;
+  const insertionMax = Math.max(2, finalIndex);
+
+  return Array.from({ length: insertCount }, (_unused, actionIndex) => {
+    const targetIndex = Math.min(insertionMax, 2 + actionIndex);
+    const beforeSlide = activeSlides[Math.max(0, targetIndex - 2)];
+    const afterSlide = activeSlides[Math.min(activeSlides.length - 1, targetIndex - 1)];
+    const title = actionIndex === 0
+      ? "Concrete example"
+      : actionIndex === 1
+        ? "Tradeoff detail"
+        : `Added detail ${actionIndex + 1}`;
+    const reason = afterSlide && beforeSlide
+      ? `Adds semantic depth between "${beforeSlide.title}" and "${afterSlide.title}" instead of stretching existing slides.`
+      : "Adds one concrete detail slide instead of stretching existing slides.";
+
+    return {
+      action: "insert",
+      confidence: "medium",
+      reason,
+      slideSpec: toSemanticContentSlideSpec({
+        keyPoints: [
+          { body: `Show one concrete example that makes ${beforeSlide ? beforeSlide.title : "the prior idea"} easier to understand.`, title: "Example" },
+          { body: "Name the decision or behavior the audience should notice.", title: "Decision" },
+          { body: "Connect the example back to the presentation's main promise.", title: "Connection" },
+          { body: "Keep the added slide short enough to preserve pacing.", title: "Pacing" }
+        ],
+        reason,
+        summary: reason,
+        title
+      }, targetIndex),
+      targetIndex,
+      title
+    };
+  });
+}
+
+function normalizeSemanticSkipActions(actions, activeSlides, skipCount) {
+  const activeById: Map<string, any> = new Map(activeSlides.map((slide) => [slide.id, slide]));
+  const protectedIds = new Set([
+    activeSlides[0] && activeSlides[0].id,
+    activeSlides[activeSlides.length - 1] && activeSlides[activeSlides.length - 1].id
+  ].filter(Boolean));
+  const seen = new Set();
+  const normalized = [];
+
+  (Array.isArray(actions) ? actions : []).forEach((action) => {
+    if (!action || action.action !== "skip" || !activeById.has(action.slideId) || protectedIds.has(action.slideId) || seen.has(action.slideId)) {
+      return;
+    }
+
+    const slide = activeById.get(action.slideId);
+    seen.add(action.slideId);
+    normalized.push({
+      action: "skip",
+      confidence: action.confidence || "medium",
+      reason: sentence(action.reason, "Semantic length planning marked this as restorable supporting detail.", 18),
+      slideId: slide.id,
+      title: slide.title
+    });
+  });
+
+  if (normalized.length >= skipCount) {
+    return normalized.slice(0, skipCount);
+  }
+
+  const fallback = createSkipActions(activeSlides, activeSlides.length - skipCount, "balanced")
+    .filter((action) => !seen.has(action.slideId));
+  return [
+    ...normalized,
+    ...fallback
+  ].slice(0, skipCount);
+}
+
+function normalizeSemanticInsertActions(actions, activeSlides, insertCount) {
+  const normalized = [];
+  const maxIndex = Math.max(1, activeSlides.length + 1);
+
+  (Array.isArray(actions) ? actions : []).forEach((action, actionIndex) => {
+    if (!action || action.action !== "insert" || normalized.length >= insertCount) {
+      return;
+    }
+
+    const requestedIndex = Number(action.targetIndex);
+    const targetIndex = Number.isFinite(requestedIndex)
+      ? Math.min(Math.max(1, Math.round(requestedIndex)), maxIndex)
+      : Math.min(Math.max(2, actionIndex + 2), maxIndex);
+    normalized.push({
+      action: "insert",
+      confidence: action.confidence || "medium",
+      reason: sentence(action.reason, "Semantic length planning added detail where the deck had room to expand.", 18),
+      slideSpec: toSemanticContentSlideSpec(action, targetIndex),
+      targetIndex,
+      title: sentence(action.title, `Expansion ${actionIndex + 1}`, 8)
+    });
+  });
+
+  if (normalized.length >= insertCount) {
+    return normalized.slice(0, insertCount);
+  }
+
+  return [
+    ...normalized,
+    ...createLocalInsertActions(activeSlides, insertCount - normalized.length)
+  ];
+}
+
+async function createSemanticActions(activeSlides, targetCount, skippedSlides, options: any = {}) {
+  const currentCount = activeSlides.length;
+  const restoreCount = Math.max(0, Math.min(skippedSlides.length, targetCount - currentCount));
+  const restoreActions = createRestoreActions(skippedSlides, restoreCount);
+  const insertCount = Math.max(0, targetCount - currentCount - restoreActions.length);
+  const skipCount = Math.max(0, currentCount - targetCount);
+  const llmStatus = getLlmStatus();
+
+  if (!llmStatus.available) {
+    return targetCount < currentCount
+      ? createSkipActions(activeSlides, targetCount, "balanced")
+      : [
+          ...restoreActions,
+          ...createLocalInsertActions(activeSlides, insertCount)
+        ];
+  }
+
+  try {
+    const result = await createStructuredResponse({
+      developerPrompt: [
+        "You plan reversible presentation length changes.",
+        "For shrinking, choose slides that are least essential to the narrative and can be skipped temporarily.",
+        "For growing, propose new concrete detail slides that add examples, tradeoffs, evidence, or walkthrough depth.",
+        "Do not delete content. Do not rewrite existing slides. Keep cover and final handoff slides unless absolutely necessary.",
+        "Return only the requested action count."
+      ].join("\n"),
+      maxOutputTokens: Math.max(900, (skipCount + insertCount) * 220),
+      onProgress: options.onProgress,
+      schema: createSemanticLengthSchema(),
+      schemaName: "semantic_deck_length_plan",
+      userPrompt: JSON.stringify({
+        activeSlides: getSlidePlanningContext(activeSlides),
+        actionCounts: {
+          insert: insertCount,
+          restore: restoreActions.length,
+          skip: skipCount
+        },
+        currentCount,
+        targetCount,
+        task: targetCount < currentCount
+          ? `Choose exactly ${skipCount} active slides to skip.`
+          : `Propose exactly ${insertCount} new slides to insert after restoring ${restoreActions.length} skipped slides.`
+      }, null, 2)
+    });
+
+    return targetCount < currentCount
+      ? normalizeSemanticSkipActions(result.data && result.data.actions, activeSlides, skipCount)
+      : [
+          ...restoreActions,
+          ...normalizeSemanticInsertActions(result.data && result.data.actions, activeSlides, insertCount)
+        ];
+  } catch (error) {
+    return targetCount < currentCount
+      ? createSkipActions(activeSlides, targetCount, "balanced")
+      : [
+          ...restoreActions,
+          ...createLocalInsertActions(activeSlides, insertCount)
+        ];
+  }
+}
+
+function summarizeActions(actions) {
+  const skipped = actions.filter((entry) => entry.action === "skip").length;
+  const restored = actions.filter((entry) => entry.action === "restore").length;
+  const inserted = actions.filter((entry) => entry.action === "insert").length;
+
+  if (!actions.length) {
+    return "The active deck already matches the requested length.";
+  }
+
+  return [
+    skipped ? `${skipped} slide${skipped === 1 ? "" : "s"} to skip` : "",
+    restored ? `${restored} to restore` : "",
+    inserted ? `${inserted} new detail slide${inserted === 1 ? "" : "s"} to insert` : ""
+  ].filter(Boolean).join(", ") + ".";
+}
+
 function planDeckLength(options: any = {}) {
   const activeSlides = getSlides();
   const skippedSlides = getSkippedSlides();
@@ -167,7 +492,8 @@ function planDeckLength(options: any = {}) {
     : createRestoreActions(skippedSlides, restoreCount);
   const nextCount = activeSlides.length
     - actions.filter((entry) => entry.action === "skip").length
-    + actions.filter((entry) => entry.action === "restore").length;
+    + actions.filter((entry) => entry.action === "restore").length
+    + actions.filter((entry) => entry.action === "insert").length;
 
   return {
     actions,
@@ -182,9 +508,41 @@ function planDeckLength(options: any = {}) {
       title: slide.title
     })),
     skippedCount: skippedSlides.length,
-    summary: actions.length
-      ? `${actions.filter((entry) => entry.action === "skip").length} slide${actions.filter((entry) => entry.action === "skip").length === 1 ? "" : "s"} to skip, ${actions.filter((entry) => entry.action === "restore").length} to restore.`
-      : "The active deck already matches the requested length.",
+    summary: summarizeActions(actions),
+    targetCount
+  };
+}
+
+async function planDeckLengthSemantic(options: any = {}) {
+  const activeSlides = getSlides();
+  const skippedSlides = getSkippedSlides();
+  const targetCount = normalizeTargetCount(options.targetCount, activeSlides.length);
+  const mode = normalizeMode(options.mode);
+
+  if (mode !== "semantic") {
+    return planDeckLength(options);
+  }
+
+  const actions = await createSemanticActions(activeSlides, targetCount, skippedSlides, options);
+  const nextCount = activeSlides.length
+    - actions.filter((entry) => entry.action === "skip").length
+    + actions.filter((entry) => entry.action === "restore").length
+    + actions.filter((entry) => entry.action === "insert").length;
+
+  return {
+    actions,
+    currentCount: activeSlides.length,
+    mode,
+    nextCount,
+    restoreCandidates: options.includeSkippedForRestore === false ? [] : skippedSlides.map((slide) => ({
+      previousIndex: slide.skipMeta && slide.skipMeta.previousIndex,
+      reason: slide.skipReason || "",
+      slideId: slide.id,
+      skippedAt: slide.skipMeta && slide.skipMeta.skippedAt,
+      title: slide.title
+    })),
+    skippedCount: skippedSlides.length,
+    summary: summarizeActions(actions),
     targetCount
   };
 }
@@ -212,8 +570,15 @@ function applyDeckLengthPlan(options: any = {}) {
       }).actions;
   let restoredSlides = 0;
   let skippedSlides = 0;
+  let insertedSlides = 0;
 
   actions.forEach((entry) => {
+    if (entry && entry.action === "insert" && entry.slideSpec) {
+      insertStructuredSlide(entry.slideSpec, entry.targetIndex);
+      insertedSlides += 1;
+      return;
+    }
+
     if (!entry || typeof entry.slideId !== "string" || !entry.slideId) {
       return;
     }
@@ -230,13 +595,16 @@ function applyDeckLengthPlan(options: any = {}) {
     if (entry.action === "restore") {
       restoreSkippedSlide(entry.slideId);
       restoredSlides += 1;
+      return;
     }
+
   });
 
   compactActiveSlideIndices();
 
   return {
     actions,
+    insertedSlides,
     lengthProfile: createLengthProfile(targetCount),
     restoredSlides,
     skippedSlides,
@@ -277,5 +645,6 @@ function restoreSkippedSlides(options: any = {}) {
 module.exports = {
   applyDeckLengthPlan,
   planDeckLength,
+  planDeckLengthSemantic,
   restoreSkippedSlides
 };

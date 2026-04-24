@@ -39,7 +39,7 @@ The browser studio baseline is complete.
 - Deck checks are available from a compact masthead control that opens an inspectable check console and focused report without becoming a primary workspace page.
 - Check settings and rule severity overrides use explicit show/hide disclosure controls so advanced validation configuration stays discoverable without being visible by default.
 - Deck planning is consolidated into a compact planning console with palette controls, design guardrails, and deck-plan details hidden until inspection.
-- Deck Planning can scale the active presentation to a target slide count through a deterministic keep/skip/restore plan; scaling down marks slide specs as skipped rather than deleting them, and skipped slides can be restored individually or in bulk.
+- Deck Planning can scale the active presentation to a target slide count through deterministic or semantic keep/skip/restore/insert plans; scaling down marks slide specs as skipped rather than deleting them, skipped slides can be restored individually or in bulk, and semantic growth can add structured detail slides when restored slides are not enough.
 - Local deck-planning candidates carry shared deck-context patches, use presentation-scoped path labels, and generate content scaffolds with title/body evidence items rather than placeholder metric bars.
 - Deck-plan diffs report presentation-scoped slide paths so review copy matches the active storage layout.
 - Slide candidate review and visual comparison share one workspace: direct-select rows drive the adjacent current-versus-candidate preview and diff pane, while the compare pane stays hidden until candidates exist.

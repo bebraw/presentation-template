@@ -637,6 +637,7 @@ async function generateInitialPresentation(fields: any = {}) {
       responseId: response ? response.responseId : null
     },
     retrieval: {
+      budget: sourceContext.budget || null,
       snippets: sourceContext.snippets.map((snippet) => ({
         chunkIndex: snippet.chunkIndex,
         sourceId: snippet.sourceId,

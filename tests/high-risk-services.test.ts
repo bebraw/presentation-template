@@ -35,6 +35,7 @@ const {
 const {
   createSource,
   deleteSource,
+  getGenerationSourceContext,
   listSources,
   retrieveSourceSnippets
 } = require("../studio/server/services/sources.ts");
@@ -391,6 +392,27 @@ test("presentation sources are presentation-scoped and retrieved during local ge
     new Set(snippets.map((snippet) => snippet.text)).size,
     snippets.length,
     "retrieval should suppress duplicate chunks"
+  );
+
+  const budgetedContext = getGenerationSourceContext({
+    includeActiveSources: false,
+    presentationSources: [{
+      text: Array.from({ length: 10 }, (_unused, index) => (
+        `HTMX fragment budget ${index + 1}. ${"Detailed retrieval material for prompt budgeting. ".repeat(18)}`
+      )).join("\n\n"),
+      title: "Budget source"
+    }],
+    title: "HTMX fragment budget"
+  });
+  assert.ok(budgetedContext.snippets.length <= 6, "generation source context should cap prompt snippets");
+  assert.ok(budgetedContext.budget.promptCharCount <= budgetedContext.budget.maxPromptChars, "generation source context should cap prompt source characters");
+  assert.ok(
+    budgetedContext.snippets.every((snippet) => snippet.text.length <= budgetedContext.budget.maxSnippetChars),
+    "generation source context should cap each snippet excerpt"
+  );
+  assert.ok(
+    budgetedContext.budget.truncatedSnippetCount > 0 || budgetedContext.budget.omittedSnippetCount > 0,
+    "generation source context should report source prompt budget pressure"
   );
   deleteSource(duplicateSource.id);
 

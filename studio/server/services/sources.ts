@@ -10,6 +10,9 @@ const {
 const maxSourceChars = 60000;
 const maxFetchBytes = 256000;
 const maxChunkChars = 900;
+const maxPromptSourceChars = 3200;
+const maxPromptSnippetChars = 550;
+const maxPromptSnippets = 6;
 const acceptedFetchContentTypes = [
   "application/json",
   "application/xhtml+xml",
@@ -351,6 +354,65 @@ function retrieveSourceSnippets(query, options: any = {}) {
   return results;
 }
 
+function limitSnippetText(value, remainingChars) {
+  const normalized = normalizeWhitespace(value);
+  const maxChars = Math.min(maxPromptSnippetChars, Math.max(0, remainingChars));
+  if (normalized.length <= maxChars) {
+    return {
+      text: normalized,
+      truncated: false
+    };
+  }
+
+  const clipped = normalized.slice(0, maxChars).trimEnd();
+  return {
+    text: clipped,
+    truncated: true
+  };
+}
+
+function applySourcePromptBudget(snippets) {
+  const budgeted = [];
+  let remainingChars = maxPromptSourceChars;
+  let truncatedSnippetCount = 0;
+
+  snippets.slice(0, maxPromptSnippets).forEach((snippet) => {
+    if (remainingChars <= 0) {
+      return;
+    }
+
+    const limited = limitSnippetText(snippet.text, remainingChars);
+    if (!limited.text) {
+      return;
+    }
+
+    if (limited.truncated) {
+      truncatedSnippetCount += 1;
+    }
+
+    remainingChars -= limited.text.length;
+    budgeted.push({
+      ...snippet,
+      text: limited.text
+    });
+  });
+
+  return {
+    budget: {
+      maxPromptChars: maxPromptSourceChars,
+      maxSnippetChars: maxPromptSnippetChars,
+      omittedSnippetCount: Math.max(0, snippets.length - budgeted.length),
+      promptCharCount: budgeted.reduce((total, snippet) => total + snippet.text.length, 0),
+      retrievedSnippetCount: snippets.length,
+      snippetLimit: maxPromptSnippets,
+      sourceCount: new Set(budgeted.map((snippet) => snippet.sourceId || snippet.title || snippet.url || "").filter(Boolean)).size,
+      truncatedSnippetCount,
+      usedSnippetCount: budgeted.length
+    },
+    snippets: budgeted
+  };
+}
+
 function buildRetrievalQuery(fields: any = {}) {
   return [
     fields.title,
@@ -378,18 +440,20 @@ function getGenerationSourceContext(fields: any = {}) {
     ...normalizeInlineSources(fields.presentationSourceText),
     ...normalizeInlineSources(fields.presentationSources)
   ];
-  const snippets = retrieveSourceSnippets(buildRetrievalQuery(fields), {
+  const retrievedSnippets = retrieveSourceSnippets(buildRetrievalQuery(fields), {
     includeActiveSources: fields.includeActiveSources !== false,
-    limit: 6,
+    limit: maxPromptSnippets * 2,
     queryFields: buildRetrievalQueryFields(fields),
     sources: inlineSources
   });
+  const promptPack = applySourcePromptBudget(retrievedSnippets);
   return {
-    promptText: snippets.map((snippet, index) => [
+    budget: promptPack.budget,
+    promptText: promptPack.snippets.map((snippet, index) => [
       `[${index + 1}] ${snippet.title}${snippet.url ? ` (${snippet.url})` : ""}`,
       snippet.text
     ].join("\n")).join("\n\n"),
-    snippets
+    snippets: promptPack.snippets
   };
 }
 

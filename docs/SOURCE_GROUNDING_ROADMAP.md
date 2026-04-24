@@ -53,6 +53,7 @@ This document tracks the next practical steps for combining Slideotter's determi
    - Keep fetched text normalized and bounded so prompts remain predictable.
 
 7. **Token Budget Controls**
+   - Status: implemented for the current source prompt pack.
    - Cap retrieved snippets and excerpt sizes deliberately.
    - Report how many snippets and sources were used by a generation.
    - Prefer transparent truncation over hidden prompt bloat.

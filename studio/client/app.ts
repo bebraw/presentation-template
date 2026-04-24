@@ -1551,9 +1551,14 @@ function renderSourceRetrieval() {
   }
 
   if (elements.sourceRetrievalSummary) {
+    const budget = retrieval && retrieval.budget ? retrieval.budget : {};
     const sourceKeys = new Set(snippets.map((snippet) => snippet.sourceId || snippet.title || snippet.url || "").filter(Boolean));
-    const sourceCount = sourceKeys.size || snippets.length;
-    elements.sourceRetrievalSummary.textContent = `${snippets.length} source snippet${snippets.length === 1 ? "" : "s"} from ${sourceCount} source${sourceCount === 1 ? "" : "s"} informed the last generation.`;
+    const sourceCount = Number.isFinite(Number(budget.sourceCount)) ? Number(budget.sourceCount) : sourceKeys.size || snippets.length;
+    const promptChars = Number.isFinite(Number(budget.promptCharCount)) ? Number(budget.promptCharCount) : null;
+    const omittedCount = Number.isFinite(Number(budget.omittedSnippetCount)) ? Number(budget.omittedSnippetCount) : 0;
+    const budgetLabel = promptChars === null ? "" : `, ${promptChars} source chars`;
+    const omittedLabel = omittedCount > 0 ? `, ${omittedCount} omitted by budget` : "";
+    elements.sourceRetrievalSummary.textContent = `${snippets.length} source snippet${snippets.length === 1 ? "" : "s"} from ${sourceCount} source${sourceCount === 1 ? "" : "s"} informed the last generation${budgetLabel}${omittedLabel}.`;
   }
 
   elements.sourceRetrievalList.innerHTML = snippets.map((snippet, index) => {

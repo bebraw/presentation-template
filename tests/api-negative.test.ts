@@ -114,6 +114,33 @@ function createGeneratedPlan(title, slideCount) {
   };
 }
 
+function createGeneratedDeckPlan(title, slideCount) {
+  const slides = Array.from({ length: slideCount }, (_unused, index) => {
+    const isFirst = index === 0;
+    const isLast = index === slideCount - 1 && slideCount > 1;
+    const role = isFirst ? "opening" : isLast ? "handoff" : ["context", "concept", "mechanics", "example", "tradeoff"][(index - 1) % 5];
+    const label = `${title} ${index + 1}`;
+
+    return {
+      intent: `${label} has a distinct planning intent.`,
+      keyMessage: `${label} carries one clear message.`,
+      role,
+      sourceNeed: `${label} should use supplied context when relevant.`,
+      title: label,
+      visualNeed: `${label} may use fitting supplied imagery.`
+    };
+  });
+
+  return {
+    audience: "API coverage",
+    language: "English",
+    narrativeArc: `${title} moves from context to action.`,
+    outline: slides.map((slide, index) => `${index + 1}. ${slide.title}`).join("\n"),
+    slides,
+    thesis: `${title} should verify API generation behavior.`
+  };
+}
+
 function configureMockLlm(baseUrl) {
   llmEnvKeys.forEach((key) => {
     delete process.env[key];
@@ -128,6 +155,10 @@ function configureMockLlm(baseUrl) {
 
     if (/\/chat\/completions$/.test(urlText)) {
       const requestBody = JSON.parse(init.body);
+      if (requestBody.response_format.json_schema.name === "initial_presentation_deck_plan") {
+        return createLmStudioStreamResponse(createGeneratedDeckPlan("API Negative", 5));
+      }
+
       assert.equal(requestBody.response_format.json_schema.name, "initial_presentation_plan");
       return createLmStudioStreamResponse(createGeneratedPlan("API Negative", 5));
     }

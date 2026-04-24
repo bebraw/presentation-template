@@ -228,6 +228,33 @@ function createGeneratedPlan(title, slideCount, options: any = {}) {
   };
 }
 
+function createGeneratedDeckPlan(title, slideCount) {
+  const slides = Array.from({ length: slideCount }, (_unused, index) => {
+    const isFirst = index === 0;
+    const isLast = index === slideCount - 1 && slideCount > 1;
+    const role = isFirst ? "opening" : isLast ? "handoff" : ["context", "concept", "mechanics", "example", "tradeoff"][(index - 1) % 5];
+    const label = `${title} ${index + 1}`;
+
+    return {
+      intent: `${label} has a distinct planning intent.`,
+      keyMessage: `${label} carries one clear generated message.`,
+      role,
+      sourceNeed: `${label} should use supplied context when relevant.`,
+      title: label,
+      visualNeed: `${label} may use fitting supplied imagery.`
+    };
+  });
+
+  return {
+    audience: "Coverage audience",
+    language: "English",
+    narrativeArc: `${title} moves from context to action.`,
+    outline: slides.map((slide, index) => `${index + 1}. ${slide.title}`).join("\n"),
+    slides,
+    thesis: `${title} should exercise phased generation.`
+  };
+}
+
 test.after(() => {
   cleanupCoveragePresentations();
   global.fetch = originalFetch;
@@ -538,6 +565,10 @@ test("initial presentation generation requires complete LLM-visible plans", asyn
   global.fetch = async (url, init) => {
     assert.match(String(url), /\/chat\/completions$/);
     const requestBody = JSON.parse(init.body);
+    if (requestBody.response_format.json_schema.name === "initial_presentation_deck_plan") {
+      return createLmStudioStreamResponse(createGeneratedDeckPlan("Intro to HTMX", fields.targetSlideCount));
+    }
+
     assert.equal(requestBody.response_format.json_schema.name, "initial_presentation_plan");
     return createLmStudioStreamResponse(createGeneratedPlan("Intro to HTMX", fields.targetSlideCount));
   };
@@ -631,17 +662,26 @@ test("presentation sources are presentation-scoped and retrieved during LLM gene
   global.fetch = async (url, init) => {
     assert.match(String(url), /\/chat\/completions$/);
     const requestBody = JSON.parse(init.body);
-    assert.equal(requestBody.response_format.json_schema.name, "initial_presentation_plan");
     generationRequestCount += 1;
+    const schemaName = requestBody.response_format.json_schema.name;
 
-    if (generationRequestCount === 1) {
+    if (generationRequestCount <= 2) {
       assert.match(requestBody.messages[1].content, /HTML fragments/);
+    } else {
+      assert.doesNotMatch(requestBody.messages[1].content, /HTML fragments/);
+    }
+
+    if (schemaName === "initial_presentation_deck_plan") {
+      return createLmStudioStreamResponse(createGeneratedDeckPlan("Intro to HTMX", generationRequestCount <= 2 ? 5 : 3));
+    }
+
+    assert.equal(schemaName, "initial_presentation_plan");
+    if (generationRequestCount <= 2) {
       return createLmStudioStreamResponse(createGeneratedPlan("Intro to HTMX", 5, {
         sourceText: "HTMX swaps HTML fragments into the page."
       }));
     }
 
-    assert.doesNotMatch(requestBody.messages[1].content, /HTML fragments/);
     return createLmStudioStreamResponse(createGeneratedPlan("Intro to HTMX", 3));
   };
 
@@ -709,6 +749,10 @@ test("LLM presentation generation semantically shortens overlong visible text", 
     assert.match(String(url), /\/chat\/completions$/);
     const requestBody = JSON.parse(init.body);
     requestCount += 1;
+
+    if (requestBody.response_format.json_schema.name === "initial_presentation_deck_plan") {
+      return createLmStudioStreamResponse(createGeneratedDeckPlan("How to Make Presentations", 3));
+    }
 
     if (requestBody.response_format.json_schema.name === "initial_presentation_plan") {
       return createLmStudioStreamResponse({
@@ -797,7 +841,7 @@ test("LLM presentation generation semantically shortens overlong visible text", 
       ...(slideSpec.bullets || []).flatMap((item) => [item.title, item.body])
     ].filter(Boolean));
 
-    assert.equal(requestCount, 2, "LLM generation should request a semantic repair pass after the plan");
+    assert.equal(requestCount, 3, "LLM generation should request deck planning, slide drafting, and semantic repair");
     assert.equal(repairRequestSeen, true, "semantic repair prompt should receive the original overlong text");
     assert.ok(visibleText.some((value) => value === "Run three timed rehearsals before presenting."), "semantic repair should preserve meaning in a shorter field");
     assert.ok(!visibleText.some((value) => /Practice your talk three times while timing each run to stay$/i.test(String(value))), "semantic repair should avoid deterministic clipped fragments");
@@ -825,7 +869,45 @@ test("LLM presentation generation preserves non-English visible structure", asyn
   global.fetch = async (_url, init) => {
     const requestBody = JSON.parse(init.body);
     requestCount += 1;
-    assert.equal(requestBody.response_format.json_schema.name, "initial_presentation_plan");
+    const schemaName = requestBody.response_format.json_schema.name;
+    if (schemaName === "initial_presentation_deck_plan") {
+      assert.match(requestBody.messages[0].content, /Use the language requested or implied by the brief/);
+      return createLmStudioStreamResponse({
+        audience: "suomenkieliset esiintyjät",
+        language: "suomi",
+        narrativeArc: "Esitys kulkee lupauksesta menetelmään ja seuraavaan toimeen.",
+        outline: "1. Alku\n2. Menetelmä\n3. Seuraavat askeleet",
+        slides: [
+          {
+            intent: "Avaa aihe kuulijan hyödyn kautta.",
+            keyMessage: "Hyvä esitys alkaa selkeällä lupauksella.",
+            role: "opening",
+            sourceNeed: "Käytä käyttäjän tavoitetta.",
+            title: "Hyvä esitys",
+            visualNeed: "Ei välttämätöntä kuvaa."
+          },
+          {
+            intent: "Näytä rakenteen käytännön merkitys.",
+            keyMessage: "Rakenne pitää viestin koossa.",
+            role: "concept",
+            sourceNeed: "Käytä briefin rajausta.",
+            title: "Rakenna selkeä polku",
+            visualNeed: "Yksinkertainen rakennekuva voi auttaa."
+          },
+          {
+            intent: "Sulje yhdellä seuraavalla toimella.",
+            keyMessage: "Kuulijan pitää tietää mitä tehdä seuraavaksi.",
+            role: "handoff",
+            sourceNeed: "Käytä tavoitetta.",
+            title: "Seuraava askel",
+            visualNeed: "Ei välttämätöntä kuvaa."
+          }
+        ],
+        thesis: "Hyvä esitys auttaa kuulijaa toimimaan."
+      });
+    }
+
+    assert.equal(schemaName, "initial_presentation_plan");
     assert.match(requestBody.messages[0].content, /Use the language requested or implied by the brief/);
 
     return createLmStudioStreamResponse({
@@ -912,7 +994,7 @@ test("LLM presentation generation preserves non-English visible structure", asyn
       ...(slideSpec.resources || []).flatMap((item) => [item.title, item.body])
     ].filter(Boolean));
 
-    assert.equal(requestCount, 1, "non-English plans with usable visible text should not need fallback repair");
+    assert.equal(requestCount, 2, "non-English plans should use deck planning and slide drafting without repair");
     assert.ok(visibleText.some((value) => value === "Pääkohdat"), "LLM-supplied labels should reach slides");
     assert.ok(
       !visibleText.some((value) => /Opening|Close|Key points|Useful cues|Drafted|Checks|Reference lead/i.test(String(value))),
@@ -980,9 +1062,13 @@ test("presentation generation can attach semantically matching image materials",
   global.fetch = async (url, init) => {
     assert.match(String(url), /\/chat\/completions$/);
     const requestBody = JSON.parse(init.body);
-    assert.equal(requestBody.response_format.json_schema.name, "initial_presentation_plan");
-    materialGenerationRequestCount += 1;
+    const schemaName = requestBody.response_format.json_schema.name;
+    if (schemaName === "initial_presentation_deck_plan") {
+      return createLmStudioStreamResponse(createGeneratedDeckPlan("HTMX request flow", 4));
+    }
 
+    assert.equal(schemaName, "initial_presentation_plan");
+    materialGenerationRequestCount += 1;
     return createLmStudioStreamResponse(createGeneratedPlan("HTMX request flow", 4, {
       mediaMaterialId: materialGenerationRequestCount === 1 ? material.id : "",
       mediaSlideIndex: 1

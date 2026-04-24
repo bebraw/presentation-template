@@ -388,6 +388,42 @@ function createPlanSchema(slideCount) {
   };
 }
 
+function createDeckPlanSchema(slideCount) {
+  return {
+    additionalProperties: false,
+    properties: {
+      audience: { type: "string" },
+      language: { type: "string" },
+      narrativeArc: { type: "string" },
+      outline: { type: "string" },
+      slides: {
+        items: {
+          additionalProperties: false,
+          properties: {
+            intent: { type: "string" },
+            keyMessage: { type: "string" },
+            role: {
+              enum: ["opening", "context", "concept", "mechanics", "example", "tradeoff", "reference", "handoff"],
+              type: "string"
+            },
+            sourceNeed: { type: "string" },
+            title: { type: "string" },
+            visualNeed: { type: "string" }
+          },
+          required: ["title", "role", "intent", "keyMessage", "sourceNeed", "visualNeed"],
+          type: "object"
+        },
+        maxItems: slideCount,
+        minItems: slideCount,
+        type: "array"
+      },
+      thesis: { type: "string" }
+    },
+    required: ["language", "audience", "thesis", "narrativeArc", "outline", "slides"],
+    type: "object"
+  };
+}
+
 function createSemanticRepairSchema() {
   return {
     additionalProperties: false,
@@ -599,6 +635,48 @@ function normalizePlanRole(role, index, total) {
   }
 
   return contentRoles.includes(normalizedRole) ? normalizedRole : desired;
+}
+
+function deckPlanSlideSignature(planSlide) {
+  return normalizeVisibleText([
+    planSlide && planSlide.title,
+    planSlide && planSlide.intent,
+    planSlide && planSlide.keyMessage
+  ].filter(Boolean).join(" | ")).toLowerCase();
+}
+
+function validateDeckPlan(plan, slideCount) {
+  const slides = Array.isArray(plan && plan.slides) ? plan.slides : [];
+  if (slides.length !== slideCount) {
+    throw new Error(`Generated deck plan needs exactly ${slideCount} slides.`);
+  }
+
+  const seenSignatures = new Set();
+  slides.forEach((slide, index) => {
+    [
+      ["title", slide && slide.title],
+      ["intent", slide && slide.intent],
+      ["keyMessage", slide && slide.keyMessage],
+      ["sourceNeed", slide && slide.sourceNeed],
+      ["visualNeed", slide && slide.visualNeed]
+    ].forEach(([fieldName, value]) => {
+      requireVisibleText(value, `deckPlan.slides[${index}].${fieldName}`);
+    });
+
+    const desiredRole = roleForIndex(index, slideCount);
+    if ((index === 0 || index === slideCount - 1 && slideCount > 1) && slide.role !== desiredRole) {
+      throw new Error(`Generated deck plan slide ${index + 1} must use role "${desiredRole}".`);
+    }
+
+    const signature = deckPlanSlideSignature(slide);
+    if (signature && seenSignatures.has(signature)) {
+      throw new Error(`Generated deck plan repeats slide ${index + 1}; retry planning before drafting slides.`);
+    }
+
+    seenSignatures.add(signature);
+  });
+
+  return plan;
 }
 
 function planSlideSignature(planSlide) {
@@ -848,15 +926,17 @@ async function createLlmPlan(fields, slideCount, options: any = {}) {
   const suppliedUrls = collectProvidedUrls(fields);
   const sourceContext = fields.sourceContext || { promptText: "", snippets: [] };
   const materialContext = fields.materialContext || { promptText: "", materials: [] };
+  const deckPlan = validateDeckPlan(options.deckPlan, slideCount);
   const result = await createStructuredResponse({
     developerPrompt: [
-      "You generate first-draft presentation plans for a local structured-deck studio.",
+      "You turn an approved presentation outline into complete structured slide content for a local deck studio.",
       "Return JSON only and stay within the provided schema.",
       "Use the language requested or implied by the brief for every user-visible field.",
       "Do not translate a non-English brief into English unless the user explicitly asks for English.",
       "Every slide must provide its own visible labels: eyebrow, note, signalsTitle, guardrailsTitle, resourcesTitle, keyPoints, guardrails, and resources.",
       "Every key point must have a specific short title and a concrete body sentence.",
       "Every guardrail and resource must have a specific short title and a concrete body sentence in the deck language.",
+      "Follow the approved deck plan slide by slide. Do not change the slide count or repeat the same slide intent.",
       "Do not use placeholders, dummy metrics, markdown fences, or generic filler.",
       "Do not use ellipses. Finish each visible sentence cleanly.",
       "Do not use field labels such as title, summary, body, key point, or role as visible slide text.",
@@ -883,6 +963,9 @@ async function createLlmPlan(fields, slideCount, options: any = {}) {
       `Theme brief: ${fields.themeBrief || "Not specified"}`,
       `Supplied source URLs: ${suppliedUrls.length ? suppliedUrls.join(", ") : "None"}`,
       "",
+      "Approved deck plan:",
+      JSON.stringify(deckPlan, null, 2),
+      "",
       "Retrieved source snippets:",
       sourceContext.promptText || "None",
       "",
@@ -897,6 +980,56 @@ async function createLlmPlan(fields, slideCount, options: any = {}) {
   return {
     model: result.model,
     plan: result.data,
+    provider: result.provider,
+    responseId: result.responseId
+  };
+}
+
+async function createLlmDeckPlan(fields, slideCount, options: any = {}) {
+  const suppliedUrls = collectProvidedUrls(fields);
+  const sourceContext = fields.sourceContext || { promptText: "", snippets: [] };
+  const materialContext = fields.materialContext || { promptText: "", materials: [] };
+  const result = await createStructuredResponse({
+    developerPrompt: [
+      "You plan a presentation before slide drafting.",
+      "Return JSON only and stay within the provided schema.",
+      "Use the language requested or implied by the brief for user-facing titles, intents, and messages.",
+      "Do not translate a non-English brief into English unless the user explicitly asks for English.",
+      "Create a distinct narrative arc with exactly the requested number of slides.",
+      "Each slide must have a unique intent and key message.",
+      "The first slide must be role opening. The last slide must be role handoff when there is more than one slide.",
+      "Use sourceNeed and visualNeed to say what each slide needs from sources or image materials.",
+      "Do not use placeholders, dummy metrics, markdown fences, generic filler, or ellipses.",
+      "Do not invent academic papers, citations, or source URLs."
+    ].join("\n"),
+    maxOutputTokens: Math.max(1400, slideCount * 180),
+    onProgress: options.onProgress,
+    schema: createDeckPlanSchema(slideCount),
+    schemaName: "initial_presentation_deck_plan",
+    userPrompt: [
+      `Plan exactly ${slideCount} slides for a new presentation.`,
+      "",
+      `Title: ${fields.title || "Untitled presentation"}`,
+      `Audience: ${fields.audience || "Not specified"}`,
+      `Tone: ${fields.tone || "Direct and practical"}`,
+      `Objective: ${fields.objective || "Not specified"}`,
+      `Constraints and opinions: ${fields.constraints || "Not specified"}`,
+      `Theme brief: ${fields.themeBrief || "Not specified"}`,
+      `Supplied source URLs: ${suppliedUrls.length ? suppliedUrls.join(", ") : "None"}`,
+      "",
+      "Retrieved source snippets:",
+      sourceContext.promptText || "None",
+      "",
+      "Available image materials:",
+      materialContext.promptText || "None",
+      "",
+      "Return only the high-level plan. Do not draft slide cards, guardrails, resources, or notes in this phase."
+    ].join("\n")
+  });
+
+  return {
+    model: result.model,
+    plan: validateDeckPlan(result.data, slideCount),
     provider: result.provider,
     responseId: result.responseId
   };
@@ -917,7 +1050,23 @@ async function generateInitialPresentation(fields: any = {}) {
     sourceContext,
     sourceSnippets: sourceContext.snippets
   };
+  if (typeof fields.onProgress === "function") {
+    fields.onProgress({
+      message: "Planning deck structure with the LLM...",
+      stage: "planning-deck"
+    });
+  }
+  const deckPlanResponse = await createLlmDeckPlan(generationFields, slideCount, {
+    onProgress: fields.onProgress
+  });
+  if (typeof fields.onProgress === "function") {
+    fields.onProgress({
+      message: "Drafting slide details from the approved deck plan...",
+      stage: "drafting-slides"
+    });
+  }
   const response = await createLlmPlan(generationFields, slideCount, {
+    deckPlan: deckPlanResponse.plan,
     onProgress: fields.onProgress
   });
   const plan = await semanticallyRepairPlanText(response.plan, {
@@ -928,6 +1077,7 @@ async function generateInitialPresentation(fields: any = {}) {
   return {
     generation: {
       ...generation,
+      deckPlanResponseId: deckPlanResponse.responseId,
       model: response ? response.model : generation.model,
       provider: response ? response.provider : generation.provider,
       responseId: response ? response.responseId : null
@@ -951,7 +1101,8 @@ async function generateInitialPresentation(fields: any = {}) {
         url: snippet.url
       }))
     },
-    outline: plan.outline || slideSpecs.map((slide, index) => `${index + 1}. ${slide.title}`).join("\n"),
+    deckPlan: deckPlanResponse.plan,
+    outline: deckPlanResponse.plan.outline || plan.outline || slideSpecs.map((slide, index) => `${index + 1}. ${slide.title}`).join("\n"),
     slideSpecs,
     summary: `Generated ${slideSpecs.length} initial slide${slideSpecs.length === 1 ? "" : "s"} with ${response.provider} ${response.model}.`,
     targetSlideCount: slideCount

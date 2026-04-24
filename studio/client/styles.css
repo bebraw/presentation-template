@@ -802,6 +802,10 @@ input[type="color"]::-moz-color-swatch {
   margin-top: 0.8rem;
 }
 
+.variant-review-workspace.is-empty {
+  display: block;
+}
+
 .workflow-variants-head {
   display: flex;
   gap: 1rem;
@@ -1620,6 +1624,16 @@ input[type="color"]::-moz-color-swatch {
   cursor: pointer;
   padding-left: 0.7rem;
   transition: background 160ms ease, border-color 160ms ease, padding-left 160ms ease;
+}
+
+.workflow-variant-list .variant-empty-state {
+  display: grid;
+  gap: 0.2rem;
+  max-width: 34rem;
+  min-height: 0;
+  padding-left: 0;
+  border-left: 0;
+  cursor: default;
 }
 
 .variant-card.active {

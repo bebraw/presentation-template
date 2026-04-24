@@ -138,7 +138,9 @@ const elements: Record<string, any> = {
   variantFlow: document.getElementById("variant-flow"),
   variantLabel: document.getElementById("variant-label"),
   variantList: document.getElementById("variant-list"),
+  variantReviewWorkspace: document.getElementById("variant-review-workspace"),
   variantStorageNote: document.getElementById("variant-storage-note"),
+  workflowCompare: document.getElementById("workflow-compare"),
   workflowHistory: document.getElementById("workflow-history")
 };
 
@@ -1952,11 +1954,16 @@ function renderVariants() {
     : "Generated candidates stay in the current session until one is applied.";
 
   if (!variants.length) {
-    elements.variantList.innerHTML = "<div class=\"variant-card\"><strong>No candidates yet</strong><span>Choose a count, then run Ideate Slide, Ideate Structure, Ideate Theme, or Redo Layout to generate session-only options.</span></div>";
+    elements.variantReviewWorkspace.classList.add("is-empty");
+    elements.workflowCompare.hidden = true;
+    elements.variantList.innerHTML = "<div class=\"variant-card variant-empty-state\"><strong>No candidates yet</strong><span>Choose a count, then run a generation mode to create session-only options.</span></div>";
     renderVariantFlow();
     renderVariantComparison();
     return;
   }
+
+  elements.variantReviewWorkspace.classList.remove("is-empty");
+  elements.workflowCompare.hidden = false;
 
   const selectVariantForComparison = (variant) => {
     state.selectedVariantId = variant.id;

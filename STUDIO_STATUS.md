@@ -27,7 +27,7 @@ The browser studio baseline is complete.
 - Check rule severity overrides use an explicit show/hide disclosure control so the advanced settings are discoverable without staying open.
 - Deck planning is consolidated into a compact planning console with visible palette swatches, tucked-away design guardrails, and deck-plan details hidden until inspection.
 - Local deck-planning candidates carry shared deck-context patches and generated content scaffolds use title/body evidence items rather than placeholder metric bars.
-- Slide candidate review and visual comparison share one workspace: direct-select rows drive the adjacent current-versus-candidate preview and diff pane.
+- Slide candidate review and visual comparison share one workspace: direct-select rows drive the adjacent current-versus-candidate preview and diff pane, while the compare pane stays hidden until candidates exist.
 - Selected-slide context is collapsed by default into a compact disclosure, leaving the active preview and workflow surfaces higher on the page.
 - Workflow chat uses compact drawer copy, shorter empty state and message labels, and shorter canned workflow replies.
 - Workflow chat can attach selected text from the active slide preview as turn context, shown as a compact selection chip before send and on the saved user message.
@@ -36,7 +36,7 @@ The browser studio baseline is complete.
 
 ## Maintenance Focus
 
-- Apply the remaining pragmatic UI review slices by collapsing empty or advanced surfaces and reducing drawer and thumbnail rail intrusion.
+- Apply the remaining pragmatic UI review slices by collapsing advanced surfaces and reducing drawer and thumbnail rail intrusion.
 - Keep new deck-planning modes tied to shared deck-context patches when they change narrative direction, theme, constraints, or other deck-level decisions.
 - Deepen DOM media validation only when new media-heavy slide families expose concrete screenshot, chart, diagram, or legibility gaps beyond the current size, bounds, spacing, labeling, loading, and caption/source attachment checks.
 - Correct stale documentation opportunistically if it refers to removed rendering, validation, or authoring paths as active implementation.

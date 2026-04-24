@@ -1438,12 +1438,19 @@ input[type="color"]::-moz-color-swatch {
 }
 
 .thumb-rail {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(10rem, 1fr));
+  display: flex;
   gap: 0.7rem;
+  margin-inline: -0.15rem;
+  overflow-x: auto;
+  overscroll-behavior-x: contain;
+  padding: 0 0.15rem 0.55rem;
+  scrollbar-gutter: stable;
+  scroll-snap-type: x proximity;
 }
 
 .thumb {
+  flex: 0 0 9.6rem;
+  scroll-snap-align: start;
   border: 0;
   border-top: 1px solid var(--app-line);
   border-radius: 0;

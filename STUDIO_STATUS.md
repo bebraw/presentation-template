@@ -15,7 +15,7 @@ The browser studio baseline is complete.
 - The local studio runs through `studio/server/` and `studio/client/`.
 - The studio and scripts are TypeScript sources executed through Node's type-stripping runtime, and `npm run typecheck` is part of the local and CI quality gates.
 - Slide-spec JSON is the source content model for supported `cover`, `toc`, `content`, and `summary` slides.
-- The shared DOM renderer powers browser preview, thumbnails, compare views, preview PNGs, PDF export, and CLI builds.
+- The shared DOM renderer powers browser preview, the compact horizontal thumbnail selector, compare views, preview PNGs, PDF export, and CLI builds.
 - Deck and slide context, design constraints, validation settings, visual theme values, assistant sessions, and manual snapshots persist in repo-local studio state; generated slide candidates stay session-only until applied.
 - Slide-level workflows, manual slide add/remove controls, deck-planning workflows, assistant-triggered actions, session-only candidates, safe apply flows, and compare views are available from the browser.
 - Supported structured slides allow direct text edits and valid JSON spec edits to update the active DOM preview immediately while saving through the server-controlled slide-spec path without a render pass.

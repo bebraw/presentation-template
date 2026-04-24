@@ -63,6 +63,6 @@ For day-to-day setup and commands, see [DEVELOPMENT.md](DEVELOPMENT.md).
 - Shared palette, deck metadata, design constraints, and output config now live under `studio/server/services/`, while the authoritative slide layout/runtime lives in `studio/client/slide-dom.ts`.
 - `slides/output/` is git-ignored, so generated per-presentation binaries stay local.
 - `archive/<presentation-id>.pdf` stores checked-in PDF snapshots for linking and archival.
-- `studio/baseline/` stores the approved render baseline for the current deck output.
+- `studio/baseline/<presentation-id>/` stores the approved render baseline for each deck output.
 - `npm run quality:gate` runs DOM-backed geometry/text validation before checking the generated PDF against the approved render baseline.
 - If you extend the deck, follow the JSON slide-spec path and keep new runtime work on the DOM path.

@@ -5,7 +5,8 @@ const archiveDir = path.join(repoRoot, "archive");
 const studioDir = path.join(repoRoot, "studio");
 const clientDir = path.join(studioDir, "client");
 const stateDir = path.join(studioDir, "state");
-const baselineDir = path.join(studioDir, "baseline");
+const baselineRootDir = path.join(studioDir, "baseline");
+const baselineDir = baselineRootDir;
 const outputDir = path.join(studioDir, "output");
 const previewDir = path.join(outputDir, "rendered-pages");
 const deckStructurePreviewDir = path.join(outputDir, "deck-structure-previews");
@@ -20,6 +21,7 @@ const presentationsDir = path.join(repoRoot, "presentations");
 module.exports = {
   archiveDir,
   baselineDir,
+  baselineRootDir,
   clientDir,
   contactSheetFile,
   deckStructurePreviewDir,

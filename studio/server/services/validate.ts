@@ -9,7 +9,6 @@ const {
 const { validateDeckInDom } = require("./dom-validate.ts");
 const { readValidationSettings, resolveValidationLevel } = require("./validation-settings.ts");
 const {
-  baselineDir,
   outputDir,
   renderCheckCurrentDir,
   renderCheckDiffDir
@@ -45,7 +44,7 @@ function summarizeFailure(error, message) {
 
 async function runRenderValidation() {
   const validationSettings = readValidationSettings();
-  const { pdfFile } = getOutputConfig();
+  const { baselineDir, pdfFile } = getOutputConfig();
   const baselinePages = listPages(baselineDir);
   if (!baselinePages.length) {
     return {

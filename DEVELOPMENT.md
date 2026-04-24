@@ -80,7 +80,7 @@ npm run baseline:render
 
 - `slides/output/<presentation-id>.pdf` is generated locally by `npm run build`; the included deck writes `slides/output/slideotter.pdf`.
 - `slides/output/` is git-ignored.
-- `studio/baseline/` stores approved render-baseline PNGs used by the visual regression gate.
+- `studio/baseline/<presentation-id>/` stores approved render-baseline PNGs used by the visual regression gate.
 - `docs/assets/studio-home.png` is refreshed manually by `npm run screenshot:home`.
 - `archive/<presentation-id>.pdf` is the checked-in archive snapshot and should be refreshed only as a publishing decision with `npm run archive:update`.
 
@@ -137,7 +137,7 @@ For presentation changes:
 
 - rebuild the deck after slide or theme changes
 - run `npm run quality:gate` before considering work complete
-- refresh `studio/baseline/` with `npm run baseline:render` when visible output changes intentionally
+- refresh `studio/baseline/<presentation-id>/` with `npm run baseline:render` when visible output changes intentionally
 - keep `ROADMAP.md` and `STUDIO_STATUS.md` current for browser-studio product or workflow changes
 - keep the project-story slides aligned when roadmap or outline structure changes
 

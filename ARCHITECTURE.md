@@ -12,7 +12,7 @@ There are now three layers:
 2. `studio/client/slide-dom.ts` renders those slide specs into a shared HTML/CSS slide runtime.
 3. Playwright-backed server services turn that same runtime into PDFs, preview PNGs, and validation inputs.
 
-Repo-level command wrappers live under `scripts/`, shared deck settings plus raster helpers live under `studio/server/services/`, and approved baseline snapshots live under `studio/baseline/`.
+Repo-level command wrappers live under `scripts/`, shared deck settings plus raster helpers live under `studio/server/services/`, and approved baseline snapshots live under `studio/baseline/<presentation-id>/`.
 
 ## System Graph
 
@@ -58,7 +58,7 @@ flowchart TD
     subgraph artifacts["Artifacts"]
         pdf["slides/output/<presentation-id>.pdf"]
         previews["studio/output/**"]
-        baselineFiles["studio/baseline/*.png"]
+        baselineFiles["studio/baseline/<presentation-id>/*.png"]
         diffs["slides/output/render-diff/*.png"]
         archive["archive/<presentation-id>.pdf"]
     end
@@ -184,7 +184,7 @@ This is the same validation path used by the studio server.
 
 1. build the current PDF through the DOM export path
 2. rasterize the PDF pages with ImageMagick through `studio/server/services/baseline-utils.ts`
-3. compare the rasterized pages to `studio/baseline/*.png`
+3. compare the rasterized pages to `studio/baseline/<presentation-id>/*.png`
 4. write diffs under `slides/output/render-diff/` when pages drift
 
 `npm run quality:gate` runs the DOM geometry/text validators first and then this render-baseline gate.
@@ -203,7 +203,7 @@ The local studio under `studio/` is now a control plane around the shared DOM re
 
 The repo still keeps two long-lived output types:
 
-- `studio/baseline/` is the approved visual regression target
+- `studio/baseline/<presentation-id>/` is the approved visual regression target for each presentation
 - `archive/<presentation-id>.pdf` is the checked-in presentation snapshot for linking and archival when a deck is published
 
 They serve different roles. Refreshing the render baseline is part of intentional visual changes. Refreshing the archive is a separate publishing decision.

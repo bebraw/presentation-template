@@ -40,7 +40,7 @@ The DOM-first runtime is now the active path:
 
 The next practical tasks are:
 
-1. keep hardening multiple-presentation workflows now that create, select, duplicate, delete, active export naming, and active archive publishing exist; the next useful slice is per-presentation visual baselines if multiple decks need separate approval history
+1. keep hardening multiple-presentation workflows now that create, select, duplicate, delete, active export naming, active archive publishing, and per-presentation render baselines exist; the next useful slice is making generated preview/contact-sheet artifacts presentation-scoped too
 2. keep hardening complete media-validation mode beyond its current media legibility, slide bounds, progress-area spacing, and caption/source attachment checks, now covered by a fixture in the quality gate, especially once media-heavy slide families land
 3. keep extending shared deck-context patches if new deck-plan modes are added; the current sequence, boundary, decision, operator, compressed, composed, and deck-authoring candidates all carry shared-context steering, and generated content scaffolds use prose evidence items instead of metric-style placeholders, enforced by the deck-plan fixture in the quality gate
 4. keep documentation aligned with the DOM-first runtime when older guidance is touched
@@ -77,7 +77,7 @@ Current implementation is now DOM-first:
 - the CLI build and geometry/text validation entrypoints now live under [`scripts/`](./scripts/) and call that same Playwright-backed DOM renderer and DOM validator
 - studio preview strips and contact sheets now use [`studio/server/services/page-artifacts.ts`](./studio/server/services/page-artifacts.ts)
 - repo-level [`scripts/`](./scripts/) entrypoints now drive build, diagram rendering, geometry/text validation, and baseline refresh around the DOM runtime
-- the optional render-baseline comparison now checks the current DOM-built PDF against approved raster snapshots under [`studio/baseline/`](./studio/baseline/)
+- the optional render-baseline comparison now checks the current DOM-built PDF against approved raster snapshots under [`studio/baseline/<presentation-id>/`](./studio/baseline/)
 - retired slide drawing, PDF rendering, text-measurement, config, and CLI layers have been removed from the active codebase
 
 The active architecture is DOM-first:

@@ -60,7 +60,7 @@ The same DOM renderer is also exposed as a standalone deck preview at `/deck-pre
 - `studio/client/`: browser UI and shared DOM slide renderer
 - `studio/server/`: local server, workflow actions, export, validation, write boundary, and LLM integration
 - `studio/state/`: global studio registry plus repo-local assistant sessions and related state
-- `studio/baseline/`: approved render-baseline images for visual regression checks
+- `studio/baseline/<presentation-id>/`: approved render-baseline images for visual regression checks
 - `scripts/`: CLI wrappers for build, validation, diagram rendering, and baseline refresh
 - `skills/`: presentation-focused Codex workflow guidance
 - `docs/adr/`: durable studio decisions

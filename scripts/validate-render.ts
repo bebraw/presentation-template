@@ -2,7 +2,6 @@ const fs = require("fs");
 const path = require("path");
 const { getOutputConfig, outputDir } = require("../studio/server/services/output-config.ts");
 const {
-  baselineDir,
   renderCheckCurrentDir,
   renderCheckDiffDir
 } = require("../studio/server/services/paths.ts");
@@ -23,7 +22,7 @@ function fail(message) {
 }
 
 function main() {
-  const { pdfFile } = getOutputConfig();
+  const { baselineDir, pdfFile } = getOutputConfig();
   const baselinePages = listPages(baselineDir);
   if (!baselinePages.length) {
     fail(

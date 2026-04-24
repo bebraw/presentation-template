@@ -1,5 +1,5 @@
 const path = require("path");
-const { archiveDir, repoRoot } = require("./paths.ts");
+const { archiveDir, baselineRootDir, repoRoot } = require("./paths.ts");
 const { getActivePresentationId } = require("./presentations.ts");
 
 const outputDir = path.join(repoRoot, "slides", "output");
@@ -9,6 +9,7 @@ function getOutputConfig() {
 
   return {
     archiveFile: path.join(archiveDir, `${outputBaseName}.pdf`),
+    baselineDir: path.join(baselineRootDir, outputBaseName),
     outputBaseName,
     outputDir,
     pdfFile: path.join(outputDir, `${outputBaseName}.pdf`)

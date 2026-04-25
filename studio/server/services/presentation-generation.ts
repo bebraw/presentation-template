@@ -1018,6 +1018,7 @@ async function createLlmDeckPlan(fields, slideCount, options: any = {}) {
   const suppliedUrls = collectProvidedUrls(fields);
   const sourceContext = fields.sourceContext || { promptText: "", snippets: [] };
   const materialContext = fields.materialContext || { promptText: "", materials: [] };
+  const lockedOutlineSlides = Array.isArray(fields.lockedOutlineSlides) ? fields.lockedOutlineSlides : [];
   const result = await createStructuredResponse({
     developerPrompt: [
       "You plan a presentation before slide drafting.",
@@ -1027,12 +1028,15 @@ async function createLlmDeckPlan(fields, slideCount, options: any = {}) {
       "Create a distinct narrative arc with exactly the requested number of slides.",
       "Each slide must have a unique intent and key message.",
       "The first slide must be role opening. The last slide must be role handoff when there is more than one slide.",
+      lockedOutlineSlides.length
+        ? "Some outline slides are locked by the user. Preserve their positions and plan surrounding slides around them without replacing their meaning."
+        : "",
       "Use sourceNeed and visualNeed to say what each slide needs from sources or image materials.",
       sourcingInstruction(fields.sourcingStyle),
       "Call out any theme or visual needs in a way that can preserve WCAG AA contrast against the slide background.",
       "Do not use placeholders, dummy metrics, markdown fences, generic filler, or ellipses.",
       "Do not invent academic papers, citations, or source URLs."
-    ].join("\n"),
+    ].filter(Boolean).join("\n"),
     maxOutputTokens: Math.max(1400, slideCount * 180),
     onProgress: options.onProgress,
     schema: createDeckPlanSchema(slideCount),
@@ -1054,6 +1058,9 @@ async function createLlmDeckPlan(fields, slideCount, options: any = {}) {
       "",
       "Available image materials:",
       materialContext.promptText || "None",
+      "",
+      "Locked outline slides:",
+      lockedOutlineSlides.length ? JSON.stringify(lockedOutlineSlides, null, 2) : "None",
       "",
       "Return only the high-level plan. Do not draft slide cards, guardrails, resources, or notes in this phase."
     ].join("\n")

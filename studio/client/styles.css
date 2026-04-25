@@ -1104,7 +1104,18 @@ html[data-app-theme="dark"] .theme-toggle-knob {
   align-items: start;
 }
 
-.creation-outline-item > span {
+.creation-outline-item-locked {
+  border-left: 2px solid var(--app-accent);
+  padding-left: 0.65rem;
+}
+
+.creation-outline-item-rail {
+  display: grid;
+  gap: 0.4rem;
+  justify-items: center;
+}
+
+.creation-outline-item-rail > span {
   display: inline-grid;
   place-items: center;
   width: 1.7rem;
@@ -1116,9 +1127,45 @@ html[data-app-theme="dark"] .theme-toggle-knob {
   font-weight: 650;
 }
 
+.outline-lock-button {
+  min-height: 1.55rem;
+  padding: 0.1rem 0.36rem;
+  border-radius: 999px;
+  font-size: 0.68rem;
+  line-height: 1;
+}
+
+.outline-lock-button[aria-pressed="true"] {
+  border-color: var(--app-accent);
+  background: var(--app-accent-soft);
+  color: var(--app-accent);
+}
+
 .creation-outline-slide-fields {
   display: grid;
   gap: 0.55rem;
+}
+
+.creation-outline-slide-toolbar {
+  display: flex;
+  gap: 0.75rem;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.creation-outline-slide-toolbar strong {
+  overflow: hidden;
+  color: var(--app-text);
+  font-size: 0.86rem;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.outline-regenerate-button {
+  min-height: 2rem;
+  padding: 0.35rem 0.6rem;
+  border-radius: 999px;
+  font-size: 0.76rem;
 }
 
 .creation-outline-slide-fields textarea {
@@ -4285,6 +4332,11 @@ html[data-app-theme="dark"] .json-editor-highlight .json-token-literal {
 
   .creation-review-grid {
     grid-template-columns: 1fr;
+  }
+
+  .creation-outline-slide-toolbar {
+    align-items: start;
+    flex-direction: column;
   }
 
   .presentation-tools {

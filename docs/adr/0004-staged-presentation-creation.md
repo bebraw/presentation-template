@@ -25,6 +25,7 @@ Split presentation creation into separate, resumable stages. Each stage should h
 
 2. Structure
    Generate or draft a proposed outline before generating full slide specs. Show editable deck thesis, narrative arc, slide titles, and slide-level intent/source/visual guidance so the user can correct wording in place before approval. Let users attach source notes to specific outline beats when evidence belongs to one slide or section rather than the whole deck, and keep a compact source outline visible for fast review. The user must approve the outline before content materialization; approval starts slide drafting from the locked outline snapshot so the Outline -> Slide Studio transition matches the Brief -> Outline generation pattern. The user can keep regenerating or editing the outline before approval if the generated structure does not read right.
+   Outline regeneration is lock-aware. Users can mark good outline slides to keep, regenerate the unlocked outline around them, or regenerate one slide at a time when only one beat is weak. Locked slides keep their position and wording during full regeneration.
    Generation uses a snapshot of the brief. Brief, source, and sourcing controls are locked while generation is running. If the user changes generation-relevant inputs after an outline exists, the outline is marked stale, approval is cleared, and slide creation stays disabled until the outline is regenerated.
 
 3. Content Draft
@@ -80,7 +81,10 @@ The first screen should still be the actual creation tool, not a marketing page.
 6. Integrate optional sources and materials into outline enrichment.
    Let the user add source text, slide-specific source notes, uploaded images, and image search hints from the outline review stage before approval creates the deck.
 
-7. Add browser workflow coverage.
+7. Add lock-aware outline refinement.
+   Let authors keep strong outline slides during full regeneration and regenerate one weak outline slide without discarding the rest of the structure. Field-level regeneration can build on the same mechanism later if slide-level refinement still leaves too much manual cleanup.
+
+8. Add browser workflow coverage.
    Validate that a user can create a deck through the staged path, skip theme, add a source, preview an outline, materialize slides, and clean up the deck.
 
 ## Open Questions

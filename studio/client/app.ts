@@ -2736,6 +2736,39 @@ function cloneDeckPlan(deckPlan) {
   };
 }
 
+function getOutlineLocks() {
+  const locks = state.creationDraft && state.creationDraft.outlineLocks && typeof state.creationDraft.outlineLocks === "object"
+    ? state.creationDraft.outlineLocks
+    : {};
+  return Object.fromEntries(Object.entries(locks).filter(([key, value]) => /^\d+$/.test(key) && value === true));
+}
+
+function isOutlineSlideLocked(index) {
+  return getOutlineLocks()[String(index)] === true;
+}
+
+function setOutlineSlideLocked(index, locked) {
+  const locks = getOutlineLocks();
+  if (locked) {
+    locks[String(index)] = true;
+  } else {
+    delete locks[String(index)];
+  }
+
+  state.creationDraft = {
+    ...(state.creationDraft || {}),
+    outlineLocks: locks
+  };
+  return locks;
+}
+
+function countUnlockedOutlineSlides(deckPlan = null) {
+  const plan = deckPlan || state.creationDraft && state.creationDraft.deckPlan;
+  const slides = plan && Array.isArray(plan.slides) ? plan.slides : [];
+  const locks = getOutlineLocks();
+  return slides.filter((_slide, index) => locks[String(index)] !== true).length;
+}
+
 function readOutlineEditorValue(selector, fallback = "") {
   const element: any = document.querySelector(selector);
   const value = element && typeof element.value === "string" ? element.value.trim() : "";
@@ -2842,6 +2875,7 @@ async function saveEditableOutlineDraft(options: any = {}) {
       approvedOutline: false,
       deckPlan,
       fields: getCreationFields(),
+      outlineLocks: getOutlineLocks(),
       outlineDirty: false,
       retrieval: state.creationDraft.retrieval,
       stage: options.stage || state.ui.creationStage || "structure"
@@ -2861,6 +2895,7 @@ function renderCreationOutline(draft) {
   const deckPlan = draft && draft.deckPlan;
   const slides = deckPlan && Array.isArray(deckPlan.slides) ? deckPlan.slides : [];
   const workflowRunning = isWorkflowRunning();
+  const outlineLocks = draft && draft.outlineLocks && typeof draft.outlineLocks === "object" ? draft.outlineLocks : {};
   elements.presentationOutlineTitle.value = deckPlan && deckPlan.thesis ? deckPlan.thesis : "";
   elements.presentationOutlineTitle.dataset.outlineField = "thesis";
   elements.presentationOutlineTitle.disabled = workflowRunning || !slides.length;
@@ -2869,9 +2904,27 @@ function renderCreationOutline(draft) {
   elements.presentationOutlineSummary.disabled = workflowRunning || !slides.length;
   elements.presentationOutlineList.innerHTML = slides.length
     ? slides.map((slide, index) => `
-        <article class="creation-outline-item">
-          <span>${index + 1}</span>
+        <article class="creation-outline-item${outlineLocks[String(index)] === true ? " creation-outline-item-locked" : ""}">
+          <div class="creation-outline-item-rail">
+            <span>${index + 1}</span>
+            <button
+              class="outline-lock-button"
+              type="button"
+              data-outline-lock-slide-index="${index}"
+              aria-pressed="${outlineLocks[String(index)] === true ? "true" : "false"}"
+              ${workflowRunning ? " disabled" : ""}
+            >${outlineLocks[String(index)] === true ? "Kept" : "Keep"}</button>
+          </div>
           <div class="creation-outline-slide-fields">
+            <div class="creation-outline-slide-toolbar">
+              <strong>${escapeHtml(slide.title || `Slide ${index + 1}`)}</strong>
+              <button
+                class="secondary compact-button outline-regenerate-button"
+                type="button"
+                data-outline-regenerate-slide-index="${index}"
+                ${workflowRunning ? " disabled" : ""}
+              >Regenerate slide</button>
+            </div>
             <label class="field creation-outline-title-field">
               <span>Slide title</span>
               <input data-outline-slide-index="${index}" data-outline-slide-field="title" type="text" value="${escapeHtml(slide.title || `Slide ${index + 1}`)}"${workflowRunning ? " disabled" : ""}>
@@ -2924,6 +2977,7 @@ function renderCreationDraft() {
   const approved = draft.approvedOutline === true;
   const outlineDirty = draft.outlineDirty === true;
   const workflowRunning = isWorkflowRunning();
+  const unlockedOutlineCount = hasOutline ? countUnlockedOutlineSlides(draft.deckPlan) : 0;
   const stageContext = { approved, hasOutline, outlineDirty };
   let stage = normalizeCreationStage(state.ui.creationStage || draft.stage || "brief");
   if (!getCreationStageAccess(stage, draft, stageContext).enabled) {
@@ -2957,8 +3011,8 @@ function renderCreationDraft() {
 
   elements.generatePresentationOutlineButton.disabled = workflowRunning || !elements.presentationTitle.value.trim();
   elements.approvePresentationOutlineButton.disabled = workflowRunning || !hasOutline || outlineDirty;
-  elements.regeneratePresentationOutlineButton.disabled = workflowRunning || !elements.presentationTitle.value.trim();
-  elements.regeneratePresentationOutlineWithSourcesButton.disabled = workflowRunning || !elements.presentationTitle.value.trim();
+  elements.regeneratePresentationOutlineButton.disabled = workflowRunning || !elements.presentationTitle.value.trim() || (hasOutline && unlockedOutlineCount === 0);
+  elements.regeneratePresentationOutlineWithSourcesButton.disabled = workflowRunning || !elements.presentationTitle.value.trim() || (hasOutline && unlockedOutlineCount === 0);
   elements.backToPresentationOutlineButton.disabled = workflowRunning;
   elements.createPresentationButton.disabled = workflowRunning || !approved || !hasOutline || outlineDirty;
   elements.savePresentationThemeButton.disabled = workflowRunning;
@@ -2967,6 +3021,8 @@ function renderCreationDraft() {
     ? "Generation is running from a locked snapshot. Wait for it to finish before changing the draft."
     : outlineDirty
       ? "Brief changed. Regenerate the outline before approving it."
+      : hasOutline && unlockedOutlineCount === 0
+        ? "All outline slides are kept. Unlock a slide before regenerating the outline."
       : approved
     ? "Outline approved. Creating slides from the accepted outline."
     : hasOutline
@@ -3645,6 +3701,7 @@ async function saveCreationDraft(stage = state.ui.creationStage, options: any = 
       approvedOutline: shouldDirtyOutline ? false : undefined,
       deckPlan: editableDeckPlan || undefined,
       fields: getCreationFields(),
+      outlineLocks: getOutlineLocks(),
       outlineDirty: shouldDirtyOutline ? true : undefined,
       stage
     }),
@@ -3691,9 +3748,12 @@ async function generatePresentationOutline() {
     element.disabled = true;
   });
   try {
+    const deckPlan = getEditableDeckPlan();
     const payload = await request("/api/presentations/draft/outline", {
       body: JSON.stringify({
-        fields: getCreationFields()
+        deckPlan: deckPlan || undefined,
+        fields: getCreationFields(),
+        outlineLocks: getOutlineLocks()
       }),
       method: "POST"
     });
@@ -3701,6 +3761,37 @@ async function generatePresentationOutline() {
     setCreationStage("structure");
   } finally {
     done();
+    renderCreationDraft();
+  }
+}
+
+async function regeneratePresentationOutlineSlide(slideIndex) {
+  const deckPlan = getEditableDeckPlan();
+  if (!deckPlan || !Array.isArray(deckPlan.slides) || !deckPlan.slides[slideIndex]) {
+    return;
+  }
+
+  const button: any = document.querySelector(`[data-outline-regenerate-slide-index="${slideIndex}"]`);
+  const done = button ? setBusy(button, "Regenerating...") : null;
+  getCreationInputElements().forEach((element: any) => {
+    element.disabled = true;
+  });
+  try {
+    const payload = await request("/api/presentations/draft/outline/slide", {
+      body: JSON.stringify({
+        deckPlan,
+        fields: getCreationFields(),
+        outlineLocks: getOutlineLocks(),
+        slideIndex
+      }),
+      method: "POST"
+    });
+    state.creationDraft = payload.creationDraft;
+    setCreationStage("structure");
+  } finally {
+    if (done) {
+      done();
+    }
     renderCreationDraft();
   }
 }
@@ -3721,7 +3812,8 @@ async function approvePresentationOutline() {
   try {
     const payload = await request("/api/presentations/draft/approve", {
       body: JSON.stringify({
-        deckPlan: approvedDeckPlan
+        deckPlan: approvedDeckPlan,
+        outlineLocks: getOutlineLocks()
       }),
       method: "POST"
     });
@@ -3746,6 +3838,7 @@ async function backToPresentationOutline() {
       approvedOutline: false,
       deckPlan: deckPlan || state.creationDraft && state.creationDraft.deckPlan,
       fields: getCreationFields(),
+      outlineLocks: getOutlineLocks(),
       retrieval: state.creationDraft && state.creationDraft.retrieval,
       stage: "structure"
     }),
@@ -4907,6 +5000,26 @@ document.querySelectorAll("[data-creation-stage]").forEach((button: any) => {
       saveEditableOutlineDraft({ render: false }).catch((error) => window.alert(error.message));
     }
   });
+});
+elements.presentationOutlineList.addEventListener("click", (event) => {
+  const target: any = event.target;
+  const lockButton = target.closest("[data-outline-lock-slide-index]");
+  if (lockButton && elements.presentationOutlineList.contains(lockButton)) {
+    const slideIndex = Number.parseInt(lockButton.dataset.outlineLockSlideIndex, 10);
+    if (Number.isFinite(slideIndex)) {
+      setOutlineSlideLocked(slideIndex, lockButton.getAttribute("aria-pressed") !== "true");
+      saveEditableOutlineDraft().catch((error) => window.alert(error.message));
+    }
+    return;
+  }
+
+  const regenerateButton = target.closest("[data-outline-regenerate-slide-index]");
+  if (regenerateButton && elements.presentationOutlineList.contains(regenerateButton)) {
+    const slideIndex = Number.parseInt(regenerateButton.dataset.outlineRegenerateSlideIndex, 10);
+    if (Number.isFinite(slideIndex)) {
+      regeneratePresentationOutlineSlide(slideIndex).catch((error) => window.alert(error.message));
+    }
+  }
 });
 
 [

@@ -317,6 +317,11 @@ function normalizeCreationDraft(draft) {
   const fields = source.fields && typeof source.fields === "object" && !Array.isArray(source.fields)
     ? source.fields
     : {};
+  const outlineLocks = source.outlineLocks && typeof source.outlineLocks === "object" && !Array.isArray(source.outlineLocks)
+    ? Object.fromEntries(Object.entries(source.outlineLocks)
+      .filter(([key, value]) => /^\d+$/.test(key) && value === true)
+      .map(([key]) => [key, true]))
+    : {};
 
   return {
     approvedOutline: source.approvedOutline === true,
@@ -356,6 +361,7 @@ function normalizeCreationDraft(draft) {
     retrieval: source.retrieval && typeof source.retrieval === "object" && !Array.isArray(source.retrieval)
       ? source.retrieval
       : null,
+    outlineLocks,
     outlineDirty: source.outlineDirty === true,
     stage: ["brief", "structure", "content", "theme", "sources"].includes(source.stage)
       ? source.stage
@@ -521,6 +527,7 @@ function clearPresentationCreationDraft() {
     approvedOutline: false,
     deckPlan: null,
     fields: {},
+    outlineLocks: {},
     retrieval: null,
     stage: "brief"
   });

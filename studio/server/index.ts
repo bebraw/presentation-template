@@ -539,6 +539,60 @@ function normalizeCreationFields(body: any = {}) {
   };
 }
 
+function normalizeOutlineLocks(value) {
+  const source = value && typeof value === "object" && !Array.isArray(value) ? value : {};
+  return Object.fromEntries(Object.entries(source)
+    .filter(([key, locked]) => /^\d+$/.test(key) && locked === true)
+    .map(([key]) => [key, true]));
+}
+
+function buildDeckPlanOutline(slides) {
+  return (Array.isArray(slides) ? slides : [])
+    .map((slide, index) => {
+      const title = slide && slide.title ? slide.title : `Slide ${index + 1}`;
+      const message = slide && (slide.keyMessage || slide.intent) ? slide.keyMessage || slide.intent : "";
+      return `${index + 1}. ${title}${message ? ` - ${message}` : ""}`;
+    })
+    .join("\n");
+}
+
+function applyLockedOutlineSlides(nextPlan, previousPlan, outlineLocks) {
+  const nextSlides = Array.isArray(nextPlan && nextPlan.slides) ? nextPlan.slides : [];
+  const previousSlides = Array.isArray(previousPlan && previousPlan.slides) ? previousPlan.slides : [];
+  const locks = normalizeOutlineLocks(outlineLocks);
+  if (!nextSlides.length || !previousSlides.length || !Object.keys(locks).length) {
+    return nextPlan;
+  }
+
+  const slides = nextSlides.map((slide, index) => locks[String(index)] && previousSlides[index]
+    ? { ...previousSlides[index] }
+    : slide);
+
+  return {
+    ...nextPlan,
+    outline: buildDeckPlanOutline(slides),
+    slides
+  };
+}
+
+function buildLockedOutlineContext(deckPlan, outlineLocks, options: any = {}) {
+  const slides = Array.isArray(deckPlan && deckPlan.slides) ? deckPlan.slides : [];
+  const locks = normalizeOutlineLocks(outlineLocks);
+  return slides
+    .map((slide, index) => ({ index, slide }))
+    .filter(({ index }) => locks[String(index)] && index !== options.excludeIndex)
+    .map(({ index, slide }) => ({
+      index,
+      intent: slide.intent || "",
+      keyMessage: slide.keyMessage || "",
+      role: slide.role || "",
+      sourceNeed: slide.sourceNeed || "",
+      sourceNotes: slide.sourceNotes || slide.sourceText || "",
+      title: slide.title || `Slide ${index + 1}`,
+      visualNeed: slide.visualNeed || ""
+    }));
+}
+
 async function handlePresentationDraftSave(req, res) {
   const body = await readJsonBody(req);
   const current = getPresentationCreationDraft();
@@ -550,6 +604,7 @@ async function handlePresentationDraftSave(req, res) {
       ...(current.fields || {}),
       ...normalizeCreationFields(body.fields || body || {})
     },
+    outlineLocks: body.outlineLocks ? normalizeOutlineLocks(body.outlineLocks) : current.outlineLocks,
     outlineDirty: typeof body.outlineDirty === "boolean" ? body.outlineDirty : current.outlineDirty,
     retrieval: body.retrieval || current.retrieval,
     stage: body.stage || current.stage || "brief"
@@ -563,9 +618,17 @@ async function handlePresentationDraftSave(req, res) {
 
 async function handlePresentationDraftOutline(req, res) {
   const body = await readJsonBody(req);
+  const current = getPresentationCreationDraft();
   const fields = normalizeCreationFields(body.fields || body || {});
   if (!fields.title) {
     throw new Error("Expected a presentation title before generating an outline");
+  }
+  const previousDeckPlan = body.deckPlan || current.deckPlan;
+  const outlineLocks = normalizeOutlineLocks(body.outlineLocks || current.outlineLocks);
+  const lockedSlides = buildLockedOutlineContext(previousDeckPlan, outlineLocks);
+  const previousSlides = Array.isArray(previousDeckPlan && previousDeckPlan.slides) ? previousDeckPlan.slides : [];
+  if (previousSlides.length && lockedSlides.length >= previousSlides.length) {
+    throw new Error("Unlock at least one outline slide before regenerating.");
   }
 
   const reportProgress = createWorkflowProgressReporter({
@@ -578,19 +641,22 @@ async function handlePresentationDraftOutline(req, res) {
 
   const result = await generateInitialDeckPlan({
     ...fields,
+    lockedOutlineSlides: lockedSlides,
     onProgress: reportProgress
   });
+  const deckPlan = applyLockedOutlineSlides(result.plan, previousDeckPlan, outlineLocks);
   const draft = savePresentationCreationDraft({
     approvedOutline: false,
-    deckPlan: result.plan,
+    deckPlan,
     fields,
+    outlineLocks,
     outlineDirty: false,
     retrieval: result.retrieval,
     stage: "structure"
   });
   updateWorkflowState({
     generation: result.generation,
-    message: `Generated an outline with ${result.plan.slides.length} slide${result.plan.slides.length === 1 ? "" : "s"}. Approve it before creating slides.`,
+    message: `Generated an outline with ${deckPlan.slides.length} slide${deckPlan.slides.length === 1 ? "" : "s"}. Approve it before creating slides.`,
     ok: true,
     operation: "plan-presentation-outline",
     stage: "completed",
@@ -602,7 +668,86 @@ async function handlePresentationDraftOutline(req, res) {
 
   createJsonResponse(res, 200, {
     creationDraft: draft,
-    deckPlan: result.plan,
+    deckPlan,
+    retrieval: result.retrieval,
+    runtime: serializeRuntimeState()
+  });
+}
+
+async function handlePresentationDraftOutlineSlide(req, res) {
+  const body = await readJsonBody(req);
+  const current = getPresentationCreationDraft();
+  const sourceDeckPlan = body.deckPlan || current.deckPlan;
+  const slides = Array.isArray(sourceDeckPlan && sourceDeckPlan.slides) ? sourceDeckPlan.slides : [];
+  const slideIndex = Number.parseInt(body.slideIndex, 10);
+  if (!slides.length || !Number.isFinite(slideIndex) || slideIndex < 0 || slideIndex >= slides.length) {
+    throw new Error("Expected a valid outline slide to regenerate");
+  }
+
+  const fields = {
+    ...normalizeCreationFields({
+      ...(current.fields || {}),
+      ...(body.fields || {})
+    }),
+    targetSlideCount: slides.length
+  };
+  if (!fields.title) {
+    throw new Error("Expected a presentation title before regenerating an outline slide");
+  }
+
+  const reportProgress = createWorkflowProgressReporter({
+    operation: "regenerate-outline-slide"
+  });
+  reportProgress({
+    message: `Regenerating outline slide ${slideIndex + 1}...`,
+    stage: "planning-outline-slide"
+  });
+
+  const keepLocks = Object.fromEntries(slides.map((_slide, index) => [String(index), index !== slideIndex]));
+  const result = await generateInitialDeckPlan({
+    ...fields,
+    lockedOutlineSlides: buildLockedOutlineContext(sourceDeckPlan, keepLocks, { excludeIndex: slideIndex }),
+    onProgress: reportProgress
+  });
+  const generatedSlides = Array.isArray(result.plan && result.plan.slides) ? result.plan.slides : [];
+  const replacement = generatedSlides[slideIndex];
+  if (!replacement) {
+    throw new Error("Regenerated outline did not include the requested slide");
+  }
+
+  const nextSlides = slides.map((slide, index) => index === slideIndex ? replacement : slide);
+  const deckPlan = {
+    ...sourceDeckPlan,
+    narrativeArc: result.plan.narrativeArc || sourceDeckPlan.narrativeArc,
+    outline: buildDeckPlanOutline(nextSlides),
+    slides: nextSlides,
+    thesis: result.plan.thesis || sourceDeckPlan.thesis
+  };
+  const draft = savePresentationCreationDraft({
+    ...current,
+    approvedOutline: false,
+    deckPlan,
+    fields,
+    outlineDirty: false,
+    retrieval: result.retrieval,
+    stage: "structure"
+  });
+
+  updateWorkflowState({
+    generation: result.generation,
+    message: `Regenerated outline slide ${slideIndex + 1}.`,
+    ok: true,
+    operation: "regenerate-outline-slide",
+    stage: "completed",
+    status: "completed"
+  });
+  runtimeState.lastError = null;
+  runtimeState.sourceRetrieval = result.retrieval || null;
+  publishRuntimeState();
+
+  createJsonResponse(res, 200, {
+    creationDraft: draft,
+    deckPlan,
     retrieval: result.retrieval,
     runtime: serializeRuntimeState()
   });
@@ -620,6 +765,7 @@ async function handlePresentationDraftApprove(req, res) {
     ...current,
     approvedOutline: true,
     deckPlan,
+    outlineLocks: body.outlineLocks ? normalizeOutlineLocks(body.outlineLocks) : current.outlineLocks,
     outlineDirty: false,
     stage: "content"
   });
@@ -1813,6 +1959,11 @@ async function handleApi(req, res, url) {
 
   if (req.method === "POST" && url.pathname === "/api/presentations/draft/outline") {
     await handlePresentationDraftOutline(req, res);
+    return;
+  }
+
+  if (req.method === "POST" && url.pathname === "/api/presentations/draft/outline/slide") {
+    await handlePresentationDraftOutlineSlide(req, res);
     return;
   }
 

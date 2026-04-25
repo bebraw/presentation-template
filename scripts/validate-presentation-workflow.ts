@@ -311,6 +311,28 @@ async function main() {
           const sourceOutline = document.querySelector("#presentation-source-outline")?.textContent || "";
           return /Edited workflow opener/.test(sourceOutline) && /Slide-specific source/.test(sourceOutline);
         });
+        await page.click("[data-outline-lock-slide-index='0']");
+        await page.waitForFunction(async () => {
+          const response = await fetch("/api/state");
+          const payload = await response.json();
+          return payload.creationDraft
+            && payload.creationDraft.outlineLocks
+            && payload.creationDraft.outlineLocks["0"] === true;
+        });
+        const lockedRegenerateResponse = waitForJsonResponse(page, "/api/presentations/draft/outline", 60_000);
+        await page.click("#regenerate-presentation-outline-button");
+        const lockedRegeneratedPayload = await lockedRegenerateResponse;
+        assert.equal(lockedRegeneratedPayload.creationDraft.deckPlan.slides[0].title, "Edited workflow opener");
+        assert.equal(lockedRegeneratedPayload.creationDraft.deckPlan.slides[0].sourceNotes, "Slide-specific source: the opener should cite the workflow smoke source only for this outline beat.");
+        assert.equal(lockedRegeneratedPayload.creationDraft.outlineLocks["0"], true);
+
+        await page.fill("[data-outline-slide-index='1'][data-outline-slide-field='title']", "Needs focused regeneration");
+        const slideRegenerateResponse = waitForJsonResponse(page, "/api/presentations/draft/outline/slide", 60_000);
+        await page.click("[data-outline-regenerate-slide-index='1']");
+        const slideRegeneratedPayload = await slideRegenerateResponse;
+        assert.equal(slideRegeneratedPayload.creationDraft.deckPlan.slides[0].title, "Edited workflow opener");
+        assert.equal(slideRegeneratedPayload.creationDraft.deckPlan.slides[1].title, "Workflow smoke 2");
+
         const approveOutlineResponse = waitForJsonResponse(page, "/api/presentations/draft/approve", 60_000);
         await page.click("#approve-presentation-outline-button");
         const approvedPayload = await approveOutlineResponse;

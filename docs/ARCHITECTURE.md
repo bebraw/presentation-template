@@ -179,8 +179,9 @@ flowchart LR
     validate --> geometry["DOM geometry checks"]
     validate --> text["DOM text checks"]
     validate --> media["Media fixtures"]
-    validate --> workflow["Browser workflow fixture"]
-    validate --> studioLayout["Studio layout fixture"]
+    validate --> browser["Browser fixtures on one studio server"]
+    browser --> workflow["Workflow fixture"]
+    browser --> studioLayout["Studio layout fixture"]
 
     renderCheck --> build["Build active PDF"]
     build --> raster["Rasterize with PDF.js"]
@@ -192,7 +193,7 @@ Validation is layered:
 - type checks cover the TypeScript sources
 - service tests cover high-risk server behavior
 - DOM validators catch layout, text, contrast, bounds, and media issues
-- workflow fixtures exercise browser flows
+- browser fixtures exercise workflow and layout behavior through one shared studio server
 - render validation compares the current PDF to `/studio/baseline/<id>/`
 
 Intentional visual changes should refresh `/studio/baseline/<id>/` with `npm run baseline:render`.

@@ -242,11 +242,13 @@ async function waitForJsonResponse(page, pathPart, timeout = 30_000) {
   return responseText ? JSON.parse(responseText) : null;
 }
 
-async function main() {
+async function runPresentationWorkflowValidation(options: any = {}) {
+  const keepServerOpen = options.keepServerOpen === true;
   const before = listPresentations();
   cleanupSmokePresentations(before.activePresentationId);
   installSmokeLlmMock();
   const server = startServer({ port: 0 });
+  let completed = false;
 
   try {
     if (!server.listening) {
@@ -570,16 +572,26 @@ async function main() {
     } finally {
       await browser.close();
     }
+    process.stdout.write("Presentation workflow validation passed.\n");
+    completed = true;
+    return { server };
   } finally {
-    server.close();
+    if (!keepServerOpen || !completed) {
+      server.close();
+    }
     restoreSmokeLlmMock();
     cleanupSmokePresentations(before.activePresentationId);
   }
 
-  process.stdout.write("Presentation workflow validation passed.\n");
 }
 
-main().catch((error) => {
-  console.error(error);
-  process.exit(1);
-});
+if (require.main === module) {
+  runPresentationWorkflowValidation().catch((error) => {
+    console.error(error);
+    process.exit(1);
+  });
+}
+
+module.exports = {
+  runPresentationWorkflowValidation
+};

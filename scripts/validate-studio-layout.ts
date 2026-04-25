@@ -9,13 +9,9 @@ const viewports = [
   { width: 390, height: 844 }
 ];
 
-main().catch((error) => {
-  console.error(error);
-  process.exit(1);
-});
-
-async function main() {
-  const server = startServer({ port: 0 });
+async function runStudioLayoutValidation(options: any = {}) {
+  const server = options.server || startServer({ port: 0 });
+  const ownsServer = !options.server;
 
   try {
     if (!server.listening) {
@@ -634,8 +630,21 @@ async function main() {
       await browser.close();
     }
   } finally {
-    server.close();
+    if (ownsServer) {
+      server.close();
+    }
   }
 
   process.stdout.write("Studio layout validation passed.\n");
 }
+
+if (require.main === module) {
+  runStudioLayoutValidation().catch((error) => {
+    console.error(error);
+    process.exit(1);
+  });
+}
+
+module.exports = {
+  runStudioLayoutValidation
+};

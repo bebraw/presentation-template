@@ -19,3 +19,4 @@ Accepted direction or implementation plans that are not fully built yet:
 - [0006: User Data Home And App Packaging](./proposed/0006-user-data-home-and-app-packaging.md)
 - [0007: Browser Presentation Mode](./proposed/0007-browser-presentation-mode.md)
 - [0008: Two-Dimensional Presentations](./proposed/0008-two-dimensional-presentations.md)
+- [0009: Graph-Style Presentations](./proposed/0009-graph-style-presentations.md)

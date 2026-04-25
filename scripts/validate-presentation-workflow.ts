@@ -462,6 +462,8 @@ async function runPresentationWorkflowValidation(options: any = {}) {
         });
         await presentationPage.keyboard.press("ArrowLeft");
         await presentationPage.waitForFunction(() => window.location.hash === "#x=1");
+        await presentationPage.keyboard.press("Escape");
+        await presentationPage.waitForURL(new RegExp(`http://127\\.0\\.0\\.1:${port}/#studio$`));
         await presentationPage.close();
 
         await page.locator(".material-details summary").click();

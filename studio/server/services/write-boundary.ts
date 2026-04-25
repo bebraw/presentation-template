@@ -12,6 +12,7 @@ const allowedStateFiles = new Set([
   "deck-context.json",
   "materials.json",
   "presentations.json",
+  "runtime.json",
   "sessions.json",
   "sources.json",
   "variants.json"
@@ -122,6 +123,7 @@ function describeAllowedWriteTargets() {
     "`presentations/<id>/presentation.json`",
     "`studio/state/deck-context.json`",
     "`studio/state/presentations.json`",
+    "`studio/state/runtime.json`",
     "`studio/state/sources.json`",
     "`studio/state/variants.json`",
     "`studio/state/sessions.json`",

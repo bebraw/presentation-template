@@ -24,6 +24,7 @@ const {
 } = require("./write-boundary.ts");
 
 const presentationsRegistryFile = path.join(stateDir, "presentations.json");
+const presentationRuntimeFile = path.join(stateDir, "runtime.json");
 const defaultPresentationId = "slideotter";
 
 function createSlug(value, fallback = "presentation") {
@@ -275,7 +276,6 @@ function createDefaultPresentationMeta(fields: any = {}) {
 
 function createDefaultRegistry() {
   return {
-    activePresentationId: defaultPresentationId,
     presentations: [
       {
         id: defaultPresentationId,
@@ -299,18 +299,49 @@ function normalizeRegistry(registry) {
   const normalized = presentations.length
     ? presentations
     : createDefaultRegistry().presentations;
-  const activePresentationId = normalized.some((entry) => entry.id === source.activePresentationId)
-    ? source.activePresentationId
-    : normalized[0].id;
 
   return {
-    activePresentationId,
     presentations: normalized
+  };
+}
+
+function defaultActivePresentationId(registry) {
+  const entries = registry.presentations || [];
+  return entries.some((entry) => entry.id === defaultPresentationId)
+    ? defaultPresentationId
+    : entries[0].id;
+}
+
+function normalizeRuntimeState(runtime, registry, fallbackActivePresentationId = defaultActivePresentationId(registry)) {
+  const source = runtime && typeof runtime === "object" ? runtime : {};
+  const activePresentationId = registry.presentations.some((entry) => entry.id === source.activePresentationId)
+    ? source.activePresentationId
+    : fallbackActivePresentationId;
+
+  return {
+    activePresentationId
   };
 }
 
 function readRegistry() {
   return normalizeRegistry(readJson(presentationsRegistryFile, createDefaultRegistry()));
+}
+
+function readRuntimeState(registry = readRegistry()) {
+  const legacyRegistry = readJson(presentationsRegistryFile, {});
+  const fallbackActivePresentationId = registry.presentations.some((entry) => entry.id === legacyRegistry.activePresentationId)
+    ? legacyRegistry.activePresentationId
+    : defaultActivePresentationId(registry);
+
+  return normalizeRuntimeState(readJson(presentationRuntimeFile, {
+    activePresentationId: fallbackActivePresentationId
+  }), registry, fallbackActivePresentationId);
+}
+
+function writeRuntimeState(runtime, registry = readRegistry()) {
+  const normalized = normalizeRuntimeState(runtime, registry);
+  writeJson(presentationRuntimeFile, normalized);
+  return normalized;
 }
 
 function writeRegistry(registry) {
@@ -366,7 +397,8 @@ function ensurePresentationsState() {
 }
 
 function getActivePresentationId() {
-  return ensurePresentationsState().activePresentationId;
+  const registry = ensurePresentationsState();
+  return readRuntimeState(registry).activePresentationId;
 }
 
 function getActivePresentationPaths() {
@@ -380,10 +412,9 @@ function setActivePresentation(id) {
     throw new Error(`Unknown presentation: ${safeId}`);
   }
 
-  return writeRegistry({
-    ...registry,
+  return writeRuntimeState({
     activePresentationId: safeId
-  });
+  }, registry);
 }
 
 function updatePresentationMeta(id, fields) {
@@ -468,9 +499,10 @@ function readPresentationSummary(id) {
 
 function listPresentations() {
   const registry = ensurePresentationsState();
+  const runtime = readRuntimeState(registry);
 
   return {
-    activePresentationId: registry.activePresentationId,
+    activePresentationId: runtime.activePresentationId,
     presentations: registry.presentations.map((entry) => readPresentationSummary(entry.id))
   };
 }
@@ -506,8 +538,7 @@ function createPresentation(fields: any = {}) {
   });
 
   const registry = ensurePresentationsState();
-  writeRegistry({
-    activePresentationId: id,
+  const nextRegistry = writeRegistry({
     presentations: [
       ...registry.presentations,
       {
@@ -516,6 +547,9 @@ function createPresentation(fields: any = {}) {
       }
     ]
   });
+  writeRuntimeState({
+    activePresentationId: id
+  }, nextRegistry);
 
   return readPresentationSummary(id);
 }
@@ -596,8 +630,7 @@ function duplicatePresentation(sourceId, fields: any = {}) {
   });
 
   const registry = ensurePresentationsState();
-  writeRegistry({
-    activePresentationId: id,
+  const nextRegistry = writeRegistry({
     presentations: [
       ...registry.presentations,
       {
@@ -606,6 +639,9 @@ function duplicatePresentation(sourceId, fields: any = {}) {
       }
     ]
   });
+  writeRuntimeState({
+    activePresentationId: id
+  }, nextRegistry);
 
   return readPresentationSummary(id);
 }
@@ -620,10 +656,11 @@ function deletePresentation(id) {
     throw new Error("Cannot delete the only presentation.");
   }
 
+  const runtime = readRuntimeState(registry);
   const nextPresentations = registry.presentations.filter((entry) => entry.id !== safeId);
-  const nextActiveId = registry.activePresentationId === safeId
+  const nextActiveId = runtime.activePresentationId === safeId
     ? nextPresentations[0].id
-    : registry.activePresentationId;
+    : runtime.activePresentationId;
   const rootDir = presentationRoot(safeId);
   if (fs.existsSync(rootDir)) {
     fs.rmSync(rootDir, {
@@ -632,10 +669,14 @@ function deletePresentation(id) {
     });
   }
 
-  return writeRegistry({
-    activePresentationId: nextActiveId,
+  const nextRegistry = writeRegistry({
     presentations: nextPresentations
   });
+  writeRuntimeState({
+    activePresentationId: nextActiveId
+  }, nextRegistry);
+
+  return nextRegistry;
 }
 
 module.exports = {
@@ -654,6 +695,7 @@ module.exports = {
   readPresentationDeckContext,
   regeneratePresentationSlides,
   listPresentations,
+  presentationRuntimeFile,
   presentationsRegistryFile,
   setActivePresentation,
   updatePresentationMeta

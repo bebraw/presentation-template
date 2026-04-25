@@ -4,5 +4,6 @@ node_modules/
 .env.agent-ci
 slides/output/
 studio/output/
+studio/state/runtime.json
 studio/state/variants.json
 studio/state/sessions.json

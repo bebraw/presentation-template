@@ -8,6 +8,8 @@ const {
   deletePresentation,
   duplicatePresentation,
   listPresentations,
+  presentationRuntimeFile,
+  presentationsRegistryFile,
   setActivePresentation
 } = require("../studio/server/services/presentations.ts");
 const {
@@ -307,6 +309,23 @@ test("presentation lifecycle keeps registry, active deck, and copied files consi
     /Unknown presentation/,
     "selecting an unknown presentation should fail explicitly"
   );
+});
+
+test("active presentation selection writes runtime state without rewriting the registry", () => {
+  const current = listPresentations();
+  let target = current.presentations.find((presentation) => presentation.id !== current.activePresentationId);
+
+  if (!target) {
+    target = createCoveragePresentation("runtime-selection");
+  }
+
+  const registryBefore = fs.readFileSync(presentationsRegistryFile, "utf8");
+  setActivePresentation(target.id);
+  const registryAfter = fs.readFileSync(presentationsRegistryFile, "utf8");
+  const runtime = JSON.parse(fs.readFileSync(presentationRuntimeFile, "utf8"));
+
+  assert.equal(registryAfter, registryBefore, "selecting a deck should not rewrite the tracked presentation registry");
+  assert.equal(runtime.activePresentationId, target.id, "runtime state should carry the active deck selection");
 });
 
 test("structured slide insert and archive preserve active order and hidden history", () => {

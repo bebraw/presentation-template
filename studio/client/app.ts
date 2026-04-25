@@ -38,6 +38,7 @@ const state: any = {
     assistantOpen: false,
     assistantTab: "chat",
     checksOpen: false,
+    creationThemeVariantId: "current",
     creationStage: "brief",
     deckPlanApplySharedSettings: {},
     currentPage: "studio",
@@ -83,6 +84,7 @@ const elements: Record<string, any> = {
   compareVariantPreview: document.getElementById("compare-variant-preview"),
   currentSlidePanel: document.getElementById("current-slide-panel"),
   approvePresentationOutlineButton: document.getElementById("approve-presentation-outline-button"),
+  applyPresentationThemeButton: document.getElementById("apply-presentation-theme-button"),
   backToPresentationOutlineButton: document.getElementById("back-to-presentation-outline-button"),
   createPresentationButton: document.getElementById("create-presentation-button"),
   createSystemSlideButton: document.getElementById("create-system-slide-button"),
@@ -167,7 +169,9 @@ const elements: Record<string, any> = {
   presentationThemeName: document.getElementById("presentation-theme-name"),
   presentationThemePanel: document.getElementById("presentation-theme-panel"),
   presentationThemePrimary: document.getElementById("presentation-theme-primary"),
+  presentationThemePreview: document.getElementById("presentation-theme-preview"),
   presentationThemeSecondary: document.getElementById("presentation-theme-secondary"),
+  presentationThemeVariantList: document.getElementById("presentation-theme-variant-list"),
   presentationTitle: document.getElementById("presentation-title"),
   presentationTone: document.getElementById("presentation-tone"),
   presentationsPage: document.getElementById("presentations-page"),
@@ -178,6 +182,7 @@ const elements: Record<string, any> = {
   saveDeckContextButton: document.getElementById("save-deck-context-button"),
   saveDeckThemeButton: document.getElementById("save-deck-theme-button"),
   savePresentationThemeButton: document.getElementById("save-presentation-theme-button"),
+  openCreatedPresentationButton: document.getElementById("open-created-presentation-button"),
   saveValidationSettingsButton: document.getElementById("save-validation-settings-button"),
   saveSlideContextButton: document.getElementById("save-slide-context-button"),
   saveSlideSpecButton: document.getElementById("save-slide-spec-button"),
@@ -935,14 +940,25 @@ function setCurrentPage(page) {
   renderPages();
 }
 
-function showGeneratedDeckThemeStage() {
-  setCurrentPage("planning");
-  const paletteDetails: any = document.querySelector(".planning-palette-details");
-  if (paletteDetails) {
-    paletteDetails.open = true;
-    paletteDetails.scrollIntoView({ behavior: "smooth", block: "start" });
+function showGeneratedDeckThemeStage(fields, deckPlan) {
+  state.creationDraft = {
+    approvedOutline: true,
+    deckPlan,
+    fields,
+    outlineDirty: false,
+    outlineLocks: {},
+    stage: "theme"
+  };
+  state.ui.creationStage = "theme";
+  state.ui.creationThemeVariantId = "current";
+  setCurrentPage("presentations");
+  const creationDetails: any = document.querySelector(".presentation-create-details");
+  if (creationDetails) {
+    creationDetails.open = true;
+    creationDetails.scrollIntoView({ behavior: "smooth", block: "start" });
   }
-  elements.operationStatus.textContent = "Created deck. Choose a saved theme or adjust the current palette, then save deck context.";
+  renderCreationDraft();
+  elements.operationStatus.textContent = "Created deck. Try theme variants against the generated slide, then apply one to the deck.";
 }
 
 function renderStudioTabs() {
@@ -2527,6 +2543,108 @@ function getCreationFields() {
   };
 }
 
+function getCreationTheme() {
+  return getCreationFields().visualTheme;
+}
+
+function getCreationThemeVariants() {
+  const current = getCreationTheme();
+  const baseFont = current.fontFamily || "avenir";
+  return [
+    {
+      id: "current",
+      label: "Current",
+      note: "Use the selected controls.",
+      theme: current
+    },
+    {
+      id: "clean",
+      label: "Clean",
+      note: "Bright, direct, and neutral.",
+      theme: {
+        accent: "#d97a2b",
+        bg: "#f7fafc",
+        fontFamily: baseFont,
+        light: "#dbe8f2",
+        muted: "#526273",
+        panel: "#ffffff",
+        primary: "#102033",
+        progressFill: "#2f6f9f",
+        progressTrack: "#dbe8f2",
+        secondary: "#2f6f9f",
+        surface: "#ffffff"
+      }
+    },
+    {
+      id: "editorial",
+      label: "Editorial",
+      note: "Warmer and more authored.",
+      theme: {
+        accent: "#c64f2d",
+        bg: "#fbf4ec",
+        fontFamily: "editorial",
+        light: "#f1d9c4",
+        muted: "#655a66",
+        panel: "#fffaf5",
+        primary: "#2f2530",
+        progressFill: "#c64f2d",
+        progressTrack: "#f1d9c4",
+        secondary: "#8f4e2b",
+        surface: "#ffffff"
+      }
+    },
+    {
+      id: "dark",
+      label: "Dark",
+      note: "High contrast on black.",
+      theme: {
+        accent: "#09b5c4",
+        bg: "#000000",
+        fontFamily: baseFont,
+        light: "#183b40",
+        muted: "#dcefed",
+        panel: "#101820",
+        primary: "#f7fcfb",
+        progressFill: "#b6fff8",
+        progressTrack: "#183b40",
+        secondary: "#b6fff8",
+        surface: "#f7fcfb"
+      }
+    },
+    {
+      id: "workshop",
+      label: "Workshop",
+      note: "Practical and structured.",
+      theme: {
+        accent: "#b05f2a",
+        bg: "#ffffff",
+        fontFamily: "workshop",
+        light: "#dcefed",
+        muted: "#346065",
+        panel: "#f7fcfb",
+        primary: "#183b40",
+        progressFill: "#09b5c4",
+        progressTrack: "#dcefed",
+        secondary: "#09b5c4",
+        surface: "#ffffff"
+      }
+    }
+  ];
+}
+
+function applyCreationTheme(theme) {
+  applyCreationFields({
+    ...getCreationFields(),
+    visualTheme: theme || {}
+  });
+  renderCreationThemeStage();
+}
+
+function getSelectedCreationThemeVariant() {
+  const variants = getCreationThemeVariants();
+  return variants.find((variant) => variant.id === state.ui.creationThemeVariantId) || variants[0];
+}
+
 function isWorkflowRunning() {
   const workflow = state.runtime && state.runtime.workflow;
   return Boolean(workflow && workflow.status === "running");
@@ -2973,6 +3091,54 @@ function renderCreationOutline(draft) {
   renderQuickSourceOutline(deckPlan);
 }
 
+function getCreationThemePreviewEntry() {
+  const selected = Array.isArray(state.domPreview.slides)
+    ? state.domPreview.slides.find((entry) => entry && entry.id === state.selectedSlideId)
+    : null;
+  return selected || (Array.isArray(state.domPreview.slides) ? state.domPreview.slides[0] : null);
+}
+
+function renderCreationThemeStage() {
+  if (!elements.presentationThemeVariantList || !elements.presentationThemePreview) {
+    return;
+  }
+
+  const variants = getCreationThemeVariants();
+  if (!variants.some((variant) => variant.id === state.ui.creationThemeVariantId)) {
+    state.ui.creationThemeVariantId = "current";
+  }
+  const selectedVariant = getSelectedCreationThemeVariant();
+  elements.presentationThemeVariantList.innerHTML = variants.map((variant) => `
+    <button
+      class="creation-theme-variant${variant.id === selectedVariant.id ? " active" : ""}"
+      type="button"
+      data-creation-theme-variant="${escapeHtml(variant.id)}"
+      aria-pressed="${variant.id === selectedVariant.id ? "true" : "false"}"
+    >
+      <span class="creation-theme-swatch" style="--swatch-bg:${escapeHtml(variant.theme.bg || "#ffffff")};--swatch-primary:${escapeHtml(variant.theme.primary || "#183153")};--swatch-accent:${escapeHtml(variant.theme.accent || "#f28f3b")}"></span>
+      <strong>${escapeHtml(variant.label)}</strong>
+      <small>${escapeHtml(variant.note)}</small>
+    </button>
+  `).join("");
+
+  const previewEntry = getCreationThemePreviewEntry();
+  const slideSpec = previewEntry && previewEntry.slideSpec ? previewEntry.slideSpec : null;
+  if (slideSpec) {
+    renderDomSlide(elements.presentationThemePreview, slideSpec, {
+      index: previewEntry.index || 1,
+      theme: selectedVariant.theme,
+      totalSlides: state.slides.length || state.domPreview.slides.length || 1
+    });
+  } else {
+    elements.presentationThemePreview.innerHTML = `
+      <div class="presentation-empty">
+        <strong>No slide preview yet</strong>
+        <span>Create slides from the approved outline to preview themes.</span>
+      </div>
+    `;
+  }
+}
+
 function renderCreationDraft() {
   const draft = state.creationDraft || {};
   const hasOutline = Boolean(draft.deckPlan && Array.isArray(draft.deckPlan.slides) && draft.deckPlan.slides.length);
@@ -3018,6 +3184,9 @@ function renderCreationDraft() {
   elements.backToPresentationOutlineButton.disabled = workflowRunning;
   elements.createPresentationButton.disabled = workflowRunning || !approved || !hasOutline || outlineDirty;
   elements.savePresentationThemeButton.disabled = workflowRunning;
+  if (elements.applyPresentationThemeButton) {
+    elements.applyPresentationThemeButton.disabled = workflowRunning || !state.slides.length;
+  }
 
   elements.presentationCreationStatus.textContent = workflowRunning
     ? "Generation is running from a locked snapshot. Wait for it to finish before changing the draft."
@@ -3031,6 +3200,7 @@ function renderCreationDraft() {
       ? "Review the outline, then approve it to create slides."
       : "Draft is saved locally as ignored runtime state.";
   renderCreationOutline(draft);
+  renderCreationThemeStage();
 }
 
 function formatPresentationDate(value) {
@@ -3653,6 +3823,7 @@ async function createPresentationFromForm(options: any = {}) {
   });
   try {
     const deckPlan = options.deckPlan || getEditableDeckPlan();
+    const creationFields = getCreationFields();
     const starterMaterialFile = elements.presentationMaterialFile.files && elements.presentationMaterialFile.files[0];
     const presentationMaterials = starterMaterialFile
       ? [{
@@ -3666,16 +3837,16 @@ async function createPresentationFromForm(options: any = {}) {
       body: JSON.stringify({
         approvedOutline: options.approvedOutline === true || state.creationDraft && state.creationDraft.approvedOutline === true,
         deckPlan: deckPlan || state.creationDraft && state.creationDraft.deckPlan,
-        fields: getCreationFields(),
+        fields: creationFields,
         presentationMaterials,
         targetSlideCount: Number.isFinite(targetSlideCount) ? targetSlideCount : null
       }),
       method: "POST"
     });
-    clearPresentationForm();
     resetPresentationSelection();
     await refreshState();
-    showGeneratedDeckThemeStage();
+    applyCreationFields(creationFields);
+    showGeneratedDeckThemeStage(creationFields, deckPlan || state.creationDraft && state.creationDraft.deckPlan);
   } finally {
     if (done) {
       done();
@@ -3871,6 +4042,39 @@ async function savePresentationTheme() {
   } finally {
     done();
   }
+}
+
+async function applyPresentationThemeToDeck() {
+  const theme = getSelectedCreationThemeVariant().theme;
+  const done = setBusy(elements.applyPresentationThemeButton, "Applying...");
+  try {
+    applyCreationTheme(theme);
+    const payload = await request("/api/context", {
+      body: JSON.stringify({
+        deck: {
+          themeBrief: elements.presentationThemeBrief.value,
+          visualTheme: getCreationTheme()
+        }
+      }),
+      method: "POST"
+    });
+    state.context = payload.context;
+    state.domPreview = {
+      ...state.domPreview,
+      theme: payload.context && payload.context.deck ? payload.context.deck.visualTheme : state.domPreview.theme
+    };
+    renderCreationThemeStage();
+    renderPreviews();
+    await buildDeck();
+    elements.presentationCreationStatus.textContent = "Theme applied to the generated deck.";
+  } finally {
+    done();
+  }
+}
+
+function openCreatedPresentation() {
+  clearPresentationForm();
+  setCurrentPage("studio");
 }
 
 async function saveDeckTheme() {
@@ -4963,10 +5167,29 @@ elements.regeneratePresentationOutlineWithSourcesButton.addEventListener("click"
 elements.approvePresentationOutlineButton.addEventListener("click", () => approvePresentationOutline().catch((error) => window.alert(error.message)));
 elements.backToPresentationOutlineButton.addEventListener("click", () => backToPresentationOutline().catch((error) => window.alert(error.message)));
 elements.createPresentationButton.addEventListener("click", () => createPresentationFromForm().catch((error) => window.alert(error.message)));
+elements.applyPresentationThemeButton.addEventListener("click", () => applyPresentationThemeToDeck().catch((error) => window.alert(error.message)));
 elements.savePresentationThemeButton.addEventListener("click", () => savePresentationTheme().catch((error) => window.alert(error.message)));
+elements.openCreatedPresentationButton.addEventListener("click", openCreatedPresentation);
 elements.presentationSavedTheme.addEventListener("change", () => {
   applySavedTheme(elements.presentationSavedTheme.value);
+  state.ui.creationThemeVariantId = "current";
+  renderCreationThemeStage();
   saveCreationDraft("theme").catch((error) => window.alert(error.message));
+});
+elements.presentationThemeVariantList.addEventListener("click", (event) => {
+  const target: any = event.target;
+  const button = target.closest("[data-creation-theme-variant]");
+  if (!button || !elements.presentationThemeVariantList.contains(button)) {
+    return;
+  }
+
+  state.ui.creationThemeVariantId = button.dataset.creationThemeVariant || "current";
+  const variant = getSelectedCreationThemeVariant();
+  if (variant.id !== "current") {
+    applyCreationTheme(variant.theme);
+  } else {
+    renderCreationThemeStage();
+  }
 });
 elements.deckSavedTheme.addEventListener("change", () => {
   if (elements.deckSavedTheme.value) {
@@ -5052,6 +5275,17 @@ elements.presentationOutlineList.addEventListener("click", (event) => {
     if (element === elements.presentationSourceText) {
       elements.presentationOutlineSourceText.value = elements.presentationSourceText.value;
     }
+    if ([
+      elements.presentationFontFamily,
+      elements.presentationThemePrimary,
+      elements.presentationThemeSecondary,
+      elements.presentationThemeAccent,
+      elements.presentationThemeBg,
+      elements.presentationThemePanel
+    ].includes(element)) {
+      state.ui.creationThemeVariantId = "current";
+      renderCreationThemeStage();
+    }
     scheduleCreationDraftSave(element);
   });
   element.addEventListener("change", () => {
@@ -5064,6 +5298,17 @@ elements.presentationOutlineList.addEventListener("click", (event) => {
     }
     if (element === elements.presentationSourceText) {
       elements.presentationOutlineSourceText.value = elements.presentationSourceText.value;
+    }
+    if ([
+      elements.presentationFontFamily,
+      elements.presentationThemePrimary,
+      elements.presentationThemeSecondary,
+      elements.presentationThemeAccent,
+      elements.presentationThemeBg,
+      elements.presentationThemePanel
+    ].includes(element)) {
+      state.ui.creationThemeVariantId = "current";
+      renderCreationThemeStage();
     }
     saveCreationDraft(state.ui.creationStage, {
       invalidateOutline: isOutlineRelevantInput(element)

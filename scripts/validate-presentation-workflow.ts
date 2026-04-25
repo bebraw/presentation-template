@@ -340,8 +340,15 @@ async function main() {
         assert.equal(approvedDraft.deckPlan.slides[0].title, "Edited workflow opener");
         assert.equal(approvedDraft.deckPlan.slides[0].intent, "Edited workflow opener validates custom outline wording.");
         assert.equal(approvedDraft.deckPlan.slides[0].sourceNotes, "Slide-specific source: the opener should cite the workflow smoke source only for this outline beat.");
-        await waitForPage(page, "#planning-page");
-        await page.waitForSelector(".planning-palette-details[open] #theme-primary");
+        await waitForPage(page, "#presentations-page");
+        await page.waitForSelector("#creation-stage-theme:not([hidden]) #presentation-theme-preview .dom-slide");
+        await page.click("[data-creation-theme-variant='dark']");
+        await page.waitForFunction(() => {
+          return /--dom-bg:#000000/.test(document.querySelector("#presentation-theme-preview .dom-slide")?.getAttribute("style") || "");
+        });
+        const applyThemeResponse = waitForJsonResponse(page, "/api/context", 60_000);
+        await page.click("#apply-presentation-theme-button");
+        await applyThemeResponse;
         await page.click("#show-studio-page");
         await waitForPage(page, "#studio-page");
         await page.waitForFunction(async () => {

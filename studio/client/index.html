@@ -239,61 +239,83 @@
                 </div>
 
                 <div class="presentation-create-stage" id="creation-stage-theme" hidden>
-                  <div class="presentation-create-grid">
-                    <label class="field">
-                      <span>Theme brief</span>
-                      <textarea id="presentation-theme-brief" placeholder="Color, typography, mood, or brand direction."></textarea>
-                    </label>
+                  <div class="creation-theme-workbench">
+                    <section class="creation-theme-controls">
+                      <div class="creation-theme-head">
+                        <div>
+                          <p class="eyebrow">Theme</p>
+                          <h3>Try the deck style</h3>
+                        </div>
+                        <button id="open-created-presentation-button" class="secondary" type="button">Open Slide Studio</button>
+                      </div>
 
-                    <label class="field">
-                      <span>Saved theme</span>
-                      <select id="presentation-saved-theme">
-                        <option value="">Current draft colors</option>
-                      </select>
-                    </label>
+                      <div class="presentation-create-grid creation-theme-field-grid">
+                        <label class="field">
+                          <span>Theme brief</span>
+                          <textarea id="presentation-theme-brief" placeholder="Color, typography, mood, or brand direction."></textarea>
+                        </label>
 
-                    <label class="field">
-                      <span>Font</span>
-                      <select id="presentation-font-family">
-                        <option value="avenir">Avenir</option>
-                        <option value="editorial">Editorial</option>
-                        <option value="workshop">Workshop</option>
-                        <option value="mono">Mono</option>
-                      </select>
-                    </label>
+                        <label class="field">
+                          <span>Saved theme</span>
+                          <select id="presentation-saved-theme">
+                            <option value="">Current draft colors</option>
+                          </select>
+                        </label>
 
-                    <label class="field color-field">
-                      <span>Primary</span>
-                      <input id="presentation-theme-primary" type="color" value="#183153">
-                    </label>
+                        <label class="field">
+                          <span>Font</span>
+                          <select id="presentation-font-family">
+                            <option value="avenir">Avenir</option>
+                            <option value="editorial">Editorial</option>
+                            <option value="workshop">Workshop</option>
+                            <option value="mono">Mono</option>
+                          </select>
+                        </label>
 
-                    <label class="field color-field">
-                      <span>Secondary</span>
-                      <input id="presentation-theme-secondary" type="color" value="#275d8c">
-                    </label>
+                        <label class="field color-field">
+                          <span>Primary</span>
+                          <input id="presentation-theme-primary" type="color" value="#183153">
+                        </label>
 
-                    <label class="field color-field">
-                      <span>Accent</span>
-                      <input id="presentation-theme-accent" type="color" value="#f28f3b">
-                    </label>
+                        <label class="field color-field">
+                          <span>Secondary</span>
+                          <input id="presentation-theme-secondary" type="color" value="#275d8c">
+                        </label>
 
-                    <label class="field color-field">
-                      <span>Background</span>
-                      <input id="presentation-theme-bg" type="color" value="#f5f8fc">
-                    </label>
+                        <label class="field color-field">
+                          <span>Accent</span>
+                          <input id="presentation-theme-accent" type="color" value="#f28f3b">
+                        </label>
 
-                    <label class="field color-field">
-                      <span>Panel</span>
-                      <input id="presentation-theme-panel" type="color" value="#f8fbfe">
-                    </label>
+                        <label class="field color-field">
+                          <span>Background</span>
+                          <input id="presentation-theme-bg" type="color" value="#f5f8fc">
+                        </label>
 
-                    <label class="field">
-                      <span>Favorite name</span>
-                      <input id="presentation-theme-name" type="text" placeholder="Reusable theme name">
-                    </label>
+                        <label class="field color-field">
+                          <span>Panel</span>
+                          <input id="presentation-theme-panel" type="color" value="#f8fbfe">
+                        </label>
 
-                    <div class="button-row compact presentation-create-actions">
-                      <button id="save-presentation-theme-button" type="button">Save theme</button>
+                        <label class="field">
+                          <span>Favorite name</span>
+                          <input id="presentation-theme-name" type="text" placeholder="Reusable theme name">
+                        </label>
+                      </div>
+
+                      <div class="creation-theme-variant-list" id="presentation-theme-variant-list"></div>
+
+                      <div class="button-row compact presentation-create-actions">
+                        <button id="apply-presentation-theme-button" type="button">Apply theme to deck</button>
+                        <button id="save-presentation-theme-button" class="secondary" type="button">Save theme</button>
+                      </div>
+                    </section>
+
+                    <div class="creation-theme-preview" id="presentation-theme-preview">
+                      <div class="presentation-empty">
+                        <strong>No slide preview yet</strong>
+                        <span>Create slides from the approved outline to preview themes.</span>
+                      </div>
                     </div>
                   </div>
                 </div>

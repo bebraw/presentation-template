@@ -16,11 +16,13 @@ The current model is intentionally structured. Slide specs are validated JSON, g
 
 ## Decision Direction
 
-Grow the slide model through named slide families and reusable layout definitions.
+Grow the slide model through named slide families and reusable JSON layout definitions.
 
 Authors should be able to ask for deck structure and visual intent in normal language, but the system should materialize those requests as one of the supported structured slide families. Generation may choose, for example, a divider, quote, photo, or photo-grid family, but the produced slide spec must still validate, render through the shared DOM runtime, compare cleanly, and pass the same text, geometry, media, and render checks.
 
-Authors should also be able to define, save, favorite, and reuse layouts across slide sets. From the user's perspective, layout requests can be arbitrary: "make this a quote spread", "put the chart beside two takeaways", "use three stacked screenshots", or "split these photos 70/30". Internally, those requests should compile to a bounded declarative layout definition that the renderer and validators understand.
+Authors should also be able to define, save, favorite, reuse, and share layouts across slide sets. From the user's perspective, layout requests can be arbitrary: "make this a quote spread", "put the chart beside two takeaways", "use three stacked screenshots", or "split these photos 70/30". Internally, those requests should compile to a bounded declarative JSON layout definition that the renderer and validators understand.
+
+JSON should be the canonical intermediate and exchange format for layouts. Generated layout candidates, deck-local saved layouts, favorite-layout entries, copy/paste transfer, and exported layout packs should all use the same versioned JSON document shape. The renderer can compile that JSON into DOM/CSS, but layout sharing should never require copying runtime CSS, generated HTML, or hidden editor state.
 
 ## Product Rules
 
@@ -29,6 +31,7 @@ Authors should also be able to define, save, favorite, and reuse layouts across 
 - Arbitrary layout requests should be accepted when they can compile to a validated layout definition.
 - The app should say no, or offer the nearest supported family/layout, when a request cannot be represented safely.
 - Layout definitions should be saved as reusable library items, not embedded as one-off hidden renderer code inside slide specs.
+- Layout definitions should be copyable as validated JSON so authors can move a layout between decks, workspaces, or review threads without special tooling.
 - A slide should reference a layout by id plus layout-safe slot assignments or parameters.
 - Rich visual families should build on the presentation material library rather than raw external URLs.
 - Multi-image families should keep captions, source lines, alt text, and validation close to each image.
@@ -110,11 +113,13 @@ Layouts should become a first-class reusable asset, similar to saved themes.
 
 ### Storage
 
-Layout definitions should live outside individual slide specs:
+Layout definitions should live outside individual slide specs and use JSON as their portable representation:
 
-- deck-local layout definitions under `presentations/<id>/state/layouts.json`
-- user-saved favorite layouts in a reusable library, backed by ignored studio runtime state at first
-- later export/import support for sharing layout packs across repositories
+- deck-local layout definitions under `~/.slideotter/presentations/<id>/state/layouts.json`
+- user-saved favorite layouts in a reusable user library under `~/.slideotter/libraries/layouts/`
+- later export/import support for sharing JSON layout packs across repositories
+
+The bundled slideotter tutorial presentation is the exception to the user-data rule. It can remain inside the application repository because it is part of the product documentation and development fixture set. User-created slide sets, user libraries, and other mutable user-owned data should live under `~/.slideotter`.
 
 Slide specs should reference layouts by id:
 
@@ -130,6 +135,21 @@ Slide specs should reference layouts by id:
 ```
 
 The exact shape can change, but the boundary should stay clear: slide specs carry content and layout references; layout library entries carry the reusable arrangement.
+
+### JSON Exchange Format
+
+Every reusable layout should be serializable as a standalone JSON document with:
+
+- a schema version
+- stable layout id, name, and description
+- supported slide families
+- named slots and slot constraints
+- theme token references instead of raw theme copies
+- layout regions, spacing tokens, alignment, and media treatment rules
+- validation constraints for text fit, media bounds, captions, sources, and progress-area clearance
+- optional preview metadata such as thumbnail path or sample content id
+
+Copy/paste should move this JSON document directly. Import should validate the document, normalize any local ids that would collide, and then save it into the deck-local or favorite-layout library. Exported layout packs should be arrays or named collections of the same JSON documents rather than a separate format.
 
 ### Definition Shape
 
@@ -162,7 +182,7 @@ Authors should be able to save layouts they like into a favorite-layout library.
 - the creation flow and Slide Studio should let authors choose from favorite layouts before asking the model to generate a new one
 - favorite layouts should remain user-editable and removable
 - favorite layout definitions should be validated again when reused, so older saved layouts cannot silently bypass newer renderer or validation rules
-- in the first implementation, favorites can live in ignored studio runtime state; a later export/import path can promote them into portable layout packs
+- favorites should live in the user-level `~/.slideotter` library from the first implementation; export/import should still support portable layout packs for explicit sharing and backup
 
 ### Validation
 
@@ -196,10 +216,10 @@ Every saved layout definition should pass validation before it can be used:
    Keep the existing one-image `media` field for current families. Add a validated `mediaItems` path for families that need multiple images, with per-item alt text, caption, source, and material id.
 
 7. Add the layout-library model.
-   Introduce deck-local `layouts.json`, a favorite-layout runtime store, layout ids, and layout definition validation. Start with definitions that can express the current hardcoded treatments before adding richer arrangements.
+   Introduce deck-local `layouts.json`, a favorite-layout runtime store, layout ids, a versioned JSON layout document shape, and layout definition validation. Start with definitions that can express the current hardcoded treatments before adding richer arrangements.
 
 8. Add favorite-layout save and reuse.
-   Let authors save a generated or adjusted layout as a favorite, browse favorite layouts in creation and Slide Studio, apply one to the current slide, and delete stale favorites.
+   Let authors save a generated or adjusted layout as a favorite, browse favorite layouts in creation and Slide Studio, apply one to the current slide, copy/paste its JSON, and delete stale favorites.
 
 9. Add photo-grid support.
    Introduce two-up, three-up, and four-up grid treatments through a single `photoGrid` family. Do not add arbitrary grid coordinates in the first version.
@@ -208,7 +228,7 @@ Every saved layout definition should pass validation before it can be used:
    Let deck-plan and slide-drafting schemas choose among supported slide families and saved layout definitions. Prompt language should map user requests such as "quote slide", "photo slide", "before/after", and "split photos" to the corresponding family and, when useful, a generated layout candidate.
 
 11. Add layout candidate generation.
-    `redo-layout` should generate layout candidates that may either reuse an existing library layout or propose a new declarative layout definition. If the user asks for a different family, create a candidate that changes `type` explicitly and makes the family change visible in the compare view.
+    `redo-layout` should generate layout candidates that may either reuse an existing library layout or propose a new declarative JSON layout definition. If the user asks for a different family, create a candidate that changes `type` explicitly and makes the family change visible in the compare view.
 
 12. Expand validation fixtures.
     Add fixture slides and fixture layout definitions for divider, quote, photo, photo-grid, and generated layout-library candidates. Cover text fit, media bounds, caption/source attachment, render baselines, workflow creation, and generated candidate validation.
@@ -219,6 +239,7 @@ Every saved layout definition should pass validation before it can be used:
 - no freeform drag-and-drop visual editor in this slice
 - no unconstrained per-slide absolute positioning
 - no remote image URLs in slide specs without material-library import
+- no separate non-JSON package format for layout sharing
 - no silent family changes during candidate apply
 
 ## Rollout Order
@@ -236,13 +257,17 @@ Every saved layout definition should pass validation before it can be used:
 
 This order improves long-deck clarity first, then turns layout into a reusable library asset before expanding visual expressiveness. Each slice should stay small enough to validate from the rendered PDF.
 
+## Resolved Questions
+
+- Existing `toc` + `layout: "divider"` specs do not need a long-lived backward-compatible alias. When `type: "divider"` lands, patch the repository-owned demo slides and fixtures to the new first-class family in the same change, then remove the old special case from active authoring paths.
+- Automatic section-divider suggestions should begin at 12 or more target slides when the outline has clear section boundaries. At 18 or more target slides, staged creation should actively propose dividers unless the outline is intentionally linear or the user asks for a compact deck.
+- Quote slides should support sourced quotes and editorial pull quotes as distinct modes. Sourced quotes require attribution and source metadata. Editorial pull quotes may be unsourced, but must be represented as authored slide copy rather than a quotation from an external person or document.
+- Favorite layouts should live in the user-level `~/.slideotter` library from the start. More broadly, user-created slide sets and mutable user-owned data should live under `~/.slideotter`; the bundled slideotter tutorial presentation can stay in the application repository because it doubles as product documentation and an internal fixture.
+- The first layout-definition schema should express named slots, region assignment, reading order, grid-like rows/columns, spacing tokens, typography roles, media fit rules, and validation constraints. It should not expose arbitrary CSS properties, selectors, absolute coordinates, or custom breakpoints. The schema only needs to cover the current built-in treatments first; richer layout grammar should be added only when a real slide family needs it.
+- Staged creation may select from built-in layouts and saved favorite layouts, but should not generate new layout definitions before draft slide content exists. New generated layout definitions should happen in Slide Studio or in a post-content creation step where candidates can preview against real slide content and pass validation before being saved or applied.
+- `photoGrid` should support two to four media items from the first schema version, but only through a small fixed set of arrangements such as two-up, three-item feature/stack, and four-up grid. The first implementation should not expose arbitrary grid coordinates; new arrangements can be added later as named layout definitions when real decks need them.
+- Family-changing candidates should live in the existing candidate review surface, but must be explicitly labeled as slide-family changes. The compare view should highlight the old and new `type`, show any content fields that will be dropped or transformed, and require explicit confirmation before apply.
+
 ## Open Questions
 
-- Should existing `toc` + `layout: "divider"` specs be migrated automatically or left as a backward-compatible alias?
-- What target length should trigger automatic section-divider suggestions?
-- Should quote slides require a source by default, or allow unsourced editorial pull quotes?
-- Should favorite layouts be global across slideotter workspaces from the start, or begin as repo-local runtime state with export/import later?
-- What minimal layout-definition schema can express the current built-in treatments without becoming a general CSS editor?
-- Should generated layout definitions be allowed during staged creation, or only after content exists in Slide Studio?
-- Should `photoGrid` support exactly two to four items, or should the first implementation only support two-up comparison?
-- Should family-changing candidates live in the existing variant list or in a separate "change slide type" workflow?
+- None.

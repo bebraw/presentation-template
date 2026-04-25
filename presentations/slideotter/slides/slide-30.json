@@ -1,0 +1,49 @@
+{
+  "type": "content",
+  "layout": "focus",
+  "index": 30,
+  "title": "Theme after content",
+  "eyebrow": "Theme stage",
+  "summary": "Theme choices are easier to judge against real slides than against an empty creation form.",
+  "signalsTitle": "Workbench actions",
+  "guardrailsTitle": "Theme discipline",
+  "signals": [
+    {
+      "id": "signal-current",
+      "title": "Start current",
+      "body": "Use the active deck theme."
+    },
+    {
+      "id": "signal-variants",
+      "title": "Try variants",
+      "body": "Preview candidates on real slides."
+    },
+    {
+      "id": "signal-adjust",
+      "title": "Adjust",
+      "body": "Tune palette and font."
+    },
+    {
+      "id": "signal-save",
+      "title": "Save favorite",
+      "body": "Reuse a good theme later."
+    }
+  ],
+  "guardrails": [
+    {
+      "id": "guardrail-session",
+      "title": "Session-only",
+      "body": "Candidates wait outside deck context."
+    },
+    {
+      "id": "guardrail-contrast",
+      "title": "Contrast",
+      "body": "Normalization guards readable colors."
+    },
+    {
+      "id": "guardrail-apply",
+      "title": "Apply to deck",
+      "body": "Only accepted themes become active."
+    }
+  ]
+}

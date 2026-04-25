@@ -1,0 +1,49 @@
+{
+  "type": "content",
+  "layout": "focus",
+  "index": 25,
+  "title": "Creation should be staged",
+  "eyebrow": "Creation flow",
+  "summary": "A new deck should start with one decision at a time, then show feedback before the next commitment.",
+  "signalsTitle": "What changes",
+  "guardrailsTitle": "Why it helps",
+  "signals": [
+    {
+      "id": "signal-brief",
+      "title": "Brief",
+      "body": "Capture intent first."
+    },
+    {
+      "id": "signal-structure",
+      "title": "Structure",
+      "body": "Review the outline before slides."
+    },
+    {
+      "id": "signal-content",
+      "title": "Content Draft",
+      "body": "Materialize approved beats."
+    },
+    {
+      "id": "signal-theme",
+      "title": "Theme",
+      "body": "Style real slide content."
+    }
+  ],
+  "guardrails": [
+    {
+      "id": "guardrail-resumable",
+      "title": "Resumable",
+      "body": "Each stage keeps state."
+    },
+    {
+      "id": "guardrail-preview",
+      "title": "Previewed",
+      "body": "Decisions have a visible surface."
+    },
+    {
+      "id": "guardrail-explicit",
+      "title": "Explicit",
+      "body": "Continue and Apply stay separate."
+    }
+  ]
+}

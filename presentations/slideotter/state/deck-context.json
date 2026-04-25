@@ -44,12 +44,12 @@
       "bg": "f5f8fc",
       "panel": "f8fbfe",
       "surface": "ffffff",
-      "slideCount": 20,
+      "slideCount": 36,
       "progressTrack": "d7e6f5",
       "progressFill": "275d8c"
     },
     "themeBrief": "Clean local-workbench presentation with friendly onboarding language, varied information layouts, and restrained technical detail.",
-    "outline": "1. slideotter\n2. What you will learn\n3. Why decks get messy\n4. A simple authoring loop\n5. Choose a presentation first\n6. Give the deck a brief\n7. Slides are readable JSON\n8. Edit with the slide in view\n9. Attach images as materials\n10. One renderer keeps previews honest\n11. Generate options, not surprises\n12. Compare before applying\n13. Plan the deck above slide level\n14. Use chat for bounded tasks\n15. Know what can change\n16. Run checks before sharing\n17. Archive the version you mean to share\n18. How to read the project\n19. Good next improvements\n20. The basic habit",
+    "outline": "1. slideotter\n2. What you will learn\n3. The problem and the loop\n4. Why decks get messy\n5. A simple authoring loop\n6. Author in the workbench\n7. Choose a presentation first\n8. Give the deck a brief and sources\n9. Slides are readable JSON\n10. Edit with the slide in view\n11. Attach images as materials\n12. One renderer keeps previews honest\n13. Review before applying\n14. Generate options, not surprises\n15. Compare before applying\n16. Plan the deck above slide level\n17. Use chat for bounded tasks\n18. Guardrails and handoff\n19. Know what can change\n20. Run checks before sharing\n21. Archive the version you mean to share\n22. How to read the project\n23. Good next improvements\n24. Build new decks in stages\n25. Creation should be staged\n26. Brief captures just enough\n27. Approve structure before slides\n28. Regenerate only weak beats\n29. Draft one slide at a time\n30. Theme after content\n31. Sources join the outline\n32. Make the staged flow real\n33. Draft state survives restarts\n34. Validate the staged path\n35. Roll out the practical slice\n36. The basic habit",
     "structureLabel": "",
     "structureSummary": "",
     "structurePlan": []

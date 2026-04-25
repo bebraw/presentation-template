@@ -1,0 +1,39 @@
+{
+  "type": "summary",
+  "index": 36,
+  "title": "The basic habit",
+  "eyebrow": "Takeaway",
+  "summary": "Keep the story, sources, materials, preview, review, validation, and archive in one local loop.",
+  "resourcesTitle": "Daily commands",
+  "bullets": [
+    {
+      "id": "summary-start",
+      "title": "Start with intent",
+      "body": "Choose a presentation, write the brief, add sources, then edit the slides that serve it."
+    },
+    {
+      "id": "summary-review",
+      "title": "Review every option",
+      "body": "Use variants, deck plans, and semantic scaling as proposals."
+    },
+    {
+      "id": "summary-ship",
+      "title": "Ship only checked output",
+      "body": "Build, validate, refresh baselines when needed, and update the archive."
+    }
+  ],
+  "resources": [
+    {
+      "id": "summary-build",
+      "title": "Build",
+      "body": "npm run build",
+      "bodyFontSize": 11.2
+    },
+    {
+      "id": "summary-gate",
+      "title": "Quality gate",
+      "body": "npm run quality:gate",
+      "bodyFontSize": 10.8
+    }
+  ]
+}

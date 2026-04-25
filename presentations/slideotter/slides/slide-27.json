@@ -1,0 +1,49 @@
+{
+  "type": "content",
+  "layout": "steps",
+  "index": 27,
+  "title": "Approve structure before slides",
+  "eyebrow": "Outline stage",
+  "summary": "The outline is the first generated artifact. Users can correct the story before full slide specs exist.",
+  "signalsTitle": "Review surface",
+  "guardrailsTitle": "Approval rules",
+  "signals": [
+    {
+      "id": "signal-thesis",
+      "title": "Thesis",
+      "body": "What the deck argues."
+    },
+    {
+      "id": "signal-arc",
+      "title": "Narrative arc",
+      "body": "How the story moves."
+    },
+    {
+      "id": "signal-titles",
+      "title": "Slide titles",
+      "body": "Every beat is editable."
+    },
+    {
+      "id": "signal-notes",
+      "title": "Source notes",
+      "body": "Evidence can attach to beats."
+    }
+  ],
+  "guardrails": [
+    {
+      "id": "guardrail-approve",
+      "title": "Approve first",
+      "body": "Slide drafting starts only from an accepted outline."
+    },
+    {
+      "id": "guardrail-stale",
+      "title": "Stale if brief changes",
+      "body": "Changed inputs clear approval."
+    },
+    {
+      "id": "guardrail-snapshot",
+      "title": "Locked snapshot",
+      "body": "Drafting uses the approved outline."
+    }
+  ]
+}

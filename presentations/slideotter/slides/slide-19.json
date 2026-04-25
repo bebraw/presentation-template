@@ -2,48 +2,48 @@
   "type": "content",
   "layout": "checklist",
   "index": 19,
-  "title": "Good next improvements",
-  "eyebrow": "Roadmap",
-  "summary": "The useful path is smoother grounded deck work, not a bigger generic editor.",
-  "signalsTitle": "Likely next slices",
-  "guardrailsTitle": "Scope to avoid",
+  "title": "Know what can change",
+  "eyebrow": "Safety",
+  "summary": "The server keeps writes narrow. Browser actions request specific mutations instead of giving the UI broad filesystem access.",
+  "signalsTitle": "Allowed targets",
+  "guardrailsTitle": "Change discipline",
   "signals": [
     {
-      "id": "signal-grounding",
-      "title": "Grounding quality",
-      "body": "Tune retrieval against real decks."
+      "id": "signal-slides",
+      "title": "Slide specs",
+      "body": "Structured JSON in the active presentation."
     },
     {
-      "id": "signal-citations",
-      "title": "Citation discipline",
-      "body": "Decide when source-backed claims surface."
+      "id": "signal-state",
+      "title": "Presentation state",
+      "body": "Context, variants, materials, and preferences."
     },
     {
-      "id": "signal-app",
-      "title": "Appification",
-      "body": "Make slideotter runnable from any workspace."
+      "id": "signal-materials",
+      "title": "Materials",
+      "body": "Image files for the active deck."
     },
     {
-      "id": "signal-docs",
-      "title": "Onboarding",
-      "body": "Keep examples, screenshots, and archive current."
+      "id": "signal-output",
+      "title": "Generated output",
+      "body": "Preview pages, PDFs, and archive copies."
     }
   ],
   "guardrails": [
     {
-      "id": "guardrail-editor",
-      "title": "No full WYSIWYG chase",
-      "body": "Structured decks are the point."
+      "id": "guardrail-allowlist",
+      "title": "Allowlisted paths",
+      "body": "Unexpected targets are rejected."
     },
     {
-      "id": "guardrail-renderer",
-      "title": "No second renderer",
-      "body": "The DOM path remains authoritative."
+      "id": "guardrail-action",
+      "title": "Named actions",
+      "body": "Add, remove, attach, compare, apply."
     },
     {
-      "id": "guardrail-ai",
-      "title": "No blind apply",
-      "body": "Generated changes stay reviewable."
+      "id": "guardrail-archive",
+      "title": "Separate archive",
+      "body": "Sharing output is deliberate."
     }
   ]
 }

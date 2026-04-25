@@ -1,49 +1,49 @@
 {
   "type": "content",
-  "layout": "steps",
+  "layout": "focus",
   "index": 4,
-  "title": "A simple authoring loop",
-  "eyebrow": "Workflow",
-  "summary": "Most work follows four steps and leaves readable local state.",
-  "signalsTitle": "Daily flow",
-  "guardrailsTitle": "Why it stays calm",
+  "title": "Why decks get messy",
+  "eyebrow": "Problem",
+  "summary": "Deck work gets hard when source, preview, and final PDF stop agreeing.",
+  "signalsTitle": "What usually drifts",
+  "guardrailsTitle": "What slideotter keeps together",
   "signals": [
     {
-      "id": "signal-plan",
-      "title": "Plan",
-      "body": "Capture objective, outline, audience."
+      "id": "signal-source",
+      "title": "Source",
+      "body": "The file no longer explains the visible slide."
     },
     {
-      "id": "signal-edit",
-      "title": "Edit",
-      "body": "Change text or JSON beside preview."
+      "id": "signal-context",
+      "title": "Context",
+      "body": "Audience and tone live outside the deck."
     },
     {
-      "id": "signal-review",
-      "title": "Review",
-      "body": "Compare alternatives before applying."
+      "id": "signal-options",
+      "title": "Options",
+      "body": "Ideas replace originals before review."
     },
     {
-      "id": "signal-ship",
-      "title": "Ship",
-      "body": "Build, validate, archive."
+      "id": "signal-output",
+      "title": "Output",
+      "body": "PDF issues appear after export."
     }
   ],
   "guardrails": [
     {
-      "id": "guardrail-local",
-      "title": "Local",
-      "body": "Runs against this repository."
+      "id": "guardrail-loop",
+      "title": "One local loop",
+      "body": "Edit, preview, compare, and validate in the studio."
     },
     {
-      "id": "guardrail-explicit",
-      "title": "Explicit",
-      "body": "Buttons request bounded actions."
+      "id": "guardrail-source",
+      "title": "Visible source",
+      "body": "Keep JSON close to the rendered slide."
     },
     {
-      "id": "guardrail-inspect",
-      "title": "Inspectable",
-      "body": "State stays readable on disk."
+      "id": "guardrail-archive",
+      "title": "Intentional archive",
+      "body": "Validate before archiving."
     }
   ]
 }

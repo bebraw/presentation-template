@@ -1,49 +1,49 @@
 {
   "type": "content",
-  "layout": "strip",
+  "layout": "steps",
   "index": 16,
-  "title": "Run checks before sharing",
-  "eyebrow": "Validation",
-  "summary": "Validation stays subtle in the UI, but it is the final safety net before a PDF becomes the shared version.",
-  "signalsTitle": "Gate coverage",
-  "guardrailsTitle": "What failures mean",
+  "title": "Plan the deck above slide level",
+  "eyebrow": "Deck Planning",
+  "summary": "Deck Planning handles outline, sources, length, and shared context.",
+  "signalsTitle": "Plan candidate contents",
+  "guardrailsTitle": "Promotion rules",
   "signals": [
     {
-      "id": "signal-types",
-      "title": "Types",
-      "body": "Studio, server, and scripts compile."
+      "id": "signal-sources",
+      "title": "Sources",
+      "body": "Add notes, excerpts, URLs."
     },
     {
-      "id": "signal-layout",
-      "title": "Layout",
-      "body": "Rendered slide bounds, text, and contrast."
+      "id": "signal-length",
+      "title": "Scale length",
+      "body": "Skip, restore, or add detail."
     },
     {
-      "id": "signal-media",
-      "title": "Media",
-      "body": "Images, captions, sources, and spacing."
+      "id": "signal-context",
+      "title": "Context",
+      "body": "Brief, theme, or constraints patch."
     },
     {
-      "id": "signal-browser",
-      "title": "Browser",
-      "body": "Studio workflows and page chrome."
+      "id": "signal-preview",
+      "title": "Preview",
+      "body": "Current and proposed strips."
     }
   ],
   "guardrails": [
     {
-      "id": "guardrail-baseline",
-      "title": "Baseline drift",
-      "body": "Refresh only intentional visual changes."
+      "id": "guardrail-skip",
+      "title": "Skip, do not delete",
+      "body": "Skipped slides can return."
     },
     {
-      "id": "guardrail-attribution",
-      "title": "Attribution",
-      "body": "Source lines stay attached to images."
+      "id": "guardrail-paths",
+      "title": "Paths are named",
+      "body": "Review touched files."
     },
     {
-      "id": "guardrail-fixtures",
-      "title": "Fixtures",
-      "body": "Known regressions stay covered."
+      "id": "guardrail-once",
+      "title": "Apply once",
+      "body": "Plan promotion is explicit."
     }
   ]
 }

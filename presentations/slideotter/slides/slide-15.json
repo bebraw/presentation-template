@@ -1,49 +1,49 @@
 {
   "type": "content",
-  "layout": "checklist",
+  "layout": "strip",
   "index": 15,
-  "title": "Know what can change",
-  "eyebrow": "Safety",
-  "summary": "The server keeps writes narrow. Browser actions request specific mutations instead of giving the UI broad filesystem access.",
-  "signalsTitle": "Allowed targets",
-  "guardrailsTitle": "Change discipline",
+  "title": "Compare before applying",
+  "eyebrow": "Review",
+  "summary": "When candidates exist, the compare workspace becomes the decision surface: current slide, candidate slide, changed fields, and apply buttons.",
+  "signalsTitle": "What to inspect",
+  "guardrailsTitle": "Decision cues",
   "signals": [
     {
-      "id": "signal-slides",
-      "title": "Slide specs",
-      "body": "Structured JSON in the active presentation."
+      "id": "signal-current",
+      "title": "Current",
+      "body": "The slide you would replace."
     },
     {
-      "id": "signal-state",
-      "title": "Presentation state",
-      "body": "Context, variants, materials, and preferences."
+      "id": "signal-candidate",
+      "title": "Candidate",
+      "body": "The proposed version."
     },
     {
-      "id": "signal-materials",
-      "title": "Materials",
-      "body": "Image files for the active deck."
+      "id": "signal-summary",
+      "title": "Changes",
+      "body": "Touched fields and line diffs."
     },
     {
-      "id": "signal-output",
-      "title": "Generated output",
-      "body": "Preview pages, PDFs, and archive copies."
+      "id": "signal-apply",
+      "title": "Apply",
+      "body": "Promote with optional validation."
     }
   ],
   "guardrails": [
     {
-      "id": "guardrail-allowlist",
-      "title": "Allowlisted paths",
-      "body": "Unexpected targets are rejected."
+      "id": "guardrail-hidden",
+      "title": "Hidden until useful",
+      "body": "No empty comparison area."
     },
     {
-      "id": "guardrail-action",
-      "title": "Named actions",
-      "body": "Add, remove, attach, compare, apply."
+      "id": "guardrail-select",
+      "title": "Direct selection",
+      "body": "Rows choose the candidate to inspect."
     },
     {
-      "id": "guardrail-archive",
-      "title": "Separate archive",
-      "body": "Sharing output is deliberate."
+      "id": "guardrail-explicit",
+      "title": "No surprise writes",
+      "body": "Nothing changes without Apply."
     }
   ]
 }

@@ -1,49 +1,26 @@
 {
-  "type": "content",
-  "layout": "steps",
-  "index": 13,
-  "title": "Plan the deck above slide level",
-  "eyebrow": "Deck Planning",
-  "summary": "Deck Planning handles outline, sources, length, and shared context.",
-  "signalsTitle": "Plan candidate contents",
-  "guardrailsTitle": "Promotion rules",
-  "signals": [
+  "type": "toc",
+  "eyebrow": "Section 3",
+  "title": "Review before applying",
+  "summary": "Generation should create candidates, comparisons, and plans that stay outside the deck until accepted.",
+  "note": "This section is about decision surfaces, not automatic rewrites.",
+  "cards": [
     {
-      "id": "signal-sources",
-      "title": "Sources",
-      "body": "Add notes, excerpts, URLs."
+      "id": "section-3-candidates",
+      "title": "Candidates",
+      "body": "Generate options without replacing the current slide."
     },
     {
-      "id": "signal-length",
-      "title": "Scale length",
-      "body": "Skip, restore, or add detail."
+      "id": "section-3-compare",
+      "title": "Compare",
+      "body": "Inspect current, proposed, and changed fields together."
     },
     {
-      "id": "signal-context",
-      "title": "Context",
-      "body": "Brief, theme, or constraints patch."
-    },
-    {
-      "id": "signal-preview",
-      "title": "Preview",
-      "body": "Current and proposed strips."
+      "id": "section-3-plan",
+      "title": "Plan",
+      "body": "Change the deck above one slide when the story needs it."
     }
   ],
-  "guardrails": [
-    {
-      "id": "guardrail-skip",
-      "title": "Skip, do not delete",
-      "body": "Skipped slides can return."
-    },
-    {
-      "id": "guardrail-paths",
-      "title": "Paths are named",
-      "body": "Review touched files."
-    },
-    {
-      "id": "guardrail-once",
-      "title": "Apply once",
-      "body": "Plan promotion is explicit."
-    }
-  ]
+  "index": 13,
+  "layout": "divider"
 }

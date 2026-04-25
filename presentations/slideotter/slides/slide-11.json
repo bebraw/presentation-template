@@ -1,49 +1,49 @@
 {
   "type": "content",
-  "layout": "callout",
+  "layout": "checklist",
   "index": 11,
-  "title": "Generate options, not surprises",
-  "eyebrow": "Variants",
-  "summary": "Generation creates review candidates, reports status, and keeps the current slide unchanged until Apply.",
-  "signalsTitle": "What you control",
-  "guardrailsTitle": "Apply discipline",
+  "title": "Attach images as materials",
+  "eyebrow": "Media",
+  "summary": "Upload, search, or provide starter images. Materials stay with the deck and carry source information.",
+  "signalsTitle": "Material flow",
+  "guardrailsTitle": "Practical rules",
   "signals": [
     {
-      "id": "signal-count",
-      "title": "How many",
-      "body": "Choose candidate count; five is default."
+      "id": "signal-upload",
+      "title": "Upload",
+      "body": "Files land in presentations/<id>/materials."
     },
     {
-      "id": "signal-mode",
-      "title": "What kind",
-      "body": "Try wording, structure, layout, or theme."
+      "id": "signal-search",
+      "title": "Search",
+      "body": "Openverse and Wikimedia can import images."
     },
     {
-      "id": "signal-provider",
-      "title": "Provider",
-      "body": "Use local rules, OpenAI, LM Studio, or OpenRouter."
+      "id": "signal-credit",
+      "title": "Credit",
+      "body": "Provider, creator, license, and source are saved."
     },
     {
-      "id": "signal-progress",
-      "title": "Progress",
-      "body": "LLM substatus shows requests and streamed chunks."
+      "id": "signal-attach",
+      "title": "Attach",
+      "body": "Generation or the author can attach one image."
     }
   ],
   "guardrails": [
     {
-      "id": "guardrail-session",
-      "title": "Session-only",
-      "body": "Candidates stay outside slide files until applied."
+      "id": "guardrail-alt",
+      "title": "Alt text",
+      "body": "Make the image understandable."
     },
     {
-      "id": "guardrail-grounding",
-      "title": "Grounded",
-      "body": "Briefs, sources, and materials feed prompts."
+      "id": "guardrail-source",
+      "title": "Source line",
+      "body": "Captions keep visible credit close."
     },
     {
-      "id": "guardrail-shortening",
-      "title": "Shortened",
-      "body": "Overlong text can be rewritten semantically."
+      "id": "guardrail-explicit",
+      "title": "Explicit attach",
+      "body": "Upload alone never edits a slide."
     }
   ]
 }

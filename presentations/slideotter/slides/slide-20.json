@@ -1,39 +1,49 @@
 {
-  "type": "summary",
+  "type": "content",
+  "layout": "strip",
   "index": 20,
-  "title": "The basic habit",
-  "eyebrow": "Takeaway",
-  "summary": "Keep the story, sources, materials, preview, review, validation, and archive in one local loop.",
-  "resourcesTitle": "Daily commands",
-  "bullets": [
+  "title": "Run checks before sharing",
+  "eyebrow": "Validation",
+  "summary": "Validation stays subtle in the UI, but it is the final safety net before a PDF becomes the shared version.",
+  "signalsTitle": "Gate coverage",
+  "guardrailsTitle": "What failures mean",
+  "signals": [
     {
-      "id": "summary-start",
-      "title": "Start with intent",
-      "body": "Choose a presentation, write the brief, add sources, then edit the slides that serve it."
+      "id": "signal-types",
+      "title": "Types",
+      "body": "Studio, server, and scripts compile."
     },
     {
-      "id": "summary-review",
-      "title": "Review every option",
-      "body": "Use variants, deck plans, and semantic scaling as proposals."
+      "id": "signal-layout",
+      "title": "Layout",
+      "body": "Rendered slide bounds, text, and contrast."
     },
     {
-      "id": "summary-ship",
-      "title": "Ship only checked output",
-      "body": "Build, validate, refresh baselines when needed, and update the archive."
+      "id": "signal-media",
+      "title": "Media",
+      "body": "Images, captions, sources, and spacing."
+    },
+    {
+      "id": "signal-browser",
+      "title": "Browser",
+      "body": "Studio workflows and page chrome."
     }
   ],
-  "resources": [
+  "guardrails": [
     {
-      "id": "summary-build",
-      "title": "Build",
-      "body": "npm run build",
-      "bodyFontSize": 11.2
+      "id": "guardrail-baseline",
+      "title": "Baseline drift",
+      "body": "Refresh only intentional visual changes."
     },
     {
-      "id": "summary-gate",
-      "title": "Quality gate",
-      "body": "npm run quality:gate",
-      "bodyFontSize": 10.8
+      "id": "guardrail-attribution",
+      "title": "Attribution",
+      "body": "Source lines stay attached to images."
+    },
+    {
+      "id": "guardrail-fixtures",
+      "title": "Fixtures",
+      "body": "Known regressions stay covered."
     }
   ]
 }

@@ -3493,6 +3493,20 @@ html[data-app-theme="dark"] .json-editor-highlight .json-token-literal {
   font-size: 14px;
 }
 
+.dom-slide__divider-title {
+  display: grid;
+  place-items: center;
+  min-height: 100%;
+  padding: 72px 84px 84px;
+  text-align: center;
+}
+
+.dom-slide--layout-divider .dom-slide__title {
+  max-width: 760px;
+  font-size: 56px;
+  line-height: 0.98;
+}
+
 .dom-slide__content-columns,
 .dom-slide__summary-columns {
   display: grid;

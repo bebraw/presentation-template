@@ -1,0 +1,49 @@
+{
+  "type": "content",
+  "layout": "checklist",
+  "index": 35,
+  "title": "Roll out the practical slice",
+  "eyebrow": "Implementation focus",
+  "summary": "The first useful version should reduce front-loaded decisions without rebuilding the whole authoring system.",
+  "signalsTitle": "First slice",
+  "guardrailsTitle": "Later work",
+  "signals": [
+    {
+      "id": "signal-draft",
+      "title": "Creation draft",
+      "body": "Persist the staged form state."
+    },
+    {
+      "id": "signal-brief",
+      "title": "Brief screen",
+      "body": "Separate the first decision."
+    },
+    {
+      "id": "signal-outline",
+      "title": "Outline endpoint",
+      "body": "Generate structure before content."
+    },
+    {
+      "id": "signal-drafting",
+      "title": "Sequential drafting",
+      "body": "Create slides from the approved outline."
+    }
+  ],
+  "guardrails": [
+    {
+      "id": "guardrail-theme",
+      "title": "Theme workbench",
+      "body": "Extract after real content previews work."
+    },
+    {
+      "id": "guardrail-sources",
+      "title": "Source enrichment",
+      "body": "Keep inputs close to the outline."
+    },
+    {
+      "id": "guardrail-locks",
+      "title": "Lock refinement",
+      "body": "Add after basic outline review is stable."
+    }
+  ]
+}

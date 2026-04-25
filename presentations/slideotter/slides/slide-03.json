@@ -1,49 +1,26 @@
 {
-  "type": "content",
-  "layout": "focus",
-  "index": 3,
-  "title": "Why decks get messy",
-  "eyebrow": "Problem",
-  "summary": "Deck work gets hard when source, preview, and final PDF stop agreeing.",
-  "signalsTitle": "What usually drifts",
-  "guardrailsTitle": "What slideotter keeps together",
-  "signals": [
+  "type": "toc",
+  "eyebrow": "Section 1",
+  "title": "The problem and the loop",
+  "summary": "Start with why deck work drifts, then introduce the simple local loop that keeps slideotter understandable.",
+  "note": "This section sets the operating model before the studio tour.",
+  "cards": [
     {
-      "id": "signal-source",
-      "title": "Source",
-      "body": "The file no longer explains the visible slide."
+      "id": "section-1-drift",
+      "title": "Drift",
+      "body": "Source, context, options, and output can stop agreeing."
     },
     {
-      "id": "signal-context",
-      "title": "Context",
-      "body": "Audience and tone live outside the deck."
+      "id": "section-1-loop",
+      "title": "Loop",
+      "body": "Plan, edit, review, and ship inside one local workflow."
     },
     {
-      "id": "signal-options",
-      "title": "Options",
-      "body": "Ideas replace originals before review."
-    },
-    {
-      "id": "signal-output",
-      "title": "Output",
-      "body": "PDF issues appear after export."
+      "id": "section-1-payoff",
+      "title": "Payoff",
+      "body": "The rest of the deck shows how the loop stays inspectable."
     }
   ],
-  "guardrails": [
-    {
-      "id": "guardrail-loop",
-      "title": "One local loop",
-      "body": "Edit, preview, compare, and validate in the studio."
-    },
-    {
-      "id": "guardrail-source",
-      "title": "Visible source",
-      "body": "Keep JSON close to the rendered slide."
-    },
-    {
-      "id": "guardrail-archive",
-      "title": "Intentional archive",
-      "body": "Validate before archiving."
-    }
-  ]
+  "index": 3,
+  "layout": "divider"
 }

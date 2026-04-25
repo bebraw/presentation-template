@@ -1,49 +1,49 @@
 {
   "type": "content",
-  "layout": "strip",
+  "layout": "focus",
   "index": 12,
-  "title": "Compare before applying",
-  "eyebrow": "Review",
-  "summary": "When candidates exist, the compare workspace becomes the decision surface: current slide, candidate slide, changed fields, and apply buttons.",
-  "signalsTitle": "What to inspect",
-  "guardrailsTitle": "Decision cues",
+  "title": "One renderer keeps previews honest",
+  "eyebrow": "Runtime",
+  "summary": "The studio avoids separate preview and export logic. The same DOM slide powers authoring, comparison, validation, and PDF output.",
+  "signalsTitle": "Surfaces using it",
+  "guardrailsTitle": "Why it matters",
   "signals": [
     {
-      "id": "signal-current",
-      "title": "Current",
-      "body": "The slide you would replace."
+      "id": "signal-main",
+      "title": "Main preview",
+      "body": "The large slide in Slide Studio."
     },
     {
-      "id": "signal-candidate",
-      "title": "Candidate",
-      "body": "The proposed version."
+      "id": "signal-thumbs",
+      "title": "Thumbnails",
+      "body": "Selector and presentation cards."
     },
     {
-      "id": "signal-summary",
-      "title": "Changes",
-      "body": "Touched fields and line diffs."
+      "id": "signal-compare",
+      "title": "Compare panes",
+      "body": "Current and candidate views."
     },
     {
-      "id": "signal-apply",
-      "title": "Apply",
-      "body": "Promote with optional validation."
+      "id": "signal-export",
+      "title": "PDF export",
+      "body": "Playwright prints the DOM output."
     }
   ],
   "guardrails": [
     {
-      "id": "guardrail-hidden",
-      "title": "Hidden until useful",
-      "body": "No empty comparison area."
+      "id": "guardrail-one",
+      "title": "One path",
+      "body": "Fewer places for layout drift."
     },
     {
-      "id": "guardrail-select",
-      "title": "Direct selection",
-      "body": "Rows choose the candidate to inspect."
+      "id": "guardrail-browser",
+      "title": "Browser measured",
+      "body": "Checks inspect rendered geometry."
     },
     {
-      "id": "guardrail-explicit",
-      "title": "No surprise writes",
-      "body": "Nothing changes without Apply."
+      "id": "guardrail-theme",
+      "title": "Deck themed",
+      "body": "Slides keep their own visual theme."
     }
   ]
 }

@@ -1,49 +1,49 @@
 {
   "type": "content",
-  "layout": "focus",
+  "layout": "steps",
   "index": 10,
-  "title": "One renderer keeps previews honest",
-  "eyebrow": "Runtime",
-  "summary": "The studio avoids separate preview and export logic. The same DOM slide powers authoring, comparison, validation, and PDF output.",
-  "signalsTitle": "Surfaces using it",
-  "guardrailsTitle": "Why it matters",
+  "title": "Edit with the slide in view",
+  "eyebrow": "Slide Studio",
+  "summary": "The main preview is the working surface. Text and JSON edits update it immediately.",
+  "signalsTitle": "Edit path",
+  "guardrailsTitle": "What prevents mistakes",
   "signals": [
     {
-      "id": "signal-main",
-      "title": "Main preview",
-      "body": "The large slide in Slide Studio."
+      "id": "signal-select",
+      "title": "Select",
+      "body": "Choose the target in the slide strip."
     },
     {
-      "id": "signal-thumbs",
-      "title": "Thumbnails",
-      "body": "Selector and presentation cards."
+      "id": "signal-inline",
+      "title": "Inline",
+      "body": "Double-click editable preview text."
     },
     {
-      "id": "signal-compare",
-      "title": "Compare panes",
-      "body": "Current and candidate views."
+      "id": "signal-json",
+      "title": "JSON",
+      "body": "Open the spec drawer."
     },
     {
-      "id": "signal-export",
-      "title": "PDF export",
-      "body": "Playwright prints the DOM output."
+      "id": "signal-save",
+      "title": "Save",
+      "body": "Persist valid changes."
     }
   ],
   "guardrails": [
     {
-      "id": "guardrail-one",
-      "title": "One path",
-      "body": "Fewer places for layout drift."
+      "id": "guardrail-valid",
+      "title": "Parse errors block save",
+      "body": "Invalid JSON cannot persist."
     },
     {
-      "id": "guardrail-browser",
-      "title": "Browser measured",
-      "body": "Checks inspect rendered geometry."
+      "id": "guardrail-scope",
+      "title": "Selected slide only",
+      "body": "Actions stay scoped."
     },
     {
-      "id": "guardrail-theme",
-      "title": "Deck themed",
-      "body": "Slides keep their own visual theme."
+      "id": "guardrail-preview",
+      "title": "Preview stays central",
+      "body": "Editing chrome is secondary."
     }
   ]
 }

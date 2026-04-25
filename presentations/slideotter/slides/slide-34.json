@@ -1,0 +1,49 @@
+{
+  "type": "content",
+  "layout": "strip",
+  "index": 34,
+  "title": "Validate the staged path",
+  "eyebrow": "Coverage",
+  "summary": "The new flow needs browser coverage because its value depends on staged feedback, not only data transforms.",
+  "signalsTitle": "Workflow checks",
+  "guardrailsTitle": "Regression risks",
+  "signals": [
+    {
+      "id": "signal-brief",
+      "title": "Brief",
+      "body": "Create a draft from inputs."
+    },
+    {
+      "id": "signal-outline",
+      "title": "Outline",
+      "body": "Generate, edit, lock, approve."
+    },
+    {
+      "id": "signal-slides",
+      "title": "Slides",
+      "body": "Materialize from approval."
+    },
+    {
+      "id": "signal-theme",
+      "title": "Theme",
+      "body": "Preview, skip, or apply."
+    }
+  ],
+  "guardrails": [
+    {
+      "id": "guardrail-stale",
+      "title": "Stale state",
+      "body": "Changed brief blocks drafting."
+    },
+    {
+      "id": "guardrail-cleanup",
+      "title": "Cleanup",
+      "body": "Smoke decks are removed."
+    },
+    {
+      "id": "guardrail-render",
+      "title": "Rendered proof",
+      "body": "The PDF remains the final check."
+    }
+  ]
+}

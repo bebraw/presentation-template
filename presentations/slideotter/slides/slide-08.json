@@ -1,49 +1,49 @@
 {
   "type": "content",
-  "layout": "steps",
+  "layout": "callout",
   "index": 8,
-  "title": "Edit with the slide in view",
-  "eyebrow": "Slide Studio",
-  "summary": "The main preview is the working surface. Text and JSON edits update it immediately.",
-  "signalsTitle": "Edit path",
-  "guardrailsTitle": "What prevents mistakes",
+  "title": "Give the deck a brief and sources",
+  "eyebrow": "Context",
+  "summary": "Before generation, state the goal and trusted material.",
+  "signalsTitle": "Useful brief fields",
+  "guardrailsTitle": "Where the brief helps",
   "signals": [
     {
-      "id": "signal-select",
-      "title": "Select",
-      "body": "Choose the target in the slide strip."
+      "id": "signal-audience",
+      "title": "Audience",
+      "body": "Who needs this?"
     },
     {
-      "id": "signal-inline",
-      "title": "Inline",
-      "body": "Double-click editable preview text."
+      "id": "signal-objective",
+      "title": "Objective",
+      "body": "What should change?"
     },
     {
-      "id": "signal-json",
-      "title": "JSON",
-      "body": "Open the spec drawer."
+      "id": "signal-length",
+      "title": "Target length",
+      "body": "First-draft slide count."
     },
     {
-      "id": "signal-save",
-      "title": "Save",
-      "body": "Persist valid changes."
+      "id": "signal-sources",
+      "title": "Starter sources",
+      "body": "Notes, excerpts, URLs."
     }
   ],
   "guardrails": [
     {
-      "id": "guardrail-valid",
-      "title": "Parse errors block save",
-      "body": "Invalid JSON cannot persist."
+      "id": "guardrail-planning",
+      "title": "Planning",
+      "body": "Uses brief and outline."
     },
     {
-      "id": "guardrail-scope",
-      "title": "Selected slide only",
-      "body": "Actions stay scoped."
+      "id": "guardrail-variants",
+      "title": "Grounding",
+      "body": "Uses bounded snippets."
     },
     {
-      "id": "guardrail-preview",
-      "title": "Preview stays central",
-      "body": "Editing chrome is secondary."
+      "id": "guardrail-checks",
+      "title": "Scaling",
+      "body": "Skip, restore, add detail."
     }
   ]
 }

@@ -19,6 +19,7 @@ function assertString(value, label) {
 const allowedSlideLayouts = new Set([
   "callout",
   "checklist",
+  "divider",
   "focus",
   "standard",
   "steps",

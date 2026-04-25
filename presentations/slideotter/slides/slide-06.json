@@ -1,49 +1,26 @@
 {
-  "type": "content",
-  "layout": "callout",
-  "index": 6,
-  "title": "Give the deck a brief and sources",
-  "eyebrow": "Context",
-  "summary": "Before generation, state the goal and trusted material.",
-  "signalsTitle": "Useful brief fields",
-  "guardrailsTitle": "Where the brief helps",
-  "signals": [
+  "type": "toc",
+  "eyebrow": "Section 2",
+  "title": "Author in the workbench",
+  "summary": "Move from deck selection into context, slide JSON, preview editing, materials, and the shared renderer.",
+  "note": "These slides explain the everyday authoring surface.",
+  "cards": [
     {
-      "id": "signal-audience",
-      "title": "Audience",
-      "body": "Who needs this?"
+      "id": "section-2-start",
+      "title": "Start",
+      "body": "Choose the deck and set its brief."
     },
     {
-      "id": "signal-objective",
-      "title": "Objective",
-      "body": "What should change?"
+      "id": "section-2-edit",
+      "title": "Edit",
+      "body": "Work against readable JSON and a live slide preview."
     },
     {
-      "id": "signal-length",
-      "title": "Target length",
-      "body": "First-draft slide count."
-    },
-    {
-      "id": "signal-sources",
-      "title": "Starter sources",
-      "body": "Notes, excerpts, URLs."
+      "id": "section-2-media",
+      "title": "Media",
+      "body": "Attach materials without losing source context."
     }
   ],
-  "guardrails": [
-    {
-      "id": "guardrail-planning",
-      "title": "Planning",
-      "body": "Uses brief and outline."
-    },
-    {
-      "id": "guardrail-variants",
-      "title": "Grounding",
-      "body": "Uses bounded snippets."
-    },
-    {
-      "id": "guardrail-checks",
-      "title": "Scaling",
-      "body": "Skip, restore, add detail."
-    }
-  ]
+  "index": 6,
+  "layout": "divider"
 }

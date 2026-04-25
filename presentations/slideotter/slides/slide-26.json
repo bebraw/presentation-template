@@ -1,0 +1,49 @@
+{
+  "type": "content",
+  "layout": "callout",
+  "index": 26,
+  "title": "Brief captures just enough",
+  "eyebrow": "Brief stage",
+  "summary": "The first stage asks for the deck intent, not every styling and sourcing choice at once.",
+  "signalsTitle": "Required intent",
+  "guardrailsTitle": "Keep out of the way",
+  "signals": [
+    {
+      "id": "signal-title",
+      "title": "Title",
+      "body": "Name the deck early."
+    },
+    {
+      "id": "signal-audience",
+      "title": "Audience",
+      "body": "Say who needs it."
+    },
+    {
+      "id": "signal-objective",
+      "title": "Objective",
+      "body": "Define the job."
+    },
+    {
+      "id": "signal-length",
+      "title": "Target length",
+      "body": "Set a practical slide count."
+    }
+  ],
+  "guardrails": [
+    {
+      "id": "guardrail-optional",
+      "title": "Optional details",
+      "body": "Sources and style can open only when needed."
+    },
+    {
+      "id": "guardrail-help",
+      "title": "Compact help",
+      "body": "Examples live behind small help affordances."
+    },
+    {
+      "id": "guardrail-focus",
+      "title": "One action",
+      "body": "The main button generates an outline."
+    }
+  ]
+}

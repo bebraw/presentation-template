@@ -1,0 +1,49 @@
+{
+  "type": "content",
+  "layout": "strip",
+  "index": 29,
+  "title": "Draft one slide at a time",
+  "eyebrow": "Content Draft",
+  "summary": "After approval, slideotter should materialize slide specs sequentially and keep partial progress recoverable.",
+  "signalsTitle": "Draft loop",
+  "guardrailsTitle": "Failure behavior",
+  "signals": [
+    {
+      "id": "signal-start",
+      "title": "Start",
+      "body": "Use the locked outline snapshot."
+    },
+    {
+      "id": "signal-progress",
+      "title": "Progress",
+      "body": "Report the active slide."
+    },
+    {
+      "id": "signal-write",
+      "title": "Persist",
+      "body": "Write after each saved spec."
+    },
+    {
+      "id": "signal-next",
+      "title": "Continue",
+      "body": "Move into theme work."
+    }
+  ],
+  "guardrails": [
+    {
+      "id": "guardrail-partial",
+      "title": "Partial recovery",
+      "body": "Earlier slides are not lost."
+    },
+    {
+      "id": "guardrail-context",
+      "title": "Sequence context",
+      "body": "Each slide sees the full approved plan."
+    },
+    {
+      "id": "guardrail-editable",
+      "title": "Still editable",
+      "body": "Generated specs enter normal slide workflows."
+    }
+  ]
+}

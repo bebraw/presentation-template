@@ -1,0 +1,49 @@
+{
+  "type": "content",
+  "layout": "checklist",
+  "index": 28,
+  "title": "Regenerate only weak beats",
+  "eyebrow": "Outline locks",
+  "summary": "A good outline rarely needs a full reset. The flow should let users keep strong beats and repair the rest.",
+  "signalsTitle": "Refinement tools",
+  "guardrailsTitle": "What stays stable",
+  "signals": [
+    {
+      "id": "signal-lock",
+      "title": "Lock",
+      "body": "Preserve a strong outline slide."
+    },
+    {
+      "id": "signal-unlocked",
+      "title": "Regenerate unlocked",
+      "body": "Replan around saved beats."
+    },
+    {
+      "id": "signal-one",
+      "title": "Regenerate one",
+      "body": "Replace only a weak slide."
+    },
+    {
+      "id": "signal-edit",
+      "title": "Edit directly",
+      "body": "Tune title, intent, and notes."
+    }
+  ],
+  "guardrails": [
+    {
+      "id": "guardrail-position",
+      "title": "Position",
+      "body": "Locked slides keep their slot."
+    },
+    {
+      "id": "guardrail-meaning",
+      "title": "Meaning",
+      "body": "Locked wording is preserved."
+    },
+    {
+      "id": "guardrail-disable",
+      "title": "No stale draft",
+      "body": "Creation waits for a current approval."
+    }
+  ]
+}

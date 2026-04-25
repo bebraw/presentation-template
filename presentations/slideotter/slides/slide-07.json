@@ -1,49 +1,49 @@
 {
   "type": "content",
-  "layout": "strip",
+  "layout": "checklist",
   "index": 7,
-  "title": "Slides are readable JSON",
-  "eyebrow": "Source model",
-  "summary": "Each structured slide is a compact JSON file. The renderer turns those fields into the slide you inspect in the studio.",
-  "signalsTitle": "Current slide families",
-  "guardrailsTitle": "Why JSON helps",
+  "title": "Choose a presentation first",
+  "eyebrow": "Workspace",
+  "summary": "slideotter manages multiple local decks with visual first-slide cards.",
+  "signalsTitle": "What a deck owns",
+  "guardrailsTitle": "What you can do there",
   "signals": [
     {
-      "id": "signal-cover",
-      "title": "Cover",
-      "body": "Identity, summary, logo, cards."
+      "id": "signal-slides",
+      "title": "Slides",
+      "body": "Specs under presentations/<id>/slides."
     },
     {
-      "id": "signal-toc",
-      "title": "TOC",
-      "body": "Tour framing and section cards."
+      "id": "signal-context",
+      "title": "Context",
+      "body": "Brief, outline, theme, checks."
     },
     {
-      "id": "signal-content",
-      "title": "Content",
-      "body": "Evidence and guardrail panels."
+      "id": "signal-sources",
+      "title": "Sources",
+      "body": "Notes, excerpts, URLs."
     },
     {
-      "id": "signal-summary",
-      "title": "Summary",
-      "body": "Takeaways and resource cards."
+      "id": "signal-materials",
+      "title": "Materials",
+      "body": "Images, credits, metadata."
     }
   ],
   "guardrails": [
     {
-      "id": "guardrail-parse",
-      "title": "Parseable",
-      "body": "Invalid JSON cannot be saved."
+      "id": "guardrail-create",
+      "title": "Create",
+      "body": "Set brief, length, sources."
     },
     {
-      "id": "guardrail-diff",
-      "title": "Diffable",
-      "body": "Changes stay reviewable in source."
+      "id": "guardrail-duplicate",
+      "title": "Duplicate",
+      "body": "Copy a deck when you want a branch."
     },
     {
-      "id": "guardrail-extend",
-      "title": "Extensible",
-      "body": "New families can be added later."
+      "id": "guardrail-delete",
+      "title": "Delete",
+      "body": "Remove a deck only after confirmation."
     }
   ]
 }

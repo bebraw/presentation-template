@@ -1,0 +1,49 @@
+{
+  "type": "content",
+  "layout": "checklist",
+  "index": 23,
+  "title": "Good next improvements",
+  "eyebrow": "Roadmap",
+  "summary": "The useful path is smoother grounded deck work, not a bigger generic editor.",
+  "signalsTitle": "Likely next slices",
+  "guardrailsTitle": "Scope to avoid",
+  "signals": [
+    {
+      "id": "signal-grounding",
+      "title": "Grounding quality",
+      "body": "Tune retrieval against real decks."
+    },
+    {
+      "id": "signal-citations",
+      "title": "Citation discipline",
+      "body": "Decide when source-backed claims surface."
+    },
+    {
+      "id": "signal-app",
+      "title": "Appification",
+      "body": "Make slideotter runnable from any workspace."
+    },
+    {
+      "id": "signal-docs",
+      "title": "Onboarding",
+      "body": "Keep examples, screenshots, and archive current."
+    }
+  ],
+  "guardrails": [
+    {
+      "id": "guardrail-editor",
+      "title": "No full WYSIWYG chase",
+      "body": "Structured decks are the point."
+    },
+    {
+      "id": "guardrail-renderer",
+      "title": "No second renderer",
+      "body": "The DOM path remains authoritative."
+    },
+    {
+      "id": "guardrail-ai",
+      "title": "No blind apply",
+      "body": "Generated changes stay reviewable."
+    }
+  ]
+}

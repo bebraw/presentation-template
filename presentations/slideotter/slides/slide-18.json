@@ -1,49 +1,26 @@
 {
-  "type": "content",
-  "layout": "focus",
-  "index": 18,
-  "title": "How to read the project",
-  "eyebrow": "For contributors",
-  "summary": "If you are new to the codebase, start with the folder that matches the change.",
-  "signalsTitle": "Where to look",
-  "guardrailsTitle": "Working habits",
-  "signals": [
+  "type": "toc",
+  "eyebrow": "Section 4",
+  "title": "Guardrails and handoff",
+  "summary": "Before the staged creation work, understand what can change, how output is checked, and where maintainers should look.",
+  "note": "These slides turn the studio tour into an operating habit.",
+  "cards": [
     {
-      "id": "signal-presentations",
-      "title": "presentations/",
-      "body": "Deck source, context, materials, state."
+      "id": "section-4-boundaries",
+      "title": "Boundaries",
+      "body": "Writes stay narrow and named."
     },
     {
-      "id": "signal-studio",
-      "title": "studio/",
-      "body": "Browser app, server, renderer, baselines."
+      "id": "section-4-output",
+      "title": "Output",
+      "body": "Build, validate, baseline, then archive deliberately."
     },
     {
-      "id": "signal-scripts",
-      "title": "scripts/",
-      "body": "Build, validation, archive commands."
-    },
-    {
-      "id": "signal-docs",
-      "title": "docs/ and status",
-      "body": "ADRs, roadmap, status notes."
+      "id": "section-4-handoff",
+      "title": "Handoff",
+      "body": "Project folders and next improvements stay easy to find."
     }
   ],
-  "guardrails": [
-    {
-      "id": "guardrail-small",
-      "title": "Small changes",
-      "body": "Keep edits close to the boundary."
-    },
-    {
-      "id": "guardrail-docs",
-      "title": "Docs follow code",
-      "body": "Update guidance when workflows move."
-    },
-    {
-      "id": "guardrail-gate",
-      "title": "Gate locally",
-      "body": "Run quality checks before committing."
-    }
-  ]
+  "index": 18,
+  "layout": "divider"
 }

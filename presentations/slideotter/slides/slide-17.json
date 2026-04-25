@@ -1,49 +1,49 @@
 {
   "type": "content",
-  "layout": "steps",
+  "layout": "focus",
   "index": 17,
-  "title": "Archive the version you mean to share",
-  "eyebrow": "Output",
-  "summary": "Building and archiving are separate. Build creates current output; archive update copies the presentation PDF only when you intend to publish it.",
-  "signalsTitle": "Artifact path",
-  "guardrailsTitle": "Routine",
+  "title": "Use chat for bounded tasks",
+  "eyebrow": "Assistant",
+  "summary": "In Slide Studio, chat launches bounded workflows and keeps history in a Log tab.",
+  "signalsTitle": "Inputs it sees",
+  "guardrailsTitle": "How it stays inspectable",
   "signals": [
     {
-      "id": "signal-build",
-      "title": "Build",
-      "body": "slides/output/<presentation-id>.pdf."
+      "id": "signal-message",
+      "title": "Message",
+      "body": "The request you type."
     },
     {
-      "id": "signal-pages",
-      "title": "Render pages",
-      "body": "studio/output/<id>/rendered-pages."
+      "id": "signal-selection",
+      "title": "Selection",
+      "body": "Text from the preview."
     },
     {
-      "id": "signal-baseline",
-      "title": "Baseline",
-      "body": "studio/baseline/<id>."
+      "id": "signal-slide",
+      "title": "Slide",
+      "body": "Current slide id and context."
     },
     {
-      "id": "signal-archive",
-      "title": "Archive",
-      "body": "archive/<presentation-id>.pdf."
+      "id": "signal-log",
+      "title": "Log",
+      "body": "Workflow events stay separate."
     }
   ],
   "guardrails": [
     {
-      "id": "guardrail-build",
-      "title": "Regenerate",
-      "body": "Build after slide or theme changes."
+      "id": "guardrail-actions",
+      "title": "Known actions",
+      "body": "Triggers studio workflows."
     },
     {
-      "id": "guardrail-gate",
-      "title": "Validate",
-      "body": "Run the quality gate."
+      "id": "guardrail-history",
+      "title": "Studio only",
+      "body": "Hidden while browsing decks."
     },
     {
-      "id": "guardrail-copy",
-      "title": "Archive",
-      "body": "Update the checked-in snapshot."
+      "id": "guardrail-debug",
+      "title": "Provider popover",
+      "body": "LLM details live in nav."
     }
   ]
 }

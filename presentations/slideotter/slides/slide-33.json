@@ -1,0 +1,49 @@
+{
+  "type": "content",
+  "layout": "steps",
+  "index": 33,
+  "title": "Draft state survives restarts",
+  "eyebrow": "Runtime state",
+  "summary": "Creation should feel safe to pause. Draft choices live in ignored runtime state until a deck is actually created.",
+  "signalsTitle": "Stored draft",
+  "guardrailsTitle": "Write boundary",
+  "signals": [
+    {
+      "id": "signal-title",
+      "title": "Brief fields",
+      "body": "Intent survives reloads."
+    },
+    {
+      "id": "signal-plan",
+      "title": "Approved outline",
+      "body": "Structure stays reviewable."
+    },
+    {
+      "id": "signal-theme",
+      "title": "Theme choice",
+      "body": "Candidate settings remain available."
+    },
+    {
+      "id": "signal-progress",
+      "title": "Draft progress",
+      "body": "Partial slide specs are recoverable."
+    }
+  ],
+  "guardrails": [
+    {
+      "id": "guardrail-ignored",
+      "title": "Ignored state",
+      "body": "Drafts do not dirty git."
+    },
+    {
+      "id": "guardrail-no-folder",
+      "title": "No early deck folder",
+      "body": "Presentation files appear at creation time."
+    },
+    {
+      "id": "guardrail-defaults",
+      "title": "Safe defaults",
+      "body": "Missing fields normalize predictably."
+    }
+  ]
+}

@@ -1,0 +1,49 @@
+{
+  "type": "content",
+  "layout": "callout",
+  "index": 31,
+  "title": "Sources join the outline",
+  "eyebrow": "Grounding",
+  "summary": "Sources and materials should enrich the structure stage, especially when evidence belongs to a specific beat.",
+  "signalsTitle": "Inputs to add",
+  "guardrailsTitle": "Grounding cues",
+  "signals": [
+    {
+      "id": "signal-text",
+      "title": "Source text",
+      "body": "Paste notes or excerpts."
+    },
+    {
+      "id": "signal-slide",
+      "title": "Slide notes",
+      "body": "Attach evidence to one beat."
+    },
+    {
+      "id": "signal-image",
+      "title": "Images",
+      "body": "Add visual material before drafting."
+    },
+    {
+      "id": "signal-search",
+      "title": "Search hints",
+      "body": "Request image search when useful."
+    }
+  ],
+  "guardrails": [
+    {
+      "id": "guardrail-visible",
+      "title": "Visible use",
+      "body": "Show when sources shaped generation."
+    },
+    {
+      "id": "guardrail-compact",
+      "title": "Compact refs",
+      "body": "Use numbered references by default."
+    },
+    {
+      "id": "guardrail-regenerate",
+      "title": "Regenerate path",
+      "body": "Add material, then rebuild the outline."
+    }
+  ]
+}

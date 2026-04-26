@@ -645,6 +645,77 @@ function deckPlanSlideSignature(planSlide) {
   ].filter(Boolean).join(" | ")).toLowerCase();
 }
 
+function firstVisibleDeckPlanValue(...values) {
+  for (const value of values) {
+    const normalized = normalizeVisibleText(value);
+    if (normalized) {
+      return normalized;
+    }
+  }
+
+  return "";
+}
+
+function deriveDeckPlanSourceNeed(fields, slide) {
+  const hasSources = collectProvidedUrls(fields).length > 0
+    || Boolean(fields && fields.sourceContext && normalizeVisibleText(fields.sourceContext.promptText));
+  const focus = firstVisibleDeckPlanValue(slide && slide.keyMessage, slide && slide.intent, slide && slide.title, "this slide");
+
+  if (fields && fields.sourcingStyle === "none" && !hasSources) {
+    return `Ground ${focus} in the user brief; no external source is required.`;
+  }
+
+  if (hasSources) {
+    return `Use retrieved or supplied source context that supports ${focus}.`;
+  }
+
+  return `Use the user brief as the source for ${focus}; add external evidence only if supplied.`;
+}
+
+function deriveDeckPlanVisualNeed(_fields, slide) {
+  const focus = firstVisibleDeckPlanValue(slide && slide.keyMessage, slide && slide.intent, slide && slide.title, "this slide");
+  return `Use a clear visual treatment that reinforces ${focus} without reducing readability.`;
+}
+
+function normalizeDeckPlanForValidation(fields, plan, slideCount) {
+  if (!plan || typeof plan !== "object" || !Array.isArray(plan.slides)) {
+    return plan;
+  }
+
+  const slides = plan.slides.map((slide, index) => {
+    const sourceNeed = firstVisibleDeckPlanValue(
+      slide && slide.sourceNeed,
+      slide && slide.sourceNeeds,
+      slide && slide.source_notes,
+      slide && slide.sourceNotes,
+      slide && slide.evidenceNeed,
+      slide && slide.evidence
+    ) || deriveDeckPlanSourceNeed(fields, slide);
+    const visualNeed = firstVisibleDeckPlanValue(
+      slide && slide.visualNeed,
+      slide && slide.visualNeeds,
+      slide && slide.visual_notes,
+      slide && slide.visualNotes,
+      slide && slide.imageNeed,
+      slide && slide.image
+    ) || deriveDeckPlanVisualNeed(fields, slide);
+
+    return {
+      ...slide,
+      role: normalizePlanRole(slide && slide.role, index, slideCount),
+      sourceNeed,
+      visualNeed
+    };
+  });
+
+  return {
+    ...plan,
+    outline: firstVisibleDeckPlanValue(plan.outline)
+      || slides.map((slide, index) => `${index + 1}. ${slide.title || `Slide ${index + 1}`}`).join("\n"),
+    slides
+  };
+}
+
 function collectDeckPlanIssues(plan, slideCount) {
   const slides = Array.isArray(plan && plan.slides) ? plan.slides : [];
   const issues = [];
@@ -1294,9 +1365,10 @@ async function createLlmDeckPlan(fields, slideCount, options: any = {}) {
 }
 
 async function repairDeckPlanIfNeeded(fields, plan, slideCount, options: any = {}) {
-  const issues = collectDeckPlanIssues(plan, slideCount);
+  const normalizedPlan = normalizeDeckPlanForValidation(fields, plan, slideCount);
+  const issues = collectDeckPlanIssues(normalizedPlan, slideCount);
   if (!issues.length) {
-    return validateDeckPlan(plan, slideCount);
+    return validateDeckPlan(normalizedPlan, slideCount);
   }
 
   if (typeof options.onProgress === "function") {
@@ -1332,11 +1404,11 @@ async function repairDeckPlanIfNeeded(fields, plan, slideCount, options: any = {
       issues.map((issue, index) => `${index + 1}. ${issue}`).join("\n"),
       "",
       "Current plan:",
-      JSON.stringify(plan, null, 2)
+      JSON.stringify(normalizedPlan, null, 2)
     ].join("\n")
   });
 
-  return validateDeckPlan(result.data, slideCount);
+  return validateDeckPlan(normalizeDeckPlanForValidation(fields, result.data, slideCount), slideCount);
 }
 
 async function generateInitialPresentation(fields: any = {}) {

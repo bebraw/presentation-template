@@ -25,6 +25,7 @@ const {
   restoreSkippedSlides
 } = require("../studio/server/services/deck-length.ts");
 const {
+  generateInitialDeckPlan,
   generateInitialPresentation,
   generatePresentationFromDeckPlanIncremental,
   materializePlan
@@ -851,6 +852,59 @@ test("LLM presentation generation repairs duplicate deck plans before drafting",
     );
     assert.equal(generated.slideSpecs.length, 4, "generation should continue after deck-plan repair");
     assert.ok(progressEvents.some((event) => event.stage === "deck-plan-repair"), "deck-plan repair should publish progress");
+  } finally {
+    global.fetch = originalFetch;
+    llmEnvKeys.forEach((key) => {
+      if (originalLlmEnv[key] === undefined) {
+        delete process.env[key];
+      } else {
+        process.env[key] = originalLlmEnv[key];
+      }
+    });
+  }
+});
+
+test("LLM deck planning fills missing source needs from a usable outline", async () => {
+  llmEnvKeys.forEach((key) => {
+    delete process.env[key];
+  });
+  process.env.STUDIO_LLM_PROVIDER = "lmstudio";
+  process.env.LMSTUDIO_MODEL = "small-outline-model";
+
+  const requestSchemas = [];
+  global.fetch = async (url, init) => {
+    assert.match(String(url), /\/chat\/completions$/);
+    const requestBody = JSON.parse(init.body);
+    const schemaName = requestBody.response_format.json_schema.name;
+    requestSchemas.push(schemaName);
+    assert.equal(schemaName, "initial_presentation_deck_plan");
+
+    const plan: any = createGeneratedDeckPlan("Small model outline", 4);
+    plan.slides = plan.slides.map((slide) => {
+      const { sourceNeed, ...rest } = slide;
+      return rest;
+    });
+    return createLmStudioStreamResponse(plan);
+  };
+
+  try {
+    const generated = await generateInitialDeckPlan({
+      audience: "Maintainers",
+      objective: "Show that small local models can create a usable outline.",
+      targetSlideCount: 4,
+      title: "Small model outline"
+    });
+
+    assert.deepEqual(
+      requestSchemas,
+      ["initial_presentation_deck_plan"],
+      "missing sourceNeed should be hydrated locally without a full repair round trip"
+    );
+    assert.equal(generated.plan.slides.length, 4);
+    generated.plan.slides.forEach((slide) => {
+      assert.ok(slide.sourceNeed, "each slide should receive usable source guidance");
+      assert.ok(slide.visualNeed, "existing visual guidance should be preserved");
+    });
   } finally {
     global.fetch = originalFetch;
     llmEnvKeys.forEach((key) => {

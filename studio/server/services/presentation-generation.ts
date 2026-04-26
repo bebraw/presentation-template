@@ -238,7 +238,7 @@ function isWeakLabel(value) {
 }
 
 function isScaffoldLeak(value) {
-  return /^(guardrails|sources to verify)$/i.test(String(value || "").trim())
+  return /^(guardrails|key points|sources to verify)$/i.test(String(value || "").trim())
     || /refine constraints before expanding the deck/i.test(String(value || ""));
 }
 
@@ -749,7 +749,30 @@ function toCards(planSlide, prefix, count, fieldName = "keyPoints") {
 
 function planFieldText(planSlide, fieldName, limit) {
   const text = requireVisibleText(planSlide && planSlide[fieldName], fieldName);
+  if (isScaffoldLeak(text)) {
+    const repaired = scaffoldFieldText(planSlide, fieldName);
+    if (repaired) {
+      return sentence(repaired, repaired, limit);
+    }
+  }
+
   return sentence(text, text, limit);
+}
+
+function scaffoldFieldText(planSlide, fieldName) {
+  const fieldMap = {
+    guardrailsTitle: "guardrails",
+    resourcesTitle: "resources",
+    signalsTitle: "keyPoints"
+  };
+  const itemField = fieldMap[fieldName];
+  if (!itemField || !Array.isArray(planSlide && planSlide[itemField])) {
+    return "";
+  }
+
+  return planSlide[itemField]
+    .map((item) => cleanText(item && item.title))
+    .find((title) => title && !isWeakLabel(title) && !isScaffoldLeak(title)) || "";
 }
 
 function planSummaryText(planSlide, limit) {

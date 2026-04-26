@@ -1044,6 +1044,88 @@ test("LLM presentation generation semantically shortens overlong visible text", 
   }
 });
 
+test("LLM presentation generation repairs scaffold panel titles from generated points", () => {
+  const fields = {
+    audience: "Workshop participants",
+    objective: "Explain a planning workflow clearly.",
+    title: "Workshop planning"
+  };
+  const plan = {
+    outline: "1. Open\n2. Align\n3. Close",
+    references: [],
+    slides: [
+      withVisiblePlanFields({
+        keyPoints: [
+          { body: "Name the workshop outcome before showing details.", title: "Outcome" },
+          { body: "Show who should use the planning flow.", title: "Audience" },
+          { body: "Preview the core planning steps.", title: "Steps" },
+          { body: "Explain what a good plan enables.", title: "Use" }
+        ],
+        role: "opening",
+        summary: "Open with the workshop outcome and the path participants will follow.",
+        title: "Workshop planning"
+      }, {
+        eyebrow: "Opening",
+        guardrailsTitle: "Guardrails",
+        resourcesTitle: "Sources to verify",
+        signalsTitle: "Key points"
+      }),
+      withVisiblePlanFields({
+        keyPoints: [
+          { body: "Write the decision before collecting supporting material.", title: "Decision first" },
+          { body: "Keep each planning step tied to a concrete owner.", title: "Ownership" },
+          { body: "Review evidence before expanding the plan.", title: "Evidence" },
+          { body: "Use one checklist to decide what moves forward.", title: "Checklist" }
+        ],
+        role: "concept",
+        summary: "Show how a planning flow keeps decisions and evidence connected.",
+        title: "Align the plan"
+      }, {
+        eyebrow: "Alignment",
+        guardrails: [
+          { body: "Keep the plan tied to the decision.", title: "Decision check" },
+          { body: "Avoid adding unsupported tasks.", title: "Evidence check" },
+          { body: "Confirm the next owner before closing.", title: "Owner check" }
+        ],
+        guardrailsTitle: "Guardrails",
+        resources: [
+          { body: "Use the current project brief during review.", title: "Project brief" },
+          { body: "Keep the checklist beside the draft.", title: "Review checklist" }
+        ],
+        resourcesTitle: "Sources to verify",
+        signalsTitle: "Key points"
+      }),
+      withVisiblePlanFields({
+        keyPoints: [
+          { body: "Choose one next action for the plan owner.", title: "Action" },
+          { body: "Store the plan where reviewers can find it.", title: "Store" },
+          { body: "Schedule a short review after the first use.", title: "Review" },
+          { body: "Update the checklist with what changed.", title: "Improve" }
+        ],
+        role: "handoff",
+        summary: "Close with one next action and a clear owner for the plan.",
+        title: "Use the plan"
+      }, {
+        eyebrow: "Close",
+        resourcesTitle: "Sources to verify",
+        signalsTitle: "Key points"
+      })
+    ],
+    summary: "Workshop planning generated plan"
+  };
+
+  const slideSpecs = materializePlan(fields, plan);
+  assert.equal(slideSpecs[1].guardrailsTitle, "Decision check", "content scaffold guardrails title should come from generated guardrail text");
+  assert.equal(slideSpecs[1].signalsTitle, "Decision first", "content scaffold signal title should come from generated key point text");
+  assert.equal(slideSpecs[2].resourcesTitle, "Action", "summary scaffold resources title should come from generated resource text");
+  const visibleText = slideSpecs.flatMap((slideSpec) => [
+    slideSpec.signalsTitle,
+    slideSpec.guardrailsTitle,
+    slideSpec.resourcesTitle
+  ].filter(Boolean));
+  assert.ok(!visibleText.some((value) => /^(Guardrails|Sources to verify|Key points)$/i.test(String(value))), "panel titles should not leak scaffold labels");
+});
+
 test("LLM presentation generation preserves non-English visible structure", async () => {
   llmEnvKeys.forEach((key) => {
     delete process.env[key];

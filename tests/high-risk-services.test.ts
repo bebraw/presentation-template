@@ -917,6 +917,57 @@ test("LLM deck planning fills missing source needs from a usable outline", async
   }
 });
 
+test("LLM presentation generation fills missing slide eyebrows from usable drafts", async () => {
+  llmEnvKeys.forEach((key) => {
+    delete process.env[key];
+  });
+  process.env.STUDIO_LLM_PROVIDER = "lmstudio";
+  process.env.LMSTUDIO_MODEL = "small-slide-model";
+
+  global.fetch = async (url, init) => {
+    assert.match(String(url), /\/chat\/completions$/);
+    const requestBody = JSON.parse(init.body);
+    const schemaName = requestBody.response_format.json_schema.name;
+
+    if (schemaName === "initial_presentation_deck_plan") {
+      return createLmStudioStreamResponse(createGeneratedDeckPlan("Small slide draft", 4));
+    }
+
+    assert.equal(schemaName, "initial_presentation_plan");
+    const plan = createGeneratedPlan("Small slide draft", 4);
+    plan.slides = plan.slides.map((slide) => {
+      const { eyebrow, ...rest } = slide;
+      return rest;
+    });
+    return createLmStudioStreamResponse(plan);
+  };
+
+  try {
+    const generated = await generateInitialPresentation({
+      audience: "Maintainers",
+      objective: "Show that small local models can draft usable slides.",
+      targetSlideCount: 4,
+      title: "Small slide draft"
+    });
+
+    assert.equal(generated.slideSpecs.length, 4);
+    assert.deepEqual(
+      generated.slideSpecs.map((slide) => slide.eyebrow).filter(Boolean),
+      ["Opening", "Context", "Concept", "Close"],
+      "missing slide eyebrows should be derived from slide position and role"
+    );
+  } finally {
+    global.fetch = originalFetch;
+    llmEnvKeys.forEach((key) => {
+      if (originalLlmEnv[key] === undefined) {
+        delete process.env[key];
+      } else {
+        process.env[key] = originalLlmEnv[key];
+      }
+    });
+  }
+});
+
 test("LLM presentation generation drafts approved outlines one slide at a time", async () => {
   llmEnvKeys.forEach((key) => {
     delete process.env[key];

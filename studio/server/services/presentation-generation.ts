@@ -809,6 +809,50 @@ function normalizePlanForMaterialization(_fields, plan, options: any = {}) {
   };
 }
 
+function roleEyebrow(role, index, total) {
+  if (index === 0 || role === "opening") {
+    return "Opening";
+  }
+
+  if (index === total - 1 && total > 1 || role === "handoff") {
+    return "Close";
+  }
+
+  return ({
+    concept: "Concept",
+    context: "Context",
+    divider: "Section",
+    example: "Example",
+    mechanics: "Mechanics",
+    reference: "References",
+    tradeoff: "Tradeoffs"
+  })[role] || "Section";
+}
+
+function completePlanSlideFields(planSlide, index, total) {
+  const next = { ...planSlide };
+  const role = normalizePlanRole(next.role, index, total);
+  const firstPointTitle = firstUsefulItemTitle(next.keyPoints);
+  const firstGuardrailTitle = firstUsefulItemTitle(next.guardrails);
+  const firstResourceTitle = firstUsefulItemTitle(next.resources);
+
+  next.role = role;
+  next.eyebrow = firstVisibleDeckPlanValue(next.eyebrow, next.section, next.label, roleEyebrow(role, index, total));
+  next.note = firstVisibleDeckPlanValue(
+    next.note,
+    next.speakerNote,
+    next.speakerNotes,
+    next.summary,
+    next.title
+  );
+  next.signalsTitle = firstVisibleDeckPlanValue(next.signalsTitle, next.keyPointsTitle, firstPointTitle, "Signals");
+  next.guardrailsTitle = firstVisibleDeckPlanValue(next.guardrailsTitle, next.guardrailTitle, firstGuardrailTitle, "Checks");
+  next.resourcesTitle = firstVisibleDeckPlanValue(next.resourcesTitle, next.resourceTitle, firstResourceTitle, "Next");
+  next.mediaMaterialId = typeof next.mediaMaterialId === "string" ? next.mediaMaterialId : "";
+
+  return next;
+}
+
 function toCards(planSlide, prefix, count, fieldName = "keyPoints") {
   return normalizeGeneratedPoints(planSlide[fieldName], count, fieldName)
     .map((point, index) => {
@@ -892,10 +936,13 @@ function toDividerSlide(planSlide) {
 
 function materializePlan(fields, plan, options: any = {}) {
   const normalizedPlan = normalizePlanForMaterialization(fields, plan, options);
-  const slides = Array.isArray(normalizedPlan.slides) ? normalizedPlan.slides : [];
+  const rawSlides = Array.isArray(normalizedPlan.slides) ? normalizedPlan.slides : [];
+  const slideTotal = Number.isFinite(Number(options.totalSlides)) ? Number(options.totalSlides) : rawSlides.length;
+  const startOffset = Number.isFinite(Number(options.startIndex)) ? Number(options.startIndex) : 0;
+  const slides = rawSlides.map((planSlide, index) => completePlanSlideFields(planSlide, startOffset + index, slideTotal));
   const title = sentence(requireVisibleText(fields.title || (slides[0] && slides[0].title), "presentation title"), fields.title || (slides[0] && slides[0].title), 8);
-  const total = Number.isFinite(Number(options.totalSlides)) ? Number(options.totalSlides) : slides.length;
-  const startIndex = Number.isFinite(Number(options.startIndex)) ? Number(options.startIndex) : 0;
+  const total = slideTotal;
+  const startIndex = startOffset;
   const materialCandidates = Array.isArray(fields.materialCandidates) ? fields.materialCandidates : [];
   const usedMaterialIds = options.usedMaterialIds instanceof Set ? options.usedMaterialIds : new Set();
   const suppliedUrls = new Set(collectProvidedUrls(fields));

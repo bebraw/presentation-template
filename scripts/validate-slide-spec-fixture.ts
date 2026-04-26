@@ -269,6 +269,37 @@ assert.equal(
   "Imported layouts should normalize duplicate ids"
 );
 
+const exportedLayoutPack = layoutTest.createLayoutPackExchangeDocument([
+  {
+    id: "fixture-pack-one",
+    name: "Fixture pack one",
+    supportedTypes: ["content"],
+    treatment: "focus"
+  },
+  {
+    id: "fixture-pack-two",
+    name: "Fixture pack two",
+    supportedTypes: ["summary"],
+    treatment: "strip"
+  }
+], { name: "Fixture pack" });
+
+assert.equal(
+  exportedLayoutPack.kind,
+  "slideotter.layoutPack",
+  "Layout pack exchange documents should use the canonical kind"
+);
+assert.equal(
+  layoutTest.readLayoutsFromExchangeDocument(exportedLayoutPack).length,
+  2,
+  "Layout pack exchange import should read all packed layouts"
+);
+assert.equal(
+  layoutTest.readLayoutsFromExchangeDocument(exportedLayout)[0].id,
+  "fixture-exchange",
+  "Layout pack import helper should also accept single layout documents"
+);
+
 assert.throws(
   () => layoutTest.readLayoutFromExchangeDocument({
     kind: "slideotter.layout",
@@ -282,6 +313,16 @@ assert.throws(
   }),
   /Layout exchange schemaVersion must be/,
   "Layout exchange import should reject unsupported schema versions"
+);
+
+assert.throws(
+  () => layoutTest.readLayoutsFromExchangeDocument({
+    kind: "slideotter.layoutPack",
+    layouts: [],
+    schemaVersion: 1
+  }),
+  /Layout pack must contain at least one layout/,
+  "Layout pack exchange import should reject empty packs"
 );
 
 assert.throws(

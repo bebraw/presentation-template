@@ -133,6 +133,8 @@ const elements: Record<string, any> = {
   deleteFavoriteLayoutButton: document.getElementById("delete-favorite-layout-button"),
   favoriteLayoutButton: document.getElementById("favorite-layout-button"),
   copyLayoutJsonButton: document.getElementById("copy-layout-json-button"),
+  copyDeckLayoutPackButton: document.getElementById("copy-deck-layout-pack-button"),
+  copyFavoriteLayoutPackButton: document.getElementById("copy-favorite-layout-pack-button"),
   importLayoutDeckButton: document.getElementById("import-layout-deck-button"),
   importLayoutFavoriteButton: document.getElementById("import-layout-favorite-button"),
   layoutExchangeJson: document.getElementById("layout-exchange-json"),
@@ -2444,6 +2446,12 @@ function renderLayoutLibrary() {
   }
   if (elements.copyLayoutJsonButton) {
     elements.copyLayoutJsonButton.disabled = !elements.layoutLibrarySelect.value;
+  }
+  if (elements.copyDeckLayoutPackButton) {
+    elements.copyDeckLayoutPackButton.disabled = !layouts.length;
+  }
+  if (elements.copyFavoriteLayoutPackButton) {
+    elements.copyFavoriteLayoutPackButton.disabled = !favoriteLayouts.length;
   }
   if (elements.importLayoutDeckButton) {
     elements.importLayoutDeckButton.disabled = !elements.layoutExchangeJson.value.trim();
@@ -5129,6 +5137,34 @@ async function copySelectedLayoutJson() {
   }
 }
 
+async function copyLayoutPackJson(scope) {
+  const button = scope === "favorite" ? elements.copyFavoriteLayoutPackButton : elements.copyDeckLayoutPackButton;
+  const done = setBusy(button, "Copying...");
+  try {
+    const payload = await request("/api/layouts/export", {
+      body: JSON.stringify({ pack: true, scope }),
+      method: "POST"
+    });
+    const formatted = JSON.stringify(payload.document, null, 2);
+    elements.layoutExchangeJson.value = formatted;
+    elements.layoutExchangeJson.focus();
+    elements.layoutExchangeJson.select();
+    if (navigator.clipboard && window.isSecureContext) {
+      try {
+        await navigator.clipboard.writeText(formatted);
+        elements.operationStatus.textContent = `Copied ${scope === "favorite" ? "favorite" : "deck"} layout pack JSON.`;
+      } catch (error) {
+        elements.operationStatus.textContent = `Exported ${scope === "favorite" ? "favorite" : "deck"} layout pack JSON.`;
+      }
+    } else {
+      elements.operationStatus.textContent = `Exported ${scope === "favorite" ? "favorite" : "deck"} layout pack JSON.`;
+    }
+    renderLayoutLibrary();
+  } finally {
+    done();
+  }
+}
+
 async function importLayoutJson(scope) {
   const document = parseLayoutExchangeJson();
   const button = scope === "favorite" ? elements.importLayoutFavoriteButton : elements.importLayoutDeckButton;
@@ -5145,7 +5181,14 @@ async function importLayoutJson(scope) {
       elements.layoutLibrarySelect.value = `${scope === "favorite" ? "favorite" : "deck"}:${payload.layout.id}`;
       renderLayoutLibrary();
     }
-    elements.operationStatus.textContent = `Imported layout ${payload.layout.name}.`;
+    const importedLayouts = Array.isArray(payload.importedLayouts)
+      ? payload.importedLayouts
+      : payload.layout
+        ? [payload.layout]
+        : [];
+    elements.operationStatus.textContent = importedLayouts.length === 1 && payload.layout
+      ? `Imported layout ${payload.layout.name}.`
+      : `Imported ${importedLayouts.length} layouts.`;
   } finally {
     done();
   }
@@ -5680,6 +5723,8 @@ elements.favoriteLayoutButton.addEventListener("click", () => saveSelectedLayout
 elements.deleteFavoriteLayoutButton.addEventListener("click", () => deleteSelectedFavoriteLayout().catch((error) => window.alert(error.message)));
 elements.layoutLibrarySelect.addEventListener("change", renderLayoutLibrary);
 elements.copyLayoutJsonButton.addEventListener("click", () => copySelectedLayoutJson().catch((error) => window.alert(error.message)));
+elements.copyDeckLayoutPackButton.addEventListener("click", () => copyLayoutPackJson("deck").catch((error) => window.alert(error.message)));
+elements.copyFavoriteLayoutPackButton.addEventListener("click", () => copyLayoutPackJson("favorite").catch((error) => window.alert(error.message)));
 elements.importLayoutDeckButton.addEventListener("click", () => importLayoutJson("deck").catch((error) => window.alert(error.message)));
 elements.importLayoutFavoriteButton.addEventListener("click", () => importLayoutJson("favorite").catch((error) => window.alert(error.message)));
 elements.layoutExchangeJson.addEventListener("input", renderLayoutLibrary);

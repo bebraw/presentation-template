@@ -10,6 +10,7 @@ const {
 
 const schemaVersion = 1;
 const exchangeKind = "slideotter.layout";
+const packExchangeKind = "slideotter.layoutPack";
 const knownTreatments = new Set(["callout", "checklist", "focus", "standard", "steps", "strip"]);
 const supportedSlideTypes = new Set(["cover", "toc", "content", "summary"]);
 const defaultLayouts = {
@@ -101,6 +102,17 @@ function createLayoutExchangeDocument(layout) {
   };
 }
 
+function createLayoutPackExchangeDocument(layouts, fields: any = {}) {
+  const normalizedLayouts = (Array.isArray(layouts) ? layouts : []).map((layout) => normalizeLayout(layout));
+  return {
+    exportedAt: new Date().toISOString(),
+    kind: packExchangeKind,
+    layouts: normalizedLayouts,
+    name: String(fields.name || "Layout pack").replace(/\s+/g, " ").trim() || "Layout pack",
+    schemaVersion
+  };
+}
+
 function readLayoutFromExchangeDocument(document) {
   const source = document && typeof document === "object" && !Array.isArray(document)
     ? document
@@ -115,6 +127,26 @@ function readLayoutFromExchangeDocument(document) {
   }
 
   return normalizeLayout(source);
+}
+
+function readLayoutsFromExchangeDocument(document) {
+  const source = document && typeof document === "object" && !Array.isArray(document)
+    ? document
+    : {};
+
+  if (source.kind === packExchangeKind || source.layouts) {
+    if (source.schemaVersion !== schemaVersion) {
+      throw new Error(`Layout pack schemaVersion must be ${schemaVersion}`);
+    }
+
+    if (!Array.isArray(source.layouts) || !source.layouts.length) {
+      throw new Error("Layout pack must contain at least one layout");
+    }
+
+    return source.layouts.map((layout) => normalizeLayout(layout));
+  }
+
+  return [readLayoutFromExchangeDocument(document)];
 }
 
 function readLayouts() {
@@ -189,6 +221,12 @@ function exportDeckLayout(layoutId) {
   return createLayoutExchangeDocument(getLayout(layoutId));
 }
 
+function exportDeckLayoutPack(fields: any = {}) {
+  return createLayoutPackExchangeDocument(readLayouts().layouts, {
+    name: fields.name || "Deck layout pack"
+  });
+}
+
 function readFavoriteLayouts() {
   const runtime = readRuntime();
   const layouts = Array.isArray(runtime.savedLayouts)
@@ -235,6 +273,12 @@ function exportFavoriteLayout(layoutId) {
   return createLayoutExchangeDocument(getFavoriteLayout(layoutId));
 }
 
+function exportFavoriteLayoutPack(fields: any = {}) {
+  return createLayoutPackExchangeDocument(readFavoriteLayouts().layouts, {
+    name: fields.name || "Favorite layout pack"
+  });
+}
+
 function importDeckLayout(document, fields: any = {}) {
   const current = readLayouts();
   const timestamp = new Date().toISOString();
@@ -256,6 +300,33 @@ function importDeckLayout(document, fields: any = {}) {
   return {
     layout,
     state: writeLayouts({ layouts: [...current.layouts, layout] })
+  };
+}
+
+function importDeckLayoutPack(document, fields: any = {}) {
+  const current = readLayouts();
+  const timestamp = new Date().toISOString();
+  const importedLayouts = readLayoutsFromExchangeDocument(document).map((layout) => normalizeLayout({
+    ...layout,
+    createdAt: timestamp,
+    updatedAt: timestamp
+  }));
+  const nextLayouts = [...current.layouts];
+  const savedLayouts = importedLayouts.map((layout, index) => {
+    const withId = normalizeLayoutCollectionId(layout, nextLayouts, index === 0 ? fields.id : null);
+    const saved = normalizeLayout({
+      ...withId,
+      description: index === 0 && fields.description ? fields.description : withId.description,
+      name: index === 0 && fields.name ? fields.name : withId.name
+    });
+    nextLayouts.push(saved);
+    return saved;
+  });
+
+  return {
+    layout: savedLayouts[0],
+    layouts: savedLayouts,
+    state: writeLayouts({ layouts: nextLayouts })
   };
 }
 
@@ -288,6 +359,42 @@ function importFavoriteLayout(document, fields: any = {}) {
   writeRuntime(nextRuntime);
   return {
     layout,
+    state: readFavoriteLayouts()
+  };
+}
+
+function importFavoriteLayoutPack(document, fields: any = {}) {
+  const current = readFavoriteLayouts();
+  const runtime = readRuntime();
+  const timestamp = new Date().toISOString();
+  const importedLayouts = readLayoutsFromExchangeDocument(document).map((layout) => normalizeLayout({
+    ...layout,
+    createdAt: timestamp,
+    updatedAt: timestamp
+  }));
+  const nextLayouts = [...current.layouts];
+  const savedLayouts = importedLayouts.map((layout, index) => {
+    const withId = normalizeLayoutCollectionId(layout, nextLayouts, index === 0 ? fields.id : null);
+    const saved = normalizeLayout({
+      ...withId,
+      description: index === 0 && fields.description ? fields.description : withId.description,
+      name: index === 0 && fields.name ? fields.name : withId.name
+    });
+    nextLayouts.push(saved);
+    return saved;
+  });
+
+  writeRuntime({
+    ...runtime,
+    savedLayouts: [
+      ...savedLayouts,
+      ...(Array.isArray(runtime.savedLayouts) ? runtime.savedLayouts : [])
+    ].slice(0, 50)
+  });
+
+  return {
+    layout: savedLayouts[0],
+    layouts: savedLayouts,
     state: readFavoriteLayouts()
   };
 }
@@ -343,9 +450,13 @@ function applyLayoutToSlideSpec(slideSpec, layoutRef) {
 module.exports = {
   applyLayoutToSlideSpec,
   exportDeckLayout,
+  exportDeckLayoutPack,
   exportFavoriteLayout,
+  exportFavoriteLayoutPack,
   importDeckLayout,
+  importDeckLayoutPack,
   importFavoriteLayout,
+  importFavoriteLayoutPack,
   deleteFavoriteLayout,
   getLayoutByRef,
   knownTreatments,
@@ -357,7 +468,9 @@ module.exports = {
   supportedSlideTypes,
   _test: {
     createLayoutExchangeDocument,
+    createLayoutPackExchangeDocument,
     readLayoutFromExchangeDocument,
+    readLayoutsFromExchangeDocument,
     normalizeLayoutCollectionId,
     normalizeLayout
   }

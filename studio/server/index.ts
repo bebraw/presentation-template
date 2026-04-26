@@ -15,9 +15,13 @@ const {
   applyLayoutToSlideSpec,
   deleteFavoriteLayout,
   exportDeckLayout,
+  exportDeckLayoutPack,
   exportFavoriteLayout,
+  exportFavoriteLayoutPack,
   importDeckLayout,
+  importDeckLayoutPack,
   importFavoriteLayout,
+  importFavoriteLayoutPack,
   readFavoriteLayouts,
   readLayouts,
   saveFavoriteLayout,
@@ -405,13 +409,18 @@ async function handleLayoutExport(req, res) {
   const body = await readJsonBody(req);
   const layoutId = typeof body.layoutId === "string" ? body.layoutId : "";
   const scope = typeof body.scope === "string" ? body.scope : "deck";
-  if (!layoutId) {
+  const pack = body.pack === true;
+  if (!layoutId && !pack) {
     throw new Error("Expected layoutId when exporting a layout");
   }
 
-  const document = scope === "favorite"
-    ? exportFavoriteLayout(layoutId)
-    : exportDeckLayout(layoutId);
+  const document = pack
+    ? scope === "favorite"
+      ? exportFavoriteLayoutPack()
+      : exportDeckLayoutPack()
+    : scope === "favorite"
+      ? exportFavoriteLayout(layoutId)
+      : exportDeckLayout(layoutId);
 
   createJsonResponse(res, 200, { document });
 }
@@ -424,14 +433,20 @@ async function handleLayoutImport(req, res) {
     throw new Error("Expected document when importing a layout");
   }
 
+  const isPack = document.kind === "slideotter.layoutPack" || Array.isArray(document.layouts);
   const saved = scope === "favorite"
-    ? importFavoriteLayout(document, { description: body.description, id: body.id, name: body.name })
-    : importDeckLayout(document, { description: body.description, id: body.id, name: body.name });
+    ? isPack
+      ? importFavoriteLayoutPack(document, { description: body.description, id: body.id, name: body.name })
+      : importFavoriteLayout(document, { description: body.description, id: body.id, name: body.name })
+    : isPack
+      ? importDeckLayoutPack(document, { description: body.description, id: body.id, name: body.name })
+      : importDeckLayout(document, { description: body.description, id: body.id, name: body.name });
   publishRuntimeState();
 
   createJsonResponse(res, 200, {
     favoriteLayouts: readFavoriteLayouts().layouts,
     layout: saved.layout,
+    importedLayouts: Array.isArray(saved.layouts) ? saved.layouts : [saved.layout],
     layouts: readLayouts().layouts
   });
 }

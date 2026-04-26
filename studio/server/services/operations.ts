@@ -3,8 +3,8 @@ const path = require("path");
 const { describeDesignConstraints } = require("./design-constraints.ts");
 const { buildAndRenderDeck } = require("./build.ts");
 const { createStructuredResponse, getLlmConfig, getLlmStatus } = require("./llm/client.ts");
-const { buildIdeateSlidePrompts } = require("./llm/prompts.ts");
-const { getIdeateSlideResponseSchema } = require("./llm/schemas.ts");
+const { buildIdeateSlidePrompts, buildRedoLayoutPrompts } = require("./llm/prompts.ts");
+const { getIdeateSlideResponseSchema, getRedoLayoutResponseSchema } = require("./llm/schemas.ts");
 const { createStandaloneSlideHtml, withBrowser } = require("./dom-export.ts");
 const { getDomPreviewState } = require("./dom-preview.ts");
 const { applyLayoutToSlideSpec, readFavoriteLayouts, readLayouts } = require("./layouts.ts");
@@ -1084,6 +1084,64 @@ async function createLlmIdeateCandidates(slide, slideType, source, context, cand
     }
 
     return candidate;
+  });
+}
+
+async function createLlmRedoLayoutCandidates(slide, currentSpec, source, context, candidateCount, options: any = {}) {
+  const count = normalizeCandidateCount(candidateCount);
+  const prompts = buildRedoLayoutPrompts({
+    candidateCount: count,
+    context,
+    slide,
+    slideType: currentSpec.type,
+    source
+  });
+  const result = await createStructuredResponse({
+    developerPrompt: prompts.developerPrompt,
+    onProgress: options.onProgress,
+    schema: getRedoLayoutResponseSchema(count),
+    schemaName: "redo_layout_family_variants",
+    userPrompt: prompts.userPrompt
+  });
+
+  if (!result.data || !Array.isArray(result.data.variants) || result.data.variants.length !== count) {
+    throw new Error(`LLM redo-layout did not return ${count} structured variants`);
+  }
+
+  return result.data.variants.map((variant) => {
+    const slideSpec = validateSlideSpec(variant.slideSpec);
+    const oldFamily = String(variant.oldFamily || currentSpec.type);
+    const newFamily = String(variant.newFamily || slideSpec.type);
+    if (oldFamily !== currentSpec.type) {
+      throw new Error(`LLM redo-layout returned oldFamily "${oldFamily}" for "${currentSpec.type}" slide`);
+    }
+    if (newFamily !== slideSpec.type) {
+      throw new Error(`LLM redo-layout returned newFamily "${newFamily}" but slideSpec.type is "${slideSpec.type}"`);
+    }
+
+    const droppedFields = Array.isArray(variant.droppedFields) ? variant.droppedFields.filter(Boolean) : [];
+    const preservedFields = Array.isArray(variant.preservedFields) ? variant.preservedFields.filter(Boolean) : [];
+    const changeSummary = [
+      `Changed slide family from ${oldFamily} to ${newFamily}.`,
+      droppedFields.length
+        ? `Dropped fields: ${droppedFields.slice(0, 6).join(", ")}.`
+        : "No stored structured fields were dropped.",
+      preservedFields.length
+        ? `Preserved fields: ${preservedFields.slice(0, 6).join(", ")}.`
+        : "Preserved the current slide title and core intent.",
+      sentence(variant.rationale, "Changed the layout family to improve the slide's reading path.", 18)
+    ];
+
+    return {
+      changeSummary: changeSummary.slice(0, 4),
+      generator: "llm",
+      label: variant.label,
+      model: result.model,
+      notes: variant.notes,
+      promptSummary: variant.promptSummary,
+      provider: result.provider,
+      slideSpec
+    };
   });
 }
 
@@ -4384,14 +4442,11 @@ async function redoLayoutSlide(slideId, options: any = {}) {
   let previews = null;
   const dryRun = true;
   const candidateCount = normalizeCandidateCount(options.candidateCount);
-  const generation = {
-    available: false,
-    fallbackReason: null,
-    mode: "local",
-    model: null,
-    provider: "local",
-    requestedMode: normalizeGenerationMode(options.generationMode || "local")
-  };
+  const requestedGenerationMode = normalizeGenerationMode(options.generationMode || "local");
+  const generation = resolveGeneration({
+    ...options,
+    generationMode: requestedGenerationMode === "llm" ? "llm" : "local"
+  });
 
   try {
     reportProgress(options, {
@@ -4399,10 +4454,14 @@ async function redoLayoutSlide(slideId, options: any = {}) {
       stage: "gathering-context"
     });
     reportProgress(options, {
-      message: "Generating layout variants...",
+      message: generation.mode === "llm"
+        ? `Generating layout variants with ${generation.provider} ${generation.model}...`
+        : "Generating layout variants...",
       stage: "generating-variants"
     });
-    const candidates = fitCandidateCount(createLocalLayoutCandidates(slide, originalSlideSpec, context), candidateCount);
+    const candidates = generation.mode === "llm"
+      ? await createLlmRedoLayoutCandidates(slide, originalSlideSpec, serializeSlideSpec(originalSlideSpec), context, candidateCount, options)
+      : fitCandidateCount(createLocalLayoutCandidates(slide, originalSlideSpec, context), candidateCount);
     reportProgress(options, {
       message: `Rendering ${candidates.length} layout preview${candidates.length === 1 ? "" : "s"}...`,
       stage: "rendering-variants"
@@ -4410,7 +4469,9 @@ async function redoLayoutSlide(slideId, options: any = {}) {
     const variants = await materializeCandidatesToVariants(slideId, candidates, {
       baseSlideSpec: originalSlideSpec,
       dryRun,
-      labelFormatter: (label) => `${label} candidate`,
+      labelFormatter: (label) => generation.mode === "llm"
+        ? label
+        : `${label} candidate`,
       operation: "redo-layout"
     });
     createdVariants.push(...variants);
@@ -4432,7 +4493,7 @@ async function redoLayoutSlide(slideId, options: any = {}) {
     generation,
     previews,
     slideId,
-    summary: `Generated ${createdVariants.length} session-only layout candidates for ${slide.title} using local layout rules.`,
+    summary: `Generated ${createdVariants.length} session-only layout candidates for ${slide.title} using ${generation.mode === "llm" ? `${generation.provider} ${generation.model}` : "local layout rules"}${generation.fallbackReason ? `; ${generation.fallbackReason.toLowerCase()}` : ""}.`,
     variants: createdVariants
   };
 }

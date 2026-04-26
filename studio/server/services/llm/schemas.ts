@@ -26,6 +26,71 @@ function createBaseVariantSchema(slideSpecSchema) {
   };
 }
 
+function createRedoLayoutVariantSchema() {
+  return {
+    additionalProperties: false,
+    properties: {
+      changeSummary: {
+        items: {
+          type: "string"
+        },
+        maxItems: 4,
+        minItems: 2,
+        type: "array"
+      },
+      droppedFields: {
+        items: {
+          type: "string"
+        },
+        maxItems: 12,
+        type: "array"
+      },
+      label: {
+        type: "string"
+      },
+      newFamily: {
+        enum: ["cover", "toc", "content", "summary", "divider", "quote", "photo", "photoGrid"],
+        type: "string"
+      },
+      notes: {
+        type: "string"
+      },
+      oldFamily: {
+        enum: ["cover", "toc", "content", "summary", "divider", "quote", "photo", "photoGrid"],
+        type: "string"
+      },
+      preservedFields: {
+        items: {
+          type: "string"
+        },
+        maxItems: 12,
+        minItems: 1,
+        type: "array"
+      },
+      promptSummary: {
+        type: "string"
+      },
+      rationale: {
+        type: "string"
+      },
+      slideSpec: {
+        anyOf: [
+          getSlideSpecSchema("cover"),
+          getSlideSpecSchema("toc"),
+          getSlideSpecSchema("content"),
+          getSlideSpecSchema("summary"),
+          getSlideSpecSchema("divider"),
+          getSlideSpecSchema("quote"),
+          getSlideSpecSchema("photo"),
+          getSlideSpecSchema("photoGrid")
+        ]
+      }
+    },
+    required: ["label", "promptSummary", "notes", "changeSummary", "oldFamily", "newFamily", "droppedFields", "preservedFields", "rationale", "slideSpec"],
+    type: "object"
+  };
+}
+
 function createCardSchema() {
   return {
     additionalProperties: false,
@@ -285,6 +350,23 @@ function getIdeateSlideResponseSchema(slideType, candidateCount = 3) {
   };
 }
 
+function getRedoLayoutResponseSchema(candidateCount = 3) {
+  return {
+    additionalProperties: false,
+    properties: {
+      variants: {
+        items: createRedoLayoutVariantSchema(),
+        maxItems: candidateCount,
+        minItems: candidateCount,
+        type: "array"
+      }
+    },
+    required: ["variants"],
+    type: "object"
+  };
+}
+
 module.exports = {
-  getIdeateSlideResponseSchema
+  getIdeateSlideResponseSchema,
+  getRedoLayoutResponseSchema
 };

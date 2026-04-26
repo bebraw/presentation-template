@@ -1,5 +1,7 @@
 const assert = require("node:assert/strict");
 const { _test } = require("../studio/server/services/operations.ts");
+const { buildRedoLayoutPrompts } = require("../studio/server/services/llm/prompts.ts");
+const { getRedoLayoutResponseSchema } = require("../studio/server/services/llm/schemas.ts");
 
 const baseSlideSpec = {
   type: "content",
@@ -165,6 +167,51 @@ assert.match(
   photoGridFamilyCandidate.changeSummary.join(" "),
   /Changed slide family from content to photoGrid/,
   "family-changing candidates should make the type change explicit"
+);
+
+const redoLayoutPrompts = buildRedoLayoutPrompts({
+  candidateCount: 2,
+  context: {
+    deck: { objective: "Fixture objective" },
+    slides: {
+      "slide-fixture": {
+        intent: "Fixture intent"
+      }
+    }
+  },
+  slide: {
+    id: "slide-fixture",
+    title: "Fixture slide"
+  },
+  slideType: "content",
+  source: JSON.stringify(baseSlideSpec)
+});
+
+assert.match(
+  redoLayoutPrompts.userPrompt,
+  /oldFamily, newFamily, droppedFields, preservedFields, and rationale/,
+  "LLM redo-layout prompts should require explicit family-change metadata"
+);
+assert.match(
+  redoLayoutPrompts.userPrompt,
+  /Allowed slide families/,
+  "LLM redo-layout prompts should name the allowed family choices"
+);
+
+const redoLayoutSchema = getRedoLayoutResponseSchema(2);
+const redoLayoutVariantSchema = redoLayoutSchema.properties.variants.items;
+assert.equal(
+  redoLayoutVariantSchema.properties.slideSpec.anyOf.length,
+  8,
+  "LLM redo-layout schema should allow every structured slide family"
+);
+assert.ok(
+  redoLayoutVariantSchema.required.includes("oldFamily")
+    && redoLayoutVariantSchema.required.includes("newFamily")
+    && redoLayoutVariantSchema.required.includes("droppedFields")
+    && redoLayoutVariantSchema.required.includes("preservedFields")
+    && redoLayoutVariantSchema.required.includes("rationale"),
+  "LLM redo-layout schema should require explicit family-change review fields"
 );
 
 process.stdout.write("Slide media fixture validation passed.\n");

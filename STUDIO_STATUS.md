@@ -41,6 +41,7 @@ The browser studio baseline is complete.
 - Redo Layout can propose compatible deck-local and favorite layouts as session-only candidates, so saved layout definitions flow through the same compare/apply review as generated layout variants.
 - Redo Layout candidates can now be saved directly into the deck-local layout library or favorite layout library before applying the candidate.
 - Photo-grid Redo Layout candidates now carry schema-backed reusable arrangement definitions so generated split-photo layouts can be saved, exported, imported, and reapplied through the layout library.
+- Redo Layout can use LLM mode for explicit family-changing candidates with old/new family, dropped-field, preserved-field, and rationale metadata before preview/apply.
 - Structured slide specs now carry optional `mediaItems` arrays with per-item image metadata, and the first-class `photoGrid` family renders validated two-to-four image sets with attached captions while preserving the existing single-image `photo` path.
 - Ideate Structure now includes explicit family-changing candidates for common conversions such as text-heavy slides to quote/divider and media-backed slides to photo/photo-grid, with compare review calling out the old and new slide family before apply.
 - Supported structured slides allow direct text edits and valid JSON spec edits to update the active DOM preview immediately while saving through the server-controlled slide-spec path without a render pass.

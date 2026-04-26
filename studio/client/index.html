@@ -342,7 +342,6 @@
         <section class="workspace-page" id="studio-page">
           <div class="studio-tabs" role="tablist" aria-label="Slide Studio views">
             <button class="studio-tab-button active" id="show-current-slide-tab" type="button" role="tab" aria-selected="true" aria-controls="current-slide-panel">Current slide</button>
-            <button class="studio-tab-button" id="show-slide-context-tab" type="button" role="tab" aria-selected="false" aria-controls="slide-context-panel">Slide context</button>
             <button class="studio-tab-button" id="show-variant-generation-tab" type="button" role="tab" aria-selected="false" aria-controls="variant-generation-panel">Variant generation</button>
           </div>
 
@@ -516,10 +515,14 @@
                 </div>
               </details>
             </article>
-          </section>
 
-          <section class="workspace-section">
-            <article class="editorial-block editorial-block-wide slide-context-panel studio-tab-panel" id="slide-context-panel" role="tabpanel" aria-labelledby="show-slide-context-tab" hidden>
+            <article class="editorial-block editorial-block-wide slide-context-panel" id="slide-context-panel" aria-label="Slide context">
+              <div class="section-heading">
+                <div>
+                  <p class="eyebrow">Context</p>
+                  <h2>Slide Context</h2>
+                </div>
+              </div>
               <div class="slide-context-fields">
                 <div class="field-grid">
                   <label class="field">
@@ -554,7 +557,9 @@
                 </div>
               </div>
             </article>
+          </section>
 
+          <section class="workspace-section">
             <article class="editorial-block editorial-block-wide variant-generation-panel studio-tab-panel" id="variant-generation-panel" role="tabpanel" aria-labelledby="show-variant-generation-tab" hidden>
               <div class="section-heading">
                 <div>

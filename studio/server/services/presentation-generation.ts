@@ -1081,6 +1081,34 @@ function finalizeGeneratedSlideSpecs(slideSpecs, options: any = {}) {
   return assertGeneratedSlideQuality(repairedSlideSpecs);
 }
 
+function slideIdForIndex(index) {
+  return `slide-${String(index + 1).padStart(2, "0")}`;
+}
+
+function createGeneratedSlideContexts(slideSpecs, plan, deckPlan) {
+  const planSlides = Array.isArray(plan && plan.slides) ? plan.slides : [];
+  const deckPlanSlides = Array.isArray(deckPlan && deckPlan.slides) ? deckPlan.slides : [];
+
+  return Object.fromEntries(slideSpecs.map((slideSpec, index) => {
+    const planSlide = planSlides[index] || {};
+    const deckPlanSlide = deckPlanSlides[index] || {};
+    const keyPoints = Array.isArray(planSlide.keyPoints) ? planSlide.keyPoints : [];
+    const mustInclude = keyPoints
+      .map((point) => [point && point.title, point && point.body].filter(Boolean).join(": "))
+      .filter(Boolean)
+      .slice(0, 4)
+      .join("\n");
+
+    return [slideIdForIndex(index), {
+      intent: cleanText(deckPlanSlide.intent || planSlide.summary || deckPlanSlide.keyMessage || slideSpec.summary || ""),
+      layoutHint: cleanText(deckPlanSlide.visualNeed || `Use the ${slideSpec.type} family to keep the slide readable.`),
+      mustInclude: cleanText(deckPlanSlide.keyMessage || mustInclude || planSlide.summary || slideSpec.summary || ""),
+      notes: cleanText(planSlide.note || deckPlanSlide.sourceNeed || ""),
+      title: cleanText(planSlide.title || slideSpec.title || deckPlanSlide.title || "")
+    }];
+  }));
+}
+
 function sourcingInstruction(style) {
   if (style === "none") {
     return "Do not add visible source references unless the user explicitly provided a source URL that is essential.";
@@ -1418,6 +1446,7 @@ async function generatePresentationFromDeckPlan(fields: any = {}, deckPlan, deck
     },
     deckPlan,
     outline: deckPlan.outline || plan.outline || slideSpecs.map((slide, index) => `${index + 1}. ${slide.title}`).join("\n"),
+    slideContexts: createGeneratedSlideContexts(slideSpecs, plan, deckPlan),
     slideSpecs,
     summary: `Generated ${slideSpecs.length} initial slide${slideSpecs.length === 1 ? "" : "s"} with ${response.provider} ${response.model}.`,
     targetSlideCount: slideCount
@@ -1465,6 +1494,7 @@ async function generatePresentationFromDeckPlanIncremental(fields: any = {}, dec
     sourceSnippets: sourceContext.snippets
   };
   const slideSpecs = [];
+  const generatedPlanSlides = [];
   const responses = [];
   const usedMaterialIds = new Set();
 
@@ -1501,6 +1531,7 @@ async function generatePresentationFromDeckPlanIncremental(fields: any = {}, dec
     if (generatedSlides.length !== 1) {
       throw new Error(`Generated slide ${slideIndex + 1} returned ${generatedSlides.length} slides instead of one.`);
     }
+    generatedPlanSlides.push(generatedSlides[0]);
 
     const [slideSpec] = finalizeGeneratedSlideSpecs(materializePlan(generationFields, plan, {
       startIndex: slideIndex,
@@ -1518,6 +1549,7 @@ async function generatePresentationFromDeckPlanIncremental(fields: any = {}, dec
       await options.onSlide({
         outline: deckPlan.outline || slideSpecs.map((slide, index) => `${index + 1}. ${slide.title}`).join("\n"),
         slideCount,
+        slideContexts: createGeneratedSlideContexts(slideSpecs, { slides: generatedPlanSlides }, deckPlan),
         slideIndex: slideIndex + 1,
         slideSpec,
         slideSpecs: [...slideSpecs],
@@ -1558,6 +1590,7 @@ async function generatePresentationFromDeckPlanIncremental(fields: any = {}, dec
     },
     deckPlan,
     outline: deckPlan.outline || slideSpecs.map((slide, index) => `${index + 1}. ${slide.title}`).join("\n"),
+    slideContexts: createGeneratedSlideContexts(slideSpecs, { slides: generatedPlanSlides }, deckPlan),
     slideSpecs,
     summary: `Generated ${slideSpecs.length} initial slide${slideSpecs.length === 1 ? "" : "s"} one at a time with ${lastResponse ? `${lastResponse.provider} ${lastResponse.model}` : "the configured LLM"}.`,
     targetSlideCount: slideCount

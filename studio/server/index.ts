@@ -662,6 +662,7 @@ async function handlePresentationCreate(req, res) {
     });
     presentation = regeneratePresentationSlides(presentation.id, generated.slideSpecs, {
       outline: generated.outline,
+      slideContexts: generated.slideContexts,
       targetSlideCount: generated.targetSlideCount
     });
     setActivePresentation(presentation.id);
@@ -1044,6 +1045,7 @@ async function handlePresentationDraftCreate(req, res) {
       onSlide: (partial) => {
         presentation = regeneratePresentationSlides(presentation.id, partial.slideSpecs, {
           outline: partial.outline,
+          slideContexts: partial.slideContexts,
           targetSlideCount: partial.targetSlideCount
         });
         writtenSlideCount = partial.slideSpecs.length;
@@ -1161,6 +1163,7 @@ async function handlePresentationRegenerate(req, res) {
   });
   const presentation = regeneratePresentationSlides(body.presentationId, generated.slideSpecs, {
     outline: generated.outline,
+    slideContexts: generated.slideContexts,
     targetSlideCount: generated.targetSlideCount
   });
   updateWorkflowState({

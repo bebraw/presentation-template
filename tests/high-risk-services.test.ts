@@ -651,6 +651,9 @@ test("initial presentation generation requires complete LLM-visible plans", asyn
   ].filter(Boolean));
 
   assert.equal(generated.slideSpecs.length, 20, "LLM generation should respect the HTMX target length fixture");
+  assert.equal(Object.keys(generated.slideContexts || {}).length, 20, "LLM generation should create slide context for each generated slide");
+  assert.ok(generated.slideContexts["slide-01"].intent, "generated slide context should carry slide intent");
+  assert.ok(generated.slideContexts["slide-01"].mustInclude, "generated slide context should carry required slide content");
   assert.ok(!generatedVisibleText.some((value) => /\.{3,}|…/.test(String(value))), "LLM generation should avoid ellipsis truncation");
   assert.ok(!generatedVisibleText.some((value) => /\b(a|an|and|as|at|before|by|for|from|in|into|of|on|or|the|through|to|when|where|while|with|within|without)$/i.test(String(value).trim())), "LLM generation should avoid dangling sentence endings");
   assert.ok(!generatedVisibleText.some((value) => /Refine constraints before expanding the deck|^Guardrails$|^Sources to verify$/i.test(String(value))), "LLM generation should avoid visible scaffolding labels");
@@ -870,6 +873,7 @@ test("LLM presentation generation drafts approved outlines one slide at a time",
   const deckPlan = createGeneratedDeckPlan("Incremental deck", 4);
   const progressEvents = [];
   const writtenCounts = [];
+  const writtenContextCounts = [];
   const targetSlides = [];
   global.fetch = async (url, init) => {
     assert.match(String(url), /\/chat\/completions$/);
@@ -899,14 +903,18 @@ test("LLM presentation generation drafts approved outlines one slide at a time",
       title: "Incremental deck",
       tone: "Direct"
     }, deckPlan, {}, {
-      onSlide: ({ slideSpecs }) => {
+      onSlide: ({ slideContexts, slideSpecs }) => {
         writtenCounts.push(slideSpecs.length);
+        writtenContextCounts.push(Object.keys(slideContexts || {}).length);
       }
     });
 
     assert.deepEqual(targetSlides, [1, 2, 3, 4], "drafting should request each outline slide in order");
     assert.deepEqual(writtenCounts, [1, 2, 3, 4], "partial slide specs should be available after every slide");
+    assert.deepEqual(writtenContextCounts, [1, 2, 3, 4], "partial slide contexts should be available after every slide");
     assert.equal(generated.slideSpecs.length, 4, "incremental generation should return the complete deck");
+    assert.equal(Object.keys(generated.slideContexts || {}).length, 4, "incremental generation should return context for every slide");
+    assert.ok(generated.slideContexts["slide-04"].mustInclude, "incremental slide context should include required slide content");
     assert.equal(generated.slideSpecs[0].type, "cover", "first generated slide should remain a cover");
     assert.equal(generated.slideSpecs[3].type, "summary", "last generated slide should remain a handoff summary");
     assert.ok(progressEvents.some((event) => event.stage === "drafting-slide"), "drafting should publish per-slide progress");

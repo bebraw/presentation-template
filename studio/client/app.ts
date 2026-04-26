@@ -209,10 +209,8 @@ const elements: Record<string, any> = {
   showAssistantChatTab: document.getElementById("show-assistant-chat-tab"),
   showAssistantLogTab: document.getElementById("show-assistant-log-tab"),
   showCurrentSlideTab: document.getElementById("show-current-slide-tab"),
-  showSlideContextTab: document.getElementById("show-slide-context-tab"),
   showVariantGenerationTab: document.getElementById("show-variant-generation-tab"),
   showLlmDiagnosticsButton: document.getElementById("show-llm-diagnostics"),
-  slideContextPanel: document.getElementById("slide-context-panel"),
   sourceList: document.getElementById("source-list"),
   sourceRetrievalList: document.getElementById("source-retrieval-list"),
   sourceRetrievalSummary: document.getElementById("source-retrieval-summary"),
@@ -987,24 +985,20 @@ function showGeneratedDeckThemeStage(fields, deckPlan) {
 }
 
 function renderStudioTabs() {
-  const activeTab = ["context", "variants"].includes(state.ui.studioTab) ? state.ui.studioTab : "current";
+  const activeTab = state.ui.studioTab === "variants" ? "variants" : "current";
   const currentActive = activeTab === "current";
-  const contextActive = activeTab === "context";
   const variantsActive = activeTab === "variants";
 
   elements.showCurrentSlideTab.classList.toggle("active", currentActive);
-  elements.showSlideContextTab.classList.toggle("active", contextActive);
   elements.showVariantGenerationTab.classList.toggle("active", variantsActive);
   elements.showCurrentSlideTab.setAttribute("aria-selected", currentActive ? "true" : "false");
-  elements.showSlideContextTab.setAttribute("aria-selected", contextActive ? "true" : "false");
   elements.showVariantGenerationTab.setAttribute("aria-selected", variantsActive ? "true" : "false");
   elements.currentSlidePanel.hidden = !currentActive;
-  elements.slideContextPanel.hidden = !contextActive;
   elements.variantGenerationPanel.hidden = !variantsActive;
 }
 
 function setStudioTab(tab) {
-  state.ui.studioTab = ["context", "variants"].includes(tab) ? tab : "current";
+  state.ui.studioTab = tab === "variants" ? "variants" : "current";
   renderStudioTabs();
 }
 
@@ -5773,7 +5767,6 @@ elements.showPresentationsPageButton.addEventListener("click", () => setCurrentP
 elements.showStudioPageButton.addEventListener("click", () => setCurrentPage("studio"));
 elements.showPlanningPageButton.addEventListener("click", () => setCurrentPage("planning"));
 elements.showCurrentSlideTab.addEventListener("click", () => setStudioTab("current"));
-elements.showSlideContextTab.addEventListener("click", () => setStudioTab("context"));
 elements.showVariantGenerationTab.addEventListener("click", () => setStudioTab("variants"));
 elements.themeToggle.addEventListener("click", toggleAppTheme);
 elements.showLlmDiagnosticsButton.addEventListener("click", (event) => {

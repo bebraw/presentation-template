@@ -758,7 +758,10 @@ function regeneratePresentationSlides(id, slideSpecs, fields: any = {}) {
         updatedAt: timestamp
       },
       outline: fields.outline || currentDeck.outline || ""
-    }
+    },
+    slides: fields.slideContexts && typeof fields.slideContexts === "object" && !Array.isArray(fields.slideContexts)
+      ? fields.slideContexts
+      : currentContext.slides || {}
   });
   updatePresentationMeta(safeId, {});
 

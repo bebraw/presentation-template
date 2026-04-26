@@ -5471,6 +5471,7 @@ elements.saveLayoutButton.addEventListener("click", () => saveCurrentLayout().ca
 elements.applyLayoutButton.addEventListener("click", () => applySavedLayout().catch((error) => window.alert(error.message)));
 elements.favoriteLayoutButton.addEventListener("click", () => saveSelectedLayoutAsFavorite().catch((error) => window.alert(error.message)));
 elements.deleteFavoriteLayoutButton.addEventListener("click", () => deleteSelectedFavoriteLayout().catch((error) => window.alert(error.message)));
+elements.layoutLibrarySelect.addEventListener("change", renderLayoutLibrary);
 elements.addSourceButton.addEventListener("click", () => addSource().catch((error) => window.alert(error.message)));
 elements.validateButton.addEventListener("click", () => validate(false).catch((error) => window.alert(error.message)));
 elements.validateRenderButton.addEventListener("click", () => validate(true).catch((error) => window.alert(error.message)));

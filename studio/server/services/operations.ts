@@ -7,6 +7,7 @@ const { buildIdeateSlidePrompts } = require("./llm/prompts.ts");
 const { getIdeateSlideResponseSchema } = require("./llm/schemas.ts");
 const { createStandaloneSlideHtml, withBrowser } = require("./dom-export.ts");
 const { getDomPreviewState } = require("./dom-preview.ts");
+const { readFavoriteLayouts, readLayouts } = require("./layouts.ts");
 const { getOutputConfig } = require("./output-config.ts");
 const { outputDir } = require("./paths.ts");
 const { getActivePresentationId } = require("./presentations.ts");
@@ -1460,20 +1461,63 @@ function createSummaryLayoutCandidates(currentSpec, layoutContext, options: any 
   }));
 }
 
+function createLibraryLayoutCandidates(currentSpec, options: any = {}) {
+  const modeLabel = describeVariantPersistence(options);
+  const slideType = currentSpec && currentSpec.type ? currentSpec.type : "";
+  const deckLayouts = readLayouts().layouts.map((layout) => ({
+    layout,
+    sourceLabel: "deck",
+    sourceName: "deck-local"
+  }));
+  const favoriteLayouts = readFavoriteLayouts().layouts.map((layout) => ({
+    layout,
+    sourceLabel: "favorite",
+    sourceName: "favorite"
+  }));
+
+  return [...deckLayouts, ...favoriteLayouts]
+    .filter(({ layout }) => Array.isArray(layout.supportedTypes) && layout.supportedTypes.includes(slideType))
+    .map(({ layout, sourceLabel, sourceName }) => ({
+      changeSummary: [
+        `Applied saved ${sourceName} layout "${layout.name}".`,
+        `Changed the slide layout treatment to ${layout.treatment}.`,
+        "Reused a validated layout-library item while keeping the current slide family.",
+        modeLabel
+      ],
+      generator: "local",
+      label: `Use ${sourceLabel} layout: ${layout.name}`,
+      model: null,
+      notes: layout.description || `Reuses the ${layout.treatment} layout treatment from the ${sourceName} layout library.`,
+      promptSummary: `Applies saved ${sourceName} layout ${layout.name} to this ${slideType} slide.`,
+      provider: "local",
+      slideSpec: validateSlideSpec({
+        ...currentSpec,
+        layout: layout.treatment
+      })
+    }));
+}
+
 function createLocalLayoutCandidates(slide, currentSpec, context, options: any = {}) {
   const layoutContext = collectLayoutContext(slide, context);
+  const libraryCandidates = createLibraryLayoutCandidates(currentSpec, options);
+  let generatedCandidates;
 
   switch (currentSpec.type) {
     case "cover":
     case "toc":
-      return createCardLayoutCandidates(currentSpec, layoutContext, options);
+      generatedCandidates = createCardLayoutCandidates(currentSpec, layoutContext, options);
+      break;
     case "content":
-      return createContentLayoutCandidates(currentSpec, layoutContext, options);
+      generatedCandidates = createContentLayoutCandidates(currentSpec, layoutContext, options);
+      break;
     case "summary":
-      return createSummaryLayoutCandidates(currentSpec, layoutContext, options);
+      generatedCandidates = createSummaryLayoutCandidates(currentSpec, layoutContext, options);
+      break;
     default:
       throw new Error(`Redo Layout does not support slide type "${currentSpec.type}" yet`);
   }
+
+  return [...libraryCandidates, ...generatedCandidates];
 }
 
 function collectStructureContext(slide, currentSpec, context) {

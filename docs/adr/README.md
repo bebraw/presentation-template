@@ -24,3 +24,4 @@ Accepted direction or implementation plans that are not fully built yet:
 - [0009: Graph-Style Presentations](./proposed/0009-graph-style-presentations.md)
 - [0010: Replace Deterministic Studio Workflows With LLM Plans](./proposed/0010-llm-replacement-for-deterministic-workflows.md)
 - [0011: LM Studio Model Selection UI](./proposed/0011-lm-studio-model-selection-ui.md)
+- [0012: Progressive Slide Generation Preview](./proposed/0012-progressive-slide-generation-preview.md)

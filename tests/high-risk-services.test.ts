@@ -1014,7 +1014,6 @@ test("LLM presentation generation semantically shortens overlong visible text", 
 
   try {
     const generated = await generateInitialPresentation({
-      generationMode: "llm",
       includeActiveSources: false,
       onProgress: (event) => progressEvents.push(event),
       targetSlideCount: 3,
@@ -1165,7 +1164,6 @@ test("LLM presentation generation preserves non-English visible structure", asyn
   try {
     const generated = await generateInitialPresentation({
       audience: "suomenkieliset esiintyjät",
-      generationMode: "llm",
       includeActiveSources: false,
       objective: "Näytä miten hyvä esitys rakennetaan.",
       targetSlideCount: 3,

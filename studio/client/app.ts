@@ -105,7 +105,6 @@ const elements: Record<string, any> = {
   generatePresentationOutlineButton: document.getElementById("generate-presentation-outline-button"),
   ideateCandidateCount: document.getElementById("ideate-candidate-count"),
   ideateDeckStructureButton: document.getElementById("ideate-deck-structure-button"),
-  ideateGenerationMode: document.getElementById("ideate-generation-mode"),
   ideateSlideButton: document.getElementById("ideate-slide-button"),
   ideateStructureButton: document.getElementById("ideate-structure-button"),
   ideateThemeButton: document.getElementById("ideate-theme-button"),
@@ -760,7 +759,7 @@ function getLlmConnectionView(llm) {
   }
 
   return {
-    detail: `${providerLine}${baseUrl} is not ready. ${llm.configuredReason || "Configure a provider or switch generation mode to local."}`,
+    detail: `${providerLine}${baseUrl} is not ready. ${llm.configuredReason || "Configure OpenAI, LM Studio, or OpenRouter before generating variants."}`,
     label: "LLM off",
     providerLine,
     state: "warn"
@@ -3677,7 +3676,7 @@ function renderVariants() {
   if (!variants.length) {
     elements.variantReviewWorkspace.classList.add("is-empty");
     elements.workflowCompare.hidden = true;
-    elements.variantList.innerHTML = "<div class=\"variant-card variant-empty-state\"><strong>No candidates yet</strong><span>Choose a count, then run a generation mode to create session-only options.</span></div>";
+    elements.variantList.innerHTML = "<div class=\"variant-card variant-empty-state\"><strong>No candidates yet</strong><span>Choose a count, then run a variant action to create session-only options.</span></div>";
     renderVariantFlow();
     renderVariantComparison();
     return;
@@ -4529,10 +4528,6 @@ async function refreshState() {
   state.transientVariants = [];
   state.variantStorage = payload.variantStorage || null;
   state.variants = payload.variants;
-
-  if (state.runtime && state.runtime.llm && state.runtime.llm.defaultGenerationMode) {
-    elements.ideateGenerationMode.value = state.runtime.llm.defaultGenerationMode;
-  }
 
   syncSelectedSlideToActiveList();
   if (state.creationDraft && state.creationDraft.fields) {
@@ -5494,7 +5489,6 @@ async function ideateSlide() {
     const payload = await request("/api/operations/ideate-slide", {
       body: JSON.stringify({
         candidateCount: getRequestedCandidateCount(),
-        generationMode: elements.ideateGenerationMode.value,
         slideId: state.selectedSlideId
       }),
       method: "POST"
@@ -5529,7 +5523,6 @@ async function ideateTheme() {
     const payload = await request("/api/operations/ideate-theme", {
       body: JSON.stringify({
         candidateCount: getRequestedCandidateCount(),
-        generationMode: elements.ideateGenerationMode.value,
         slideId: state.selectedSlideId
       }),
       method: "POST"
@@ -5584,7 +5577,6 @@ async function ideateStructure() {
     const payload = await request("/api/operations/ideate-structure", {
       body: JSON.stringify({
         candidateCount: getRequestedCandidateCount(),
-        generationMode: elements.ideateGenerationMode.value,
         slideId: state.selectedSlideId
       }),
       method: "POST"
@@ -5619,7 +5611,6 @@ async function redoLayout() {
     const payload = await request("/api/operations/redo-layout", {
       body: JSON.stringify({
         candidateCount: getRequestedCandidateCount(),
-        generationMode: elements.ideateGenerationMode.value,
         slideId: state.selectedSlideId
       }),
       method: "POST"
@@ -5659,7 +5650,6 @@ async function sendAssistantMessage() {
     const payload = await request("/api/assistant/message", {
       body: JSON.stringify({
         candidateCount: getRequestedCandidateCount(),
-        generationMode: elements.ideateGenerationMode.value,
         message,
         selection,
         sessionId: state.assistant.session && state.assistant.session.id ? state.assistant.session.id : "default",

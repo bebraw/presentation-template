@@ -130,6 +130,39 @@ function createSmokeSlidePlan(slideCount, options: any = {}) {
   };
 }
 
+function createSmokeRedoLayoutPlan(requestBody) {
+  const prompt = String(requestBody.messages?.map((message) => message.content).join("\n") || "");
+  const schema = requestBody.response_format?.json_schema?.schema || {};
+  const minItems = schema.properties?.candidates?.minItems;
+  const count = Number.isFinite(Number(minItems)) ? Number(minItems) : 5;
+  const currentType = prompt.match(/Current slide type:\s*([a-zA-Z]+)/)?.[1] || "content";
+  const photoGridIntents = [
+    ["Lead image grid", "Use the first image as the lead visual with a compact context caption."],
+    ["Comparison grid", "Arrange the images as a side-by-side comparison."],
+    ["Evidence grid", "Group the images as supporting proof for the slide claim."]
+  ];
+
+  return {
+    candidates: Array.from({ length: count }, (_unused, index) => {
+      const photoGridIntent = photoGridIntents[index % photoGridIntents.length];
+
+      return {
+        droppedFields: [],
+        emphasis: currentType === "photoGrid"
+          ? [photoGridIntent[1], "Keep every existing image attached."]
+          : [
+              index % 2 === 0 ? "Make the hierarchy easier to scan." : "Give supporting points more visual separation.",
+              "Keep existing slide meaning intact."
+            ],
+        label: currentType === "photoGrid" ? photoGridIntent[0] : `Workflow layout ${index + 1}`,
+        preservedFields: ["title", "summary", "keyPoints"],
+        rationale: `Workflow smoke layout ${index + 1} validates LLM-only redo layout.`,
+        targetFamily: currentType
+      };
+    })
+  };
+}
+
 function installSmokeLlmMock() {
   llmEnvKeys.forEach((key) => {
     delete process.env[key];
@@ -162,6 +195,10 @@ function installSmokeLlmMock() {
       }
 
       return createLmStudioStreamResponse(createSmokeSlidePlan(7));
+    }
+
+    if (schemaName === "redo_layout_family_variants") {
+      return createLmStudioStreamResponse(createSmokeRedoLayoutPlan(requestBody));
     }
 
     return originalFetch(url, init);
@@ -866,7 +903,7 @@ async function runPresentationWorkflowValidation(options: any = {}) {
         await page.waitForSelector("#variant-list .variant-card:not(.variant-empty-state)", { timeout: 120_000 });
         await Promise.all([
           waitForJsonResponse(page, "/api/layouts/candidates/save", 60_000),
-          page.locator("#variant-list .variant-card", { hasText: "Lead image grid candidate" }).first().locator("button", { hasText: "Save layout" }).click()
+          page.locator("#variant-list .variant-card", { hasText: "Lead image grid" }).first().locator("button", { hasText: "Save layout" }).click()
         ]);
         await page.waitForFunction(async () => {
           const response = await fetch("/api/state");

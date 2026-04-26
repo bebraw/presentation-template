@@ -610,8 +610,7 @@ function resolveGeneration(options: any = {}) {
     fallbackReason: null,
     mode: "llm",
     model: llmStatus.model,
-    provider: llmStatus.provider,
-    requestedMode: "llm"
+    provider: llmStatus.provider
   };
 }
 

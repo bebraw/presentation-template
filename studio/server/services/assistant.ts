@@ -220,7 +220,6 @@ async function handleAssistantMessage(options: any = {}) {
     const result = await ideateStructureSlide(options.slideId, {
       candidateCount: options.candidateCount,
       dryRun: true,
-      generationMode: options.generationMode,
       onProgress: options.onProgress
     });
     const reply = createMessage("assistant", buildIdeateStructureReply(result, slide), {
@@ -252,7 +251,6 @@ async function handleAssistantMessage(options: any = {}) {
     const result = await ideateThemeSlide(options.slideId, {
       candidateCount: options.candidateCount,
       dryRun: true,
-      generationMode: options.generationMode,
       onProgress: options.onProgress
     });
     const reply = createMessage("assistant", buildIdeateThemeReply(result, slide), {
@@ -284,7 +282,6 @@ async function handleAssistantMessage(options: any = {}) {
     const result = await drillWordingSlide(options.slideId, {
       candidateCount: options.candidateCount,
       dryRun: true,
-      generationMode: options.generationMode,
       onProgress: options.onProgress
     });
     const reply = createMessage("assistant", buildDrillWordingReply(result, slide), {
@@ -316,7 +313,6 @@ async function handleAssistantMessage(options: any = {}) {
     const result = await redoLayoutSlide(options.slideId, {
       candidateCount: options.candidateCount,
       dryRun: true,
-      generationMode: options.generationMode,
       onProgress: options.onProgress
     });
     const reply = createMessage("assistant", buildRedoLayoutReply(result, slide), {
@@ -347,7 +343,6 @@ async function handleAssistantMessage(options: any = {}) {
   const result = await ideateSlide(options.slideId, {
     candidateCount: options.candidateCount,
     dryRun: true,
-    generationMode: options.generationMode,
     onProgress: options.onProgress
   });
   const reply = createMessage("assistant", buildIdeateReply(result, slide), {

@@ -3,7 +3,6 @@ const { loadEnvFiles } = require("../env.ts");
 loadEnvFiles();
 
 const defaultProvider = process.env.STUDIO_LLM_PROVIDER || "openai";
-const defaultGenerationMode = process.env.STUDIO_IDEATE_MODE || "auto";
 
 function normalizeProvider(value) {
   const provider = String(value || "").trim().toLowerCase();
@@ -90,7 +89,6 @@ function getLlmConfig() {
     baseUrl: settings.baseUrl,
     configured: settings.configured,
     configuredReason: settings.configuredReason,
-    defaultGenerationMode: process.env.STUDIO_IDEATE_MODE || defaultGenerationMode,
     model: settings.model,
     provider
   };
@@ -102,7 +100,6 @@ function getLlmStatus() {
     available: config.configured,
     baseUrl: config.baseUrl,
     configuredReason: config.configuredReason,
-    defaultGenerationMode: config.defaultGenerationMode,
     model: config.model,
     provider: config.provider
   };

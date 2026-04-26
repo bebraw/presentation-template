@@ -2,7 +2,7 @@ const fs = require("fs");
 const path = require("path");
 const { describeDesignConstraints } = require("./design-constraints.ts");
 const { buildAndRenderDeck } = require("./build.ts");
-const { createStructuredResponse, getLlmConfig, getLlmStatus } = require("./llm/client.ts");
+const { createStructuredResponse, getLlmStatus } = require("./llm/client.ts");
 const { buildIdeateSlidePrompts, buildRedoLayoutPrompts } = require("./llm/prompts.ts");
 const { getIdeateSlideResponseSchema, getRedoLayoutResponseSchema } = require("./llm/schemas.ts");
 const { createStandaloneSlideHtml, withBrowser } = require("./dom-export.ts");
@@ -22,7 +22,6 @@ const {
 const { createContactSheet, listPages } = require("./page-artifacts.ts");
 
 const ideateSlideLocks = new Set();
-const allowedGenerationModes = new Set(["auto", "local", "llm"]);
 const defaultCandidateCount = 5;
 const minimumCandidateCount = 1;
 const maximumCandidateCount = 8;
@@ -71,11 +70,6 @@ function toBody(value, fallback) {
   return sentence(value, fallback, 14);
 }
 
-function normalizeGenerationMode(value) {
-  const mode = typeof value === "string" ? value.trim().toLowerCase() : "";
-  return allowedGenerationModes.has(mode) ? mode : "auto";
-}
-
 function normalizeCandidateCount(value) {
   const parsed = Number.parseInt(value, 10);
   if (!Number.isFinite(parsed)) {
@@ -85,56 +79,28 @@ function normalizeCandidateCount(value) {
   return Math.min(maximumCandidateCount, Math.max(minimumCandidateCount, parsed));
 }
 
-function resolveGeneration(options: any = {}) {
+function getLocalGenerationStatus() {
+  return {
+    available: false,
+    fallbackReason: null,
+    mode: "local",
+    model: null,
+    provider: "local"
+  };
+}
+
+function resolveGeneration() {
   const llmStatus = getLlmStatus();
-  const requestedMode = normalizeGenerationMode(options.generationMode || getLlmConfig().defaultGenerationMode);
-
-  if (requestedMode === "local") {
-    return {
-      available: llmStatus.available,
-      fallbackReason: null,
-      mode: "local",
-      model: null,
-      provider: "local",
-      requestedMode
-    };
-  }
-
-  if (requestedMode === "llm") {
-    if (!llmStatus.available) {
-      throw new Error(`LLM generation is not configured. ${llmStatus.configuredReason || "Configure a provider or switch generation mode to local."}`);
-    }
-
-    return {
-      available: true,
-      fallbackReason: null,
-      mode: "llm",
-      model: llmStatus.model,
-      provider: llmStatus.provider,
-      requestedMode
-    };
-  }
-
-  if (llmStatus.available) {
-    return {
-      available: true,
-      fallbackReason: null,
-      mode: "llm",
-      model: llmStatus.model,
-      provider: llmStatus.provider,
-      requestedMode
-    };
+  if (!llmStatus.available) {
+    throw new Error(`LLM generation is not configured. ${llmStatus.configuredReason || "Configure OpenAI, LM Studio, or OpenRouter before generating variants."}`);
   }
 
   return {
-    available: false,
-    fallbackReason: llmStatus.configuredReason
-      ? `LLM unavailable, used local generation. ${llmStatus.configuredReason}`
-      : "LLM unavailable, used local generation.",
-    mode: "local",
-    model: null,
-    provider: "local",
-    requestedMode
+    available: true,
+    fallbackReason: null,
+    mode: "llm",
+    model: llmStatus.model,
+    provider: llmStatus.provider
   };
 }
 
@@ -145,411 +111,8 @@ function getDeckConstraintLines(deck: any = {}) {
   ]);
 }
 
-function createIdeaThemes(slide, context) {
-  const deck = context.deck || {};
-  const slideContext = context.slides[slide.id] || {};
-  const mustInclude = unique(splitLines(slideContext.mustInclude));
-  const notes = unique(splitLines(slideContext.notes));
-  const outline = unique(splitLines(deck.outline));
-  const constraints = getDeckConstraintLines(deck);
-  const title = slideContext.title || slide.title;
-  const intent = sentence(
-    slideContext.intent,
-    "make the slide's job clear before changing layout"
-  );
-  const objective = sentence(
-    deck.objective,
-    "turn editing into a repeatable studio loop"
-  );
-  const audience = sentence(
-    deck.audience,
-    "authors iterating on a local deck"
-  );
-  const themeBrief = sentence(
-    deck.themeBrief,
-    "use sans-serif type on white and separate sections with dividers"
-  );
-  const note = sentence(
-    notes[0],
-    "keep the working slide untouched until one variant is chosen"
-  );
-  const include = sentence(
-    mustInclude[0],
-    "show the main point without piling on more chrome"
-  );
-  const structure = sentence(
-    outline[0],
-    "start from stored context, then generate previews before apply"
-  );
-  const guardrail = sentence(
-    constraints[0],
-    "keep the shared runtime as the source of truth"
-  );
-
-  return [
-    {
-      label: "Intent-led",
-      title,
-      notes: "Built from slide intent and deck objective.",
-      promptSummary: "Uses stored audience, objective, and slide intent.",
-      eyebrow: "Intent",
-      summary: `Use this slide to ${intent}.`,
-      cards: [
-        {
-          body: toBody(`Write for ${audience}.`, "Write for the next editor, not the implementation author."),
-          id: `${slide.id}-intent-audience`,
-          title: "Audience"
-        },
-        {
-          body: toBody(intent, "Make the slide's job clear."),
-          id: `${slide.id}-intent-purpose`,
-          title: "Purpose"
-        },
-        {
-          body: toBody(include, "Show the main point first."),
-          id: `${slide.id}-intent-must`,
-          title: "Must show"
-        }
-      ],
-      bullets: [
-        {
-          body: toBody("Start from the saved slide intent before touching layout.", "Start from saved intent."),
-          id: `${slide.id}-intent-bullet-1`,
-          title: "Anchor the claim"
-        },
-        {
-          body: toBody(`Keep the copy tuned for ${audience}.`, "Keep the copy audience-aware."),
-          id: `${slide.id}-intent-bullet-2`,
-          title: "Aim the wording"
-        },
-        {
-          body: toBody(`Carry forward ${include}.`, "Carry the essential point forward."),
-          id: `${slide.id}-intent-bullet-3`,
-          title: "Keep one focal point"
-        }
-      ],
-      resources: [
-        {
-          body: "presentations/<id>/state/deck-context.json",
-          bodyFontSize: 11.2,
-          id: `${slide.id}-intent-resource-1`,
-          title: "Saved brief"
-        },
-        {
-          body: "presentations/<id>/slides plus apply-once workflow",
-          bodyFontSize: 10.6,
-          id: `${slide.id}-intent-resource-2`,
-          title: "Working source"
-        }
-      ],
-      signals: [
-        { id: `${slide.id}-intent-signal-1`, label: "intent", value: 0.93 },
-        { id: `${slide.id}-intent-signal-2`, label: "audience", value: 0.88 },
-        { id: `${slide.id}-intent-signal-3`, label: "must-show", value: 0.9 },
-        { id: `${slide.id}-intent-signal-4`, label: "apply", value: 0.84 }
-      ],
-      guardrails: [
-        { id: `${slide.id}-intent-guardrail-1`, label: "saved inputs", value: String(Math.max(1, mustInclude.length + notes.length)) },
-        { id: `${slide.id}-intent-guardrail-2`, label: "working file", value: "1" },
-        { id: `${slide.id}-intent-guardrail-3`, label: "apply step", value: "1" }
-      ]
-    },
-    {
-      label: "Structure-led",
-      title,
-      notes: "Built from outline and theme guidance.",
-      promptSummary: "Uses outline, theme brief, and slide notes.",
-      eyebrow: "Flow",
-      summary: "Generate options from saved context, preview them, then keep one source file.",
-      cards: [
-        {
-          body: toBody(structure, "Start with stored structure instead of freeform prompting."),
-          id: `${slide.id}-structure-sequence`,
-          title: "Sequence"
-        },
-        {
-          body: toBody(themeBrief, "Keep the visual system quiet and readable."),
-          id: `${slide.id}-structure-theme`,
-          title: "Theme"
-        },
-        {
-          body: toBody(note, "Let the editor compare before applying a change."),
-          id: `${slide.id}-structure-review`,
-          title: "Review"
-        }
-      ],
-      bullets: [
-        {
-          body: toBody("Use saved outline points to shape the slide before rewriting details.", "Use saved outline points first."),
-          id: `${slide.id}-structure-bullet-1`,
-          title: "Start with structure"
-        },
-        {
-          body: toBody(`Respect the theme brief: ${themeBrief}.`, "Respect the saved theme brief."),
-          id: `${slide.id}-structure-bullet-2`,
-          title: "Keep the look aligned"
-        },
-        {
-          body: toBody(note, "Preview variants before one is applied."),
-          id: `${slide.id}-structure-bullet-3`,
-          title: "Compare before apply"
-        }
-      ],
-      resources: [
-        {
-          body: "session candidates + apply",
-          bodyFontSize: 11.2,
-          id: `${slide.id}-structure-resource-1`,
-          title: "Candidate flow"
-        },
-        {
-          body: "studio/output/<presentation-id>/variant-previews/",
-          bodyFontSize: 10.6,
-          id: `${slide.id}-structure-resource-2`,
-          title: "Preview images"
-        }
-      ],
-      signals: [
-        { id: `${slide.id}-structure-signal-1`, label: "outline", value: 0.91 },
-        { id: `${slide.id}-structure-signal-2`, label: "theme", value: 0.86 },
-        { id: `${slide.id}-structure-signal-3`, label: "preview", value: 0.9 },
-        { id: `${slide.id}-structure-signal-4`, label: "apply", value: 0.83 }
-      ],
-      guardrails: [
-        { id: `${slide.id}-structure-guardrail-1`, label: "variant options", value: "3" },
-        { id: `${slide.id}-structure-guardrail-2`, label: "working file", value: "1" },
-        { id: `${slide.id}-structure-guardrail-3`, label: "theme brief", value: String(Math.max(1, splitLines(deck.themeBrief).length || 1)) }
-      ]
-    },
-    {
-      label: "Guardrail-led",
-      title,
-      notes: "Built from constraints and workflow guardrails.",
-      promptSummary: "Uses saved constraints and source-of-truth rules.",
-      eyebrow: "Guardrails",
-      summary: "Keep the shared runtime as the source of truth and let validation catch drift early.",
-      cards: [
-        {
-          body: toBody(guardrail, "Keep the shared runtime as the source of truth."),
-          id: `${slide.id}-guardrail-source`,
-          title: "Source of truth"
-        },
-        {
-          body: toBody(objective, "Shorten the edit loop without hiding the real source."),
-          id: `${slide.id}-guardrail-loop`,
-          title: "Short loop"
-        },
-        {
-          body: toBody("Preview generated variants, then apply one and run validation.", "Preview, apply once, and validate."),
-          id: `${slide.id}-guardrail-validate`,
-          title: "Validation"
-        }
-      ],
-      bullets: [
-        {
-          body: toBody("Generate candidate source files without replacing the current slide.", "Generate without overwriting."),
-          id: `${slide.id}-guardrail-bullet-1`,
-          title: "Keep the draft safe"
-        },
-        {
-          body: toBody("Restore the real deck after every generated preview pass.", "Restore the real deck after preview."),
-          id: `${slide.id}-guardrail-bullet-2`,
-          title: "Rebuild the truth"
-        },
-        {
-          body: toBody("Apply a chosen source variant, then validate the result.", "Apply one source and validate."),
-          id: `${slide.id}-guardrail-bullet-3`,
-          title: "Promote intentionally"
-        }
-      ],
-      resources: [
-        {
-          body: "studio/client/slide-dom.ts and studio/server/",
-          bodyFontSize: 10.8,
-          id: `${slide.id}-guardrail-resource-1`,
-          title: "Runtime boundary"
-        },
-        {
-          body: "npm run quality:gate",
-          bodyFontSize: 11.2,
-          id: `${slide.id}-guardrail-resource-2`,
-          title: "Final check"
-        }
-      ],
-      signals: [
-        { id: `${slide.id}-guardrail-signal-1`, label: "preview", value: 0.88 },
-        { id: `${slide.id}-guardrail-signal-2`, label: "restore", value: 0.93 },
-        { id: `${slide.id}-guardrail-signal-3`, label: "apply", value: 0.82 },
-        { id: `${slide.id}-guardrail-signal-4`, label: "validate", value: 0.95 }
-      ],
-      guardrails: [
-        { id: `${slide.id}-guardrail-row-1`, label: "generated previews", value: "3" },
-        { id: `${slide.id}-guardrail-row-2`, label: "final apply", value: "1" },
-        { id: `${slide.id}-guardrail-row-3`, label: "quality gate", value: "1" }
-      ]
-    }
-  ];
-}
-
-function buildIdeaSlideSpec(slideType, theme, baseSpec = null) {
-  switch (slideType) {
-    case "divider":
-      return validateSlideSpec({
-        title: theme.title,
-        type: "divider"
-      });
-    case "quote":
-      return validateSlideSpec({
-        attribution: theme.eyebrow,
-        context: theme.summary,
-        quote: theme.notes || theme.summary,
-        title: theme.title,
-        type: "quote"
-      });
-    case "photo":
-      return validateSlideSpec({
-        caption: theme.summary,
-        media: baseSpec && baseSpec.media ? { ...baseSpec.media } : undefined,
-        title: theme.title,
-        type: "photo"
-      });
-    case "photoGrid":
-      return validateSlideSpec({
-        caption: theme.summary,
-        mediaItems: baseSpec && Array.isArray(baseSpec.mediaItems) ? baseSpec.mediaItems.map((item) => ({ ...item })) : [],
-        title: theme.title,
-        type: "photoGrid"
-      });
-    case "cover":
-      return validateSlideSpec({
-        cards: theme.cards,
-        eyebrow: theme.eyebrow,
-        note: theme.notes,
-        summary: theme.summary,
-        title: theme.title,
-        type: "cover"
-      });
-    case "toc":
-      return validateSlideSpec({
-        cards: theme.cards,
-        eyebrow: theme.eyebrow,
-        note: theme.notes,
-        summary: theme.summary,
-        title: theme.title,
-        type: "toc"
-      });
-    case "content":
-      return validateSlideSpec({
-        eyebrow: theme.eyebrow,
-        guardrails: theme.guardrails,
-        guardrailsTitle: "Workflow guardrails",
-        signals: theme.signals,
-        signalsTitle: `${theme.label} signals`,
-        summary: theme.summary,
-        title: theme.title,
-        type: "content"
-      });
-    case "summary":
-      return validateSlideSpec({
-        bullets: theme.bullets,
-        eyebrow: theme.eyebrow,
-        resources: theme.resources,
-        resourcesTitle: "Keep nearby",
-        summary: theme.summary,
-        title: theme.title,
-        type: "summary"
-      });
-    default:
-      throw new Error(`Ideate Slide does not support slide type "${slideType}" yet`);
-  }
-}
-
 function describeVariantPersistence(options: any = {}) {
   return "Generated as a session-only candidate; apply one to update the slide.";
-}
-
-function buildChangeSummary(slideType, theme, options: any = {}) {
-  const modeLabel = describeVariantPersistence(options);
-
-  switch (slideType) {
-    case "divider":
-      return [
-        `Shifted the divider toward the ${theme.label.toLowerCase()} framing.`,
-        "Rewrote the section title while keeping the title-only divider structure intact.",
-        "Kept the divider family instead of expanding it into a fuller content slide.",
-        modeLabel
-      ];
-    case "quote":
-      return [
-        `Shifted the quote slide toward the ${theme.label.toLowerCase()} framing.`,
-        "Reworked the quote and attached context while keeping one dominant pull quote.",
-        "Kept attribution/source fields compact so the quote remains the focal point.",
-        modeLabel
-      ];
-    case "photo":
-      return [
-        `Shifted the photo slide toward the ${theme.label.toLowerCase()} framing.`,
-        "Retitled the visual evidence while keeping the attached material dominant.",
-        "Kept the photo family and compact caption structure intact.",
-        modeLabel
-      ];
-    case "photoGrid":
-      return [
-        `Shifted the photo grid toward the ${theme.label.toLowerCase()} framing.`,
-        "Retitled the image set while keeping the same media items.",
-        "Kept the photo-grid family and compact caption structure intact.",
-        modeLabel
-      ];
-    case "cover":
-      return [
-        `Shifted the cover toward the ${theme.label.toLowerCase()} framing.`,
-        "Rewrote the three capability cards as the primary content block.",
-        "Updated the cover eyebrow, summary, and footnote copy.",
-        modeLabel
-      ];
-    case "toc":
-      return [
-        `Shifted the outline slide toward the ${theme.label.toLowerCase()} framing.`,
-        "Rewrote the section body and the three outline cards.",
-        "Updated the bottom note to match the new emphasis.",
-        modeLabel
-      ];
-    case "content":
-      return [
-        `Shifted the signal slide toward the ${theme.label.toLowerCase()} framing.`,
-        "Replaced the signal bars and guardrail metrics.",
-        "Retitled the left and right comparison panels to match the new emphasis.",
-        modeLabel
-      ];
-    case "summary":
-      return [
-        `Shifted the summary slide toward the ${theme.label.toLowerCase()} framing.`,
-        "Replaced the checklist items and the resource cards.",
-        "Kept the slide structure but rewrote the summary body around the new angle.",
-        modeLabel
-      ];
-    default:
-      return [
-        `Shifted the slide toward the ${theme.label.toLowerCase()} framing.`,
-        modeLabel
-      ];
-  }
-}
-
-function createLocalIdeateCandidates(slide, slideType, context, options: any = {}) {
-  return createIdeaThemes(slide, context).map((theme) => {
-    const slideSpec = buildIdeaSlideSpec(slideType, theme, options.baseSlideSpec);
-    return {
-      changeSummary: buildChangeSummary(slideType, theme, options),
-      generator: "local",
-      label: theme.label,
-      model: null,
-      notes: theme.notes,
-      promptSummary: theme.promptSummary,
-      provider: "local",
-      slideSpec
-    };
-  });
 }
 
 function cloneJson(value) {
@@ -1147,11 +710,46 @@ function createLlmRedoLayoutCandidateFromIntent(currentSpec, structureContext, i
     changeSummary,
     generator: "llm",
     label: intent.label || `Use ${targetFamily} layout intent`,
+    layoutDefinition: createPhotoGridLayoutDefinition(currentSpec, slideSpec),
     model: result.model,
     notes: intent.rationale || intent.emphasis || "",
     promptSummary: `LLM selected ${targetFamily} layout intent: ${sentence(intent.emphasis, intent.label || targetFamily, 12)}`,
     provider: result.provider,
     slideSpec
+  };
+}
+
+function createPhotoGridLayoutDefinition(currentSpec, slideSpec) {
+  if (!currentSpec || currentSpec.type !== "photoGrid" || !slideSpec || slideSpec.type !== "photoGrid") {
+    return undefined;
+  }
+
+  const mediaItems = Array.isArray(currentSpec.mediaItems) ? currentSpec.mediaItems : [];
+  const fullOrder = mediaItems.map((_, index) => index).slice(0, 4);
+
+  if (slideSpec.layout === "standard") {
+    return {
+      arrangement: "comparison",
+      captionRole: "comparison",
+      mediaOrder: rotateItems(fullOrder, 1),
+      type: "photoGridArrangement"
+    };
+  }
+
+  if (slideSpec.layout === "strip") {
+    return {
+      arrangement: "evidence",
+      captionRole: "evidence",
+      mediaOrder: rotateItems(fullOrder, mediaItems.length > 2 ? 2 : 1),
+      type: "photoGridArrangement"
+    };
+  }
+
+  return {
+    arrangement: "lead-image",
+    captionRole: "context",
+    mediaOrder: fullOrder,
+    type: "photoGridArrangement"
   };
 }
 
@@ -1379,311 +977,6 @@ function rotateItems(items, offset = 0) {
   return items.map((_, index) => ({ ...items[(index + shift) % items.length] }));
 }
 
-function orderByNumericValue(items, direction = "desc") {
-  return items
-    .map((item, index) => ({
-      index,
-      item: { ...item },
-      value: typeof item.value === "number" ? item.value : Number.parseFloat(item.value)
-    }))
-    .sort((left, right) => {
-      const leftValue = Number.isFinite(left.value) ? left.value : left.index;
-      const rightValue = Number.isFinite(right.value) ? right.value : right.index;
-      return direction === "asc" ? leftValue - rightValue : rightValue - leftValue;
-    })
-    .map((entry) => entry.item);
-}
-
-function collectLayoutContext(slide, context) {
-  const deck = context.deck || {};
-  const slideContext = context.slides[slide.id] || {};
-
-  return {
-    audience: sentence(deck.audience, "the next editor"),
-    intent: sentence(slideContext.intent, "make the slide's job clear before changing it"),
-    layoutHint: sentence(slideContext.layoutHint, "rebalance the content without changing the slide family"),
-    mustInclude: sentence(splitLines(slideContext.mustInclude)[0], "keep the main point visible"),
-    note: sentence(splitLines(slideContext.notes)[0], "compare the candidate before applying it"),
-    objective: sentence(deck.objective, "shorten the edit loop without hiding the source")
-  };
-}
-
-function createCardLayoutCandidates(currentSpec, layoutContext, options: any = {}) {
-  const modeLabel = describeVariantPersistence(options);
-  const cardOrders = [
-    [0, 2, 1],
-    [1, 0, 2],
-    [2, 1, 0]
-  ];
-
-  return [
-    {
-      label: "Outcome-first layout",
-      notes: "Pushes the slide toward the main outcome first, then supporting cards.",
-      promptSummary: "Reorders the card stack so the key outcome lands first and the note closes the slide.",
-      slideSpec: validateSlideSpec({
-        ...currentSpec,
-        cards: reorderItems(currentSpec.cards, cardOrders[0]),
-        eyebrow: "Outcome",
-        note: `${layoutContext.mustInclude}. ${layoutContext.note}.`,
-        summary: `Lead with ${currentSpec.cards[0].title.toLowerCase()}, then support it with the other two beats.`,
-        title: currentSpec.title
-      })
-    },
-    {
-      label: "Sequence-first layout",
-      notes: "Reframes the slide as a left-to-right sequence instead of a flat list.",
-      promptSummary: "Rotates the card order and rewrites the section framing around a clear three-step sequence.",
-      slideSpec: validateSlideSpec({
-        ...currentSpec,
-        cards: reorderItems(currentSpec.cards, cardOrders[1]),
-        eyebrow: "Sequence",
-        note: `${layoutContext.layoutHint}. ${layoutContext.note}.`,
-        summary: `Walk from ${currentSpec.cards[1].title.toLowerCase()} to ${currentSpec.cards[0].title.toLowerCase()} and close on ${currentSpec.cards[2].title.toLowerCase()}.`,
-        title: currentSpec.title
-      })
-    },
-    {
-      label: "Proof-first layout",
-      notes: "Starts with the strongest proof point and lets the rest of the slide justify it.",
-      promptSummary: "Moves the strongest support card to the first position and rewrites the frame around evidence.",
-      slideSpec: validateSlideSpec({
-        ...currentSpec,
-        cards: reorderItems(currentSpec.cards, cardOrders[2]),
-        eyebrow: "Proof",
-        note: `${layoutContext.objective}. ${layoutContext.note}.`,
-        summary: `Open on ${currentSpec.cards[2].title.toLowerCase()} and let the remaining cards explain how it holds together.`,
-        title: currentSpec.title
-      })
-    }
-  ].map((variant) => ({
-    changeSummary: [
-      `Reworked the ${currentSpec.type} slide toward an ${variant.label.toLowerCase()}.`,
-      "Reordered the three card positions and rewrote the framing copy around the new emphasis.",
-      "Kept the current slide family and card IDs while changing the reading order.",
-      modeLabel
-    ],
-    generator: "local",
-    label: variant.label,
-    model: null,
-    notes: variant.notes,
-    promptSummary: variant.promptSummary,
-    provider: "local",
-    slideSpec: variant.slideSpec
-  }));
-}
-
-function createContentLayoutCandidates(currentSpec, layoutContext, options: any = {}) {
-  const modeLabel = describeVariantPersistence(options);
-
-  return [
-    {
-      label: "Signal-first layout",
-      notes: "Moves the strongest signal rows to the top and keeps guardrails as the supporting column.",
-      promptSummary: "Sorts signal bars by strongest value first and reframes the slide around visible momentum.",
-      slideSpec: validateSlideSpec({
-        ...currentSpec,
-        eyebrow: "Priority",
-        guardrails: rotateItems(currentSpec.guardrails, 1),
-        guardrailsTitle: "Supporting guardrails",
-        layout: "focus",
-        signals: orderByNumericValue(currentSpec.signals, "desc"),
-        signalsTitle: "Leading signals",
-        summary: `Start with the strongest visible signal, then use the guardrails to explain how the setup stays stable.`,
-        title: currentSpec.title
-      })
-    },
-    {
-      label: "Guardrail-first layout",
-      notes: "Makes the control surface more prominent and turns the signals into supporting evidence.",
-      promptSummary: "Reorders the guardrails so the most material controls land first and reframes the slide around operating safety.",
-      slideSpec: validateSlideSpec({
-        ...currentSpec,
-        eyebrow: "Controls",
-        guardrails: orderByNumericValue(currentSpec.guardrails, "desc"),
-        guardrailsTitle: "Primary guardrails",
-        layout: "checklist",
-        signals: rotateItems(currentSpec.signals, 1),
-        signalsTitle: "Supporting signals",
-        summary: `Lead with the operating limits, then show the signals that justify keeping the current path.`,
-        title: currentSpec.title
-      })
-    },
-    {
-      label: "Gap-focused layout",
-      notes: "Pulls the weakest signal and tightest constraint upward so the slide reads like a watch list.",
-      promptSummary: "Sorts signals from weakest to strongest and reframes the copy around the most exposed gap.",
-      slideSpec: validateSlideSpec({
-        ...currentSpec,
-        eyebrow: "Watch list",
-        guardrails: orderByNumericValue(currentSpec.guardrails, "asc"),
-        guardrailsTitle: "Tightest guardrails",
-        layout: "strip",
-        signals: orderByNumericValue(currentSpec.signals, "asc"),
-        signalsTitle: "Weakest signals first",
-        summary: `Use the slide as a watch list: surface the weakest signal, then show which guardrail needs the most care.`,
-        title: currentSpec.title
-      })
-    }
-  ].map((variant) => ({
-    changeSummary: [
-      `Reworked the ${currentSpec.type} slide toward a ${variant.label.toLowerCase()}.`,
-      "Reordered the signal bars and guardrail rows to change which evidence lands first.",
-      "Changed the content layout treatment while keeping the same structured slide family.",
-      modeLabel
-    ],
-    generator: "local",
-    label: variant.label,
-    model: null,
-    notes: variant.notes,
-    promptSummary: variant.promptSummary,
-    provider: "local",
-    slideSpec: variant.slideSpec
-  }));
-}
-
-function createSummaryLayoutCandidates(currentSpec, layoutContext, options: any = {}) {
-  const modeLabel = describeVariantPersistence(options);
-
-  return [
-    {
-      label: "Run-path layout",
-      notes: "Makes the build path read as the primary sequence and keeps references secondary.",
-      promptSummary: "Rotates the checklist so the operating path reads top to bottom before the reference panel.",
-      slideSpec: validateSlideSpec({
-        ...currentSpec,
-        bullets: reorderItems(currentSpec.bullets, [1, 2, 0]),
-        eyebrow: "Run path",
-        resources: rotateItems(currentSpec.resources, 1),
-        resourcesTitle: "Support nearby",
-        summary: `Lead with the operating path, then keep the supporting references off to the side.`,
-        title: currentSpec.title
-      })
-    },
-    {
-      label: "Approval-path layout",
-      notes: "Moves approval and validation higher so the slide reads like a decision gate.",
-      promptSummary: "Reorders the checklist around approval steps and reframes the resource panel around review.",
-      slideSpec: validateSlideSpec({
-        ...currentSpec,
-        bullets: reorderItems(currentSpec.bullets, [2, 1, 0]),
-        eyebrow: "Approval",
-        resources: currentSpec.resources.map((item) => ({ ...item })),
-        resourcesTitle: "Review surface",
-        summary: `Put validation before convenience so the slide reads like an approval path, not a loose checklist.`,
-        title: currentSpec.title
-      })
-    },
-    {
-      label: "Handoff layout",
-      notes: "Frames the slide for the next operator by closing on what needs to stay nearby.",
-      promptSummary: "Keeps the checklist tight, rotates the order, and turns the right panel into a handoff surface.",
-      slideSpec: validateSlideSpec({
-        ...currentSpec,
-        bullets: reorderItems(currentSpec.bullets, [0, 2, 1]),
-        eyebrow: "Handoff",
-        resources: rotateItems(currentSpec.resources, 1),
-        resourcesTitle: "Carry forward",
-        summary: `Frame the slide for handoff: keep the core steps on the left and the files worth keeping nearby on the right.`,
-        title: currentSpec.title
-      })
-    }
-  ].map((variant) => ({
-    changeSummary: [
-      `Reworked the ${currentSpec.type} slide toward a ${variant.label.toLowerCase()}.`,
-      "Reordered the checklist and resource emphasis so the slide reads in a different sequence.",
-      "Kept the same summary slide family while changing what the viewer should notice first.",
-      modeLabel
-    ],
-    generator: "local",
-    label: variant.label,
-    model: null,
-    notes: variant.notes,
-    promptSummary: variant.promptSummary,
-    provider: "local",
-    slideSpec: variant.slideSpec
-  }));
-}
-
-function createPhotoGridLayoutCandidates(currentSpec, layoutContext, options: any = {}) {
-  const modeLabel = describeVariantPersistence(options);
-  const mediaItems = Array.isArray(currentSpec.mediaItems) ? currentSpec.mediaItems : [];
-  const fullOrder = mediaItems.map((_, index) => index).slice(0, 4);
-
-  return [
-    {
-      layoutDefinition: {
-        arrangement: "lead-image",
-        captionRole: "context",
-        mediaOrder: fullOrder,
-        type: "photoGridArrangement"
-      },
-      label: "Lead image grid",
-      notes: "Moves the first visual into the strongest position and keeps the set attached.",
-      promptSummary: "Uses the current image set as a lead-image grid with a compact caption.",
-      slideSpec: validateSlideSpec({
-        ...currentSpec,
-        caption: sentence(layoutContext.intent, currentSpec.caption || currentSpec.summary || "", 16),
-        layout: "focus",
-        mediaItems: mediaItems.map((item) => ({ ...item })),
-        title: currentSpec.title
-      })
-    },
-    {
-      layoutDefinition: {
-        arrangement: "comparison",
-        captionRole: "comparison",
-        mediaOrder: rotateItems(fullOrder, 1),
-        type: "photoGridArrangement"
-      },
-      label: "Comparison grid",
-      notes: "Rotates the visual order so adjacent images read as a comparison.",
-      promptSummary: "Reorders the image set while keeping every existing media item.",
-      slideSpec: validateSlideSpec({
-        ...currentSpec,
-        caption: sentence(`Compare the set against ${layoutContext.mustInclude}.`, currentSpec.caption || currentSpec.summary || "", 16),
-        layout: "standard",
-        mediaItems: rotateItems(mediaItems, 1),
-        title: currentSpec.title
-      })
-    },
-    {
-      layoutDefinition: {
-        arrangement: "evidence",
-        captionRole: "evidence",
-        mediaOrder: rotateItems(fullOrder, mediaItems.length > 2 ? 2 : 1),
-        type: "photoGridArrangement"
-      },
-      label: "Evidence grid",
-      notes: "Frames the image set as grouped evidence with the strongest proof first.",
-      promptSummary: "Reorders the image set and tightens the caption toward evidence.",
-      slideSpec: validateSlideSpec({
-        ...currentSpec,
-        caption: sentence(`Use the set as evidence for ${layoutContext.mustInclude}.`, currentSpec.caption || currentSpec.summary || "", 16),
-        layout: "strip",
-        mediaItems: rotateItems(mediaItems, mediaItems.length > 2 ? 2 : 1),
-        title: currentSpec.title
-      })
-    }
-  ].map((variant) => ({
-    changeSummary: [
-      `Reworked the photo grid toward a ${variant.label.toLowerCase()}.`,
-      "Adjusted image order and caption emphasis while preserving the media item set.",
-      "Proposed a reusable photo-grid layout definition for the layout library.",
-      "Kept the photo-grid family and validated two-to-four image constraint intact.",
-      modeLabel
-    ],
-    generator: "local",
-    label: variant.label,
-    layoutDefinition: variant.layoutDefinition,
-    model: null,
-    notes: variant.notes,
-    promptSummary: variant.promptSummary,
-    provider: "local",
-    slideSpec: variant.slideSpec
-  }));
-}
-
 function createLibraryLayoutCandidates(currentSpec, options: any = {}) {
   const modeLabel = describeVariantPersistence(options);
   const slideType = currentSpec && currentSpec.type ? currentSpec.type : "";
@@ -1718,32 +1011,6 @@ function createLibraryLayoutCandidates(currentSpec, options: any = {}) {
         `${sourceLabel}:${layout.id}`
       ))
     }));
-}
-
-function createLocalLayoutCandidates(slide, currentSpec, context, options: any = {}) {
-  const layoutContext = collectLayoutContext(slide, context);
-  const libraryCandidates = createLibraryLayoutCandidates(currentSpec, options);
-  let generatedCandidates;
-
-  switch (currentSpec.type) {
-    case "cover":
-    case "toc":
-      generatedCandidates = createCardLayoutCandidates(currentSpec, layoutContext, options);
-      break;
-    case "content":
-      generatedCandidates = createContentLayoutCandidates(currentSpec, layoutContext, options);
-      break;
-    case "summary":
-      generatedCandidates = createSummaryLayoutCandidates(currentSpec, layoutContext, options);
-      break;
-    case "photoGrid":
-      generatedCandidates = createPhotoGridLayoutCandidates(currentSpec, layoutContext, options);
-      break;
-    default:
-      throw new Error(`Redo Layout does not support slide type "${currentSpec.type}" yet`);
-  }
-
-  return [...libraryCandidates, ...generatedCandidates];
 }
 
 function collectStructureContext(slide, currentSpec, context) {
@@ -4291,7 +3558,7 @@ async function ideateSlide(slideId, options: any = {}) {
   const dryRun = true;
   const candidateCount = normalizeCandidateCount(options.candidateCount);
   const slideType = originalSlideSpec.type;
-  const generation = resolveGeneration(options);
+  const generation = resolveGeneration();
 
   try {
     reportProgress(options, {
@@ -4300,16 +3567,10 @@ async function ideateSlide(slideId, options: any = {}) {
     });
 
     reportProgress(options, {
-      message: generation.mode === "llm"
-        ? `Generating slide variants with ${generation.provider} ${generation.model}...`
-        : "Generating slide variants from saved context...",
+      message: `Generating slide variants with ${generation.provider} ${generation.model}...`,
       stage: "generating-variants"
     });
-    const candidates = generation.mode === "llm"
-      ? await createLlmIdeateCandidates(slide, slideType, serializeSlideSpec(originalSlideSpec), context, candidateCount, options)
-      : fitCandidateCount(createLocalIdeateCandidates(slide, slideType, context, {
-          baseSlideSpec: originalSlideSpec
-        }), candidateCount);
+    const candidates = await createLlmIdeateCandidates(slide, slideType, serializeSlideSpec(originalSlideSpec), context, candidateCount, options);
 
     reportProgress(options, {
       message: `Rendering ${candidates.length} candidate preview${candidates.length === 1 ? "" : "s"}...`,
@@ -4318,9 +3579,7 @@ async function ideateSlide(slideId, options: any = {}) {
     const variants = await materializeCandidatesToVariants(slideId, candidates, {
       baseSlideSpec: originalSlideSpec,
       dryRun,
-      labelFormatter: (label) => generation.mode === "llm"
-        ? label
-        : `${label} candidate`,
+      labelFormatter: (label) => label,
       operation: "ideate-slide"
     });
     createdVariants.push(...variants);
@@ -4342,7 +3601,7 @@ async function ideateSlide(slideId, options: any = {}) {
     generation,
     previews,
     slideId,
-    summary: `Generated ${createdVariants.length} session-only slide candidates for ${slide.title} using ${generation.mode === "llm" ? `${generation.provider} ${generation.model}` : "local rules"}${generation.fallbackReason ? `; ${generation.fallbackReason.toLowerCase()}` : ""}.`,
+    summary: `Generated ${createdVariants.length} session-only slide candidates for ${slide.title} using ${generation.provider} ${generation.model}.`,
     variants: createdVariants
   };
 }
@@ -4359,14 +3618,7 @@ async function drillWordingSlide(slideId, options: any = {}) {
   let previews = null;
   const dryRun = true;
   const candidateCount = normalizeCandidateCount(options.candidateCount);
-  const generation = {
-    available: false,
-    fallbackReason: null,
-    mode: "local",
-    model: null,
-    provider: "local",
-    requestedMode: normalizeGenerationMode(options.generationMode || "local")
-  };
+  const generation = getLocalGenerationStatus();
 
   try {
     reportProgress(options, {
@@ -4425,14 +3677,7 @@ async function ideateThemeSlide(slideId, options: any = {}) {
   let previews = null;
   const dryRun = true;
   const candidateCount = normalizeCandidateCount(options.candidateCount);
-  const generation = {
-    available: false,
-    fallbackReason: null,
-    mode: "local",
-    model: null,
-    provider: "local",
-    requestedMode: normalizeGenerationMode(options.generationMode || "local")
-  };
+  const generation = getLocalGenerationStatus();
 
   try {
     reportProgress(options, {
@@ -4491,11 +3736,7 @@ async function redoLayoutSlide(slideId, options: any = {}) {
   let previews = null;
   const dryRun = true;
   const candidateCount = normalizeCandidateCount(options.candidateCount);
-  const requestedGenerationMode = normalizeGenerationMode(options.generationMode || "local");
-  const generation = resolveGeneration({
-    ...options,
-    generationMode: requestedGenerationMode === "llm" ? "llm" : "local"
-  });
+  const generation = resolveGeneration();
 
   try {
     reportProgress(options, {
@@ -4503,14 +3744,12 @@ async function redoLayoutSlide(slideId, options: any = {}) {
       stage: "gathering-context"
     });
     reportProgress(options, {
-      message: generation.mode === "llm"
-        ? `Generating layout variants with ${generation.provider} ${generation.model}...`
-        : "Generating layout variants...",
+      message: `Generating layout variants with ${generation.provider} ${generation.model}...`,
       stage: "generating-variants"
     });
-    const candidates = generation.mode === "llm"
-      ? await createLlmRedoLayoutCandidates(slide, originalSlideSpec, serializeSlideSpec(originalSlideSpec), context, candidateCount, options)
-      : fitCandidateCount(createLocalLayoutCandidates(slide, originalSlideSpec, context), candidateCount);
+    const libraryCandidates = createLibraryLayoutCandidates(originalSlideSpec, options);
+    const llmCandidates = await createLlmRedoLayoutCandidates(slide, originalSlideSpec, serializeSlideSpec(originalSlideSpec), context, candidateCount, options);
+    const candidates = [...libraryCandidates, ...llmCandidates];
     reportProgress(options, {
       message: `Rendering ${candidates.length} layout preview${candidates.length === 1 ? "" : "s"}...`,
       stage: "rendering-variants"
@@ -4518,9 +3757,7 @@ async function redoLayoutSlide(slideId, options: any = {}) {
     const variants = await materializeCandidatesToVariants(slideId, candidates, {
       baseSlideSpec: originalSlideSpec,
       dryRun,
-      labelFormatter: (label) => generation.mode === "llm"
-        ? label
-        : `${label} candidate`,
+      labelFormatter: (label) => label,
       operation: "redo-layout"
     });
     createdVariants.push(...variants);
@@ -4542,7 +3779,7 @@ async function redoLayoutSlide(slideId, options: any = {}) {
     generation,
     previews,
     slideId,
-    summary: `Generated ${createdVariants.length} session-only layout candidates for ${slide.title} using ${generation.mode === "llm" ? `${generation.provider} ${generation.model}` : "local layout rules"}${generation.fallbackReason ? `; ${generation.fallbackReason.toLowerCase()}` : ""}.`,
+    summary: `Generated ${createdVariants.length} session-only layout candidates for ${slide.title} using ${generation.provider} ${generation.model}.`,
     variants: createdVariants
   };
 }
@@ -4560,14 +3797,7 @@ async function ideateStructureSlide(slideId, options: any = {}) {
   let previews = null;
   const dryRun = true;
   const candidateCount = normalizeCandidateCount(options.candidateCount);
-  const generation = {
-    available: false,
-    fallbackReason: null,
-    mode: "local",
-    model: null,
-    provider: "local",
-    requestedMode: normalizeGenerationMode(options.generationMode || "local")
-  };
+  const generation = getLocalGenerationStatus();
 
   try {
     reportProgress(options, {
@@ -4616,14 +3846,7 @@ async function ideateStructureSlide(slideId, options: any = {}) {
 async function ideateDeckStructure(options: any = {}) {
   const context = getDeckContext();
   const dryRun = options.dryRun !== false;
-  const generation = {
-    available: false,
-    fallbackReason: null,
-    mode: "local",
-    model: null,
-    provider: "local",
-    requestedMode: "local"
-  };
+  const generation = getLocalGenerationStatus();
 
   reportProgress(options, {
     message: "Gathering deck brief, outline, and current slide roles...",

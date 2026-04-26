@@ -1874,7 +1874,6 @@ async function handleIdeateSlide(req, res) {
   });
   const result = await ideateSlide(body.slideId, {
     candidateCount: body.candidateCount,
-    generationMode: body.generationMode,
     dryRun: true,
     onProgress: reportProgress
   });
@@ -1923,7 +1922,6 @@ async function handleDrillWording(req, res) {
   });
   const result = await drillWordingSlide(body.slideId, {
     candidateCount: body.candidateCount,
-    generationMode: body.generationMode,
     dryRun: true,
     onProgress: reportProgress
   });
@@ -1972,7 +1970,6 @@ async function handleIdeateTheme(req, res) {
   });
   const result = await ideateThemeSlide(body.slideId, {
     candidateCount: body.candidateCount,
-    generationMode: body.generationMode,
     dryRun: true,
     onProgress: reportProgress
   });
@@ -2050,7 +2047,6 @@ async function handleIdeateStructure(req, res) {
   });
   const result = await ideateStructureSlide(body.slideId, {
     candidateCount: body.candidateCount,
-    generationMode: body.generationMode,
     dryRun: true,
     onProgress: reportProgress
   });
@@ -2099,7 +2095,6 @@ async function handleRedoLayout(req, res) {
   });
   const result = await redoLayoutSlide(body.slideId, {
     candidateCount: body.candidateCount,
-    generationMode: body.generationMode,
     dryRun: true,
     onProgress: reportProgress
   });
@@ -2152,7 +2147,6 @@ async function handleAssistantSend(req, res) {
   const result = await handleAssistantMessage({
     candidateCount: body.candidateCount,
     dryRun: body.dryRun !== false,
-    generationMode: body.generationMode,
     message: body.message,
     onProgress: createWorkflowProgressReporter({
       dryRun: body.dryRun !== false,

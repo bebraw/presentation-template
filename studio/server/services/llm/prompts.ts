@@ -138,7 +138,45 @@ function buildRedoLayoutPrompts(options) {
   };
 }
 
+function buildDrillWordingPrompts(options) {
+  const developerPrompt = [
+    "You are tightening presentation slide wording for a local studio workflow.",
+    "Return structured data only and stay within the provided schema.",
+    "Do not emit JavaScript, markdown fences, or explanatory prose outside the schema.",
+    "Keep the current slide family and field structure intact.",
+    "Rewrite visible text only where it improves clarity, concision, or presentation-scale reading.",
+    "Do not add unsupported claims, new facts, or fixed English labels.",
+    "Preserve the requested deck language and the user's terminology.",
+    buildSlideTypeGuidance(options.slideType)
+  ].join("\n\n");
+
+  const userPrompt = [
+    `Generate ${options.candidateCount} wording variants from the current presentation context.`,
+    "",
+    `Slide id: ${options.slide.id}`,
+    `Slide title: ${options.slide.title}`,
+    `Slide type: ${options.slideType}`,
+    "",
+    "Deck context:",
+    safeJson(options.context.deck || {}),
+    "",
+    "Selected slide context:",
+    safeJson((options.context.slides && options.context.slides[options.slide.id]) || {}),
+    "",
+    "Current slide spec:",
+    options.source,
+    "",
+    "Produce wording-only variants. Keep IDs, media attachments, slide family, and structural array sizes intact. Make the copy shorter, clearer, and more defensible at slide scale."
+  ].join("\n");
+
+  return {
+    developerPrompt,
+    userPrompt
+  };
+}
+
 module.exports = {
+  buildDrillWordingPrompts,
   buildIdeateSlidePrompts,
   buildRedoLayoutPrompts
 };

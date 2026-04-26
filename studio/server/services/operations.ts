@@ -3,7 +3,7 @@ const path = require("path");
 const { describeDesignConstraints } = require("./design-constraints.ts");
 const { buildAndRenderDeck } = require("./build.ts");
 const { createStructuredResponse, getLlmStatus } = require("./llm/client.ts");
-const { buildIdeateSlidePrompts, buildRedoLayoutPrompts } = require("./llm/prompts.ts");
+const { buildDrillWordingPrompts, buildIdeateSlidePrompts, buildRedoLayoutPrompts } = require("./llm/prompts.ts");
 const { getIdeateSlideResponseSchema, getRedoLayoutResponseSchema } = require("./llm/schemas.ts");
 const { createStandaloneSlideHtml, withBrowser } = require("./dom-export.ts");
 const { getDomPreviewState } = require("./dom-preview.ts");
@@ -650,6 +650,45 @@ async function createLlmIdeateCandidates(slide, slideType, source, context, cand
   });
 }
 
+async function createLlmWordingCandidates(slide, slideType, source, context, candidateCount, options: any = {}) {
+  const count = normalizeCandidateCount(candidateCount);
+  const prompts = buildDrillWordingPrompts({
+    candidateCount: count,
+    context,
+    slide,
+    slideType,
+    source
+  });
+  const result = await createStructuredResponse({
+    developerPrompt: prompts.developerPrompt,
+    onProgress: options.onProgress,
+    schema: getIdeateSlideResponseSchema(slideType, count),
+    schemaName: `drill_wording_${slideType}_variants`,
+    userPrompt: prompts.userPrompt
+  });
+
+  if (!result.data || !Array.isArray(result.data.variants) || result.data.variants.length !== count) {
+    throw new Error(`LLM wording drill did not return ${count} structured variants`);
+  }
+
+  return result.data.variants.map((variant) => ({
+    changeSummary: Array.isArray(variant.changeSummary) ? variant.changeSummary : [],
+    generator: "llm",
+    label: variant.label,
+    model: result.model,
+    notes: variant.notes,
+    promptSummary: variant.promptSummary,
+    provider: result.provider,
+    slideSpec: validateSlideSpec(variant.slideSpec)
+  })).map((candidate) => {
+    if (candidate.slideSpec.type !== slideType) {
+      throw new Error(`LLM returned slide spec type "${candidate.slideSpec.type}" for "${slideType}" wording drill`);
+    }
+
+    return candidate;
+  });
+}
+
 async function createLlmRedoLayoutCandidates(slide, currentSpec, source, context, candidateCount, options: any = {}) {
   const count = normalizeCandidateCount(candidateCount);
   const prompts = buildRedoLayoutPrompts({
@@ -797,168 +836,6 @@ function normalizeSentence(value) {
     .replace(/\s+/g, " ")
     .replace(/\s+([,.;:!?])/g, "$1")
     .trim();
-}
-
-function shortenWords(value, limit) {
-  const words = normalizeSentence(value).split(/\s+/).filter(Boolean);
-  if (words.length <= limit) {
-    return words.join(" ");
-  }
-
-  return `${words.slice(0, limit).join(" ")}.`;
-}
-
-function tightenText(value, mode) {
-  const normalized = normalizeSentence(value)
-    .replace(/\bthat\b/gi, "")
-    .replace(/\bvery\b/gi, "")
-    .replace(/\s+/g, " ")
-    .trim();
-
-  switch (mode) {
-    case "direct":
-      return shortenWords(normalized, 11);
-    case "condensed":
-      return shortenWords(normalized, 8);
-    case "operator":
-      return shortenWords(
-        normalized
-          .replace(/\bslides\b/gi, "Slide")
-          .replace(/\bvalidation\b/gi, "Checks")
-          .replace(/\bgenerator\b/gi, "Runtime"),
-        9
-      );
-    default:
-      return normalized;
-  }
-}
-
-function tightenCardCollection(items, mode, field = "body") {
-  return items.map((item) => ({
-    ...item,
-    [field]: tightenText(item[field], mode),
-    title: tightenText(item.title, mode === "condensed" ?  "condensed" : "direct")
-  }));
-}
-
-function createWordingVariant(slideSpec, options: any = {}) {
-  const mode = options.mode || "direct";
-  const next = {
-    ...slideSpec,
-    caption: slideSpec.caption ? tightenText(slideSpec.caption, mode) : slideSpec.caption,
-    eyebrow: slideSpec.eyebrow ? tightenText(slideSpec.eyebrow, mode) : slideSpec.eyebrow,
-    quote: slideSpec.quote ? tightenText(slideSpec.quote, mode) : slideSpec.quote,
-    summary: slideSpec.summary ? tightenText(slideSpec.summary, mode) : slideSpec.summary,
-    title: slideSpec.title
-  };
-
-  if (next.note) {
-    next.note = tightenText(next.note, mode);
-  }
-
-  if (next.signalsTitle) {
-    next.signalsTitle = tightenText(next.signalsTitle, mode);
-  }
-
-  if (next.guardrailsTitle) {
-    next.guardrailsTitle = tightenText(next.guardrailsTitle, mode);
-  }
-
-  if (next.resourcesTitle) {
-    next.resourcesTitle = tightenText(next.resourcesTitle, mode);
-  }
-
-  if (next.context) {
-    next.context = tightenText(next.context, mode);
-  }
-
-  if (next.media && next.media.caption) {
-    next.media = {
-      ...next.media,
-      caption: tightenText(next.media.caption, mode)
-    };
-  }
-
-  if (Array.isArray(next.mediaItems)) {
-    next.mediaItems = next.mediaItems.map((item) => ({
-      ...item,
-      caption: item.caption ? tightenText(item.caption, mode) : item.caption,
-      source: item.source ? tightenText(item.source, mode) : item.source,
-      title: item.title ? tightenText(item.title, mode === "condensed" ? "condensed" : "direct") : item.title
-    }));
-  }
-
-  if (Array.isArray(next.cards)) {
-    next.cards = tightenCardCollection(next.cards, mode);
-  }
-
-  if (Array.isArray(next.bullets)) {
-    next.bullets = tightenCardCollection(next.bullets, mode);
-  }
-
-  if (Array.isArray(next.resources)) {
-    next.resources = next.resources.map((item) => ({
-      ...item,
-      body: tightenText(item.body, mode),
-      title: tightenText(item.title, mode === "condensed" ? "condensed" : "direct")
-    }));
-  }
-
-  if (Array.isArray(next.signals)) {
-    next.signals = next.signals.map((item) => ({
-      ...item,
-      label: tightenText(item.label, mode === "condensed" ? "condensed" : "direct")
-    }));
-  }
-
-  if (Array.isArray(next.guardrails)) {
-    next.guardrails = next.guardrails.map((item) => ({
-      ...item,
-      label: tightenText(item.label, mode === "condensed" ? "condensed" : "direct")
-    }));
-  }
-
-  return validateSlideSpec(next);
-}
-
-function createLocalWordingCandidates(currentSpec, options: any = {}) {
-  const modeLabel = describeVariantPersistence(options);
-  const variants = [
-    {
-      label: "Direct wording",
-      mode: "direct",
-      notes: "Tightens copy while keeping the current slide structure intact.",
-      promptSummary: "Uses the current slide copy and trims it to a more direct presentation voice."
-    },
-    {
-      label: "Condensed wording",
-      mode: "condensed",
-      notes: "Shortens the copy more aggressively for presentation-scale reading.",
-      promptSummary: "Uses the current slide copy and compresses it for tighter reading."
-    },
-    {
-      label: "Operator wording",
-      mode: "operator",
-      notes: "Keeps the message practical and outcome-focused.",
-      promptSummary: "Uses the current slide copy and rewrites it in a more operational tone."
-    }
-  ];
-
-  return variants.map((variant) => ({
-    changeSummary: [
-      `Reworked the ${currentSpec.type} slide toward a ${variant.mode} wording pass.`,
-      "Kept the current slide structure and IDs while tightening on-slide copy.",
-      "Focused on shorter slide-scale phrases instead of changing the layout.",
-      modeLabel
-    ],
-    generator: "local",
-    label: variant.label,
-    model: null,
-    notes: variant.notes,
-    promptSummary: variant.promptSummary,
-    provider: "local",
-    slideSpec: createWordingVariant(currentSpec, { mode: variant.mode })
-  }));
 }
 
 function reorderItems(items, order) {
@@ -3614,11 +3491,12 @@ async function drillWordingSlide(slideId, options: any = {}) {
   ideateSlideLocks.add(slideId);
   const slide = getSlide(slideId);
   const originalSlideSpec = readSlideSpec(slideId);
+  const context = getDeckContext();
   const createdVariants = [];
   let previews = null;
   const dryRun = true;
   const candidateCount = normalizeCandidateCount(options.candidateCount);
-  const generation = getLocalGenerationStatus();
+  const generation = resolveGeneration();
 
   try {
     reportProgress(options, {
@@ -3626,10 +3504,10 @@ async function drillWordingSlide(slideId, options: any = {}) {
       stage: "gathering-context"
     });
     reportProgress(options, {
-      message: "Generating wording variants...",
+      message: `Generating wording variants with ${generation.provider} ${generation.model}...`,
       stage: "generating-variants"
     });
-    const candidates = fitCandidateCount(createLocalWordingCandidates(originalSlideSpec), candidateCount);
+    const candidates = await createLlmWordingCandidates(slide, originalSlideSpec.type, serializeSlideSpec(originalSlideSpec), context, candidateCount, options);
     reportProgress(options, {
       message: `Rendering ${candidates.length} wording preview${candidates.length === 1 ? "" : "s"}...`,
       stage: "rendering-variants"
@@ -3637,7 +3515,7 @@ async function drillWordingSlide(slideId, options: any = {}) {
     const variants = await materializeCandidatesToVariants(slideId, candidates, {
       baseSlideSpec: originalSlideSpec,
       dryRun,
-      labelFormatter: (label) => `${label} candidate`,
+      labelFormatter: (label) => label,
       operation: "drill-wording"
     });
     createdVariants.push(...variants);
@@ -3659,7 +3537,7 @@ async function drillWordingSlide(slideId, options: any = {}) {
     generation,
     previews,
     slideId,
-    summary: `Generated ${createdVariants.length} session-only wording candidates for ${slide.title} using local wording rules.`,
+    summary: `Generated ${createdVariants.length} session-only wording candidates for ${slide.title} using ${generation.provider} ${generation.model}.`,
     variants: createdVariants
   };
 }

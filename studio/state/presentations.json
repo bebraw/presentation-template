@@ -11,6 +11,10 @@
     {
       "id": "german-beers",
       "title": "German beers"
+    },
+    {
+      "id": "test-presentation",
+      "title": "Test presentation"
     }
   ]
 }

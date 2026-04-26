@@ -132,6 +132,7 @@ const elements: Record<string, any> = {
   llmPopover: document.getElementById("llm-status-popover"),
   manualSystemAfter: document.getElementById("manual-system-after"),
   manualDeleteSlide: document.getElementById("manual-delete-slide"),
+  manualSystemMaterial: document.getElementById("manual-system-material"),
   manualSystemType: document.getElementById("manual-system-type"),
   materialAlt: document.getElementById("material-alt"),
   materialCaption: document.getElementById("material-caption"),
@@ -2337,6 +2338,7 @@ function renderMaterials() {
 
   if (!materials.length) {
     elements.materialList.innerHTML = "<div class=\"material-empty\"><strong>No materials yet</strong><span>Upload an image to make it available to this presentation.</span></div>";
+    renderManualSlideForm();
     return;
   }
 
@@ -2359,6 +2361,8 @@ function renderMaterials() {
     button.addEventListener("click", () => attachMaterialToSlide(material, button).catch((error) => window.alert(error.message)));
     elements.materialList.appendChild(item);
   });
+
+  renderManualSlideForm();
 }
 
 function renderSources() {
@@ -2751,10 +2755,12 @@ function renderManualSlideForm() {
   const slideType = elements.manualSystemType ? elements.manualSystemType.value : "content";
   const isDivider = slideType === "divider";
   const isQuote = slideType === "quote";
+  const isPhoto = slideType === "photo";
   const summaryField = document.querySelector(".manual-system-summary-field");
+  const materialField = document.querySelector(".manual-system-material-field");
 
   if (elements.manualSystemTitle) {
-    elements.manualSystemTitle.placeholder = isDivider ? "Section title" : isQuote ? "Quote slide title" : "System name";
+    elements.manualSystemTitle.placeholder = isDivider ? "Section title" : isQuote ? "Quote slide title" : isPhoto ? "Photo slide title" : "System name";
   }
 
   if (elements.manualSystemSummary) {
@@ -2762,6 +2768,8 @@ function renderManualSlideForm() {
       ? "Optional notes for yourself; divider slides stay title-only."
       : isQuote
         ? "Paste the quote or pull quote text. Attribution and source can be added in JSON."
+        : isPhoto
+          ? "Optional caption shown with the photo."
       : "What boundary, signal, and guardrails should this system explain?";
     elements.manualSystemSummary.disabled = isDivider;
   }
@@ -2770,12 +2778,32 @@ function renderManualSlideForm() {
     summaryField.hidden = isDivider;
     const label = summaryField.querySelector("span");
     if (label) {
-      label.textContent = isQuote ? "Quote" : "Summary";
+      label.textContent = isQuote ? "Quote" : isPhoto ? "Caption" : "Summary";
+    }
+  }
+
+  if (materialField instanceof HTMLElement) {
+    materialField.hidden = !isPhoto;
+  }
+
+  if (elements.manualSystemMaterial) {
+    const selectedId = elements.manualSystemMaterial.value;
+    const materials = Array.isArray(state.materials) ? state.materials : [];
+    elements.manualSystemMaterial.innerHTML = materials.length
+      ? materials.map((material) => `<option value="${escapeHtml(material.id)}">${escapeHtml(material.title || material.fileName || material.id)}</option>`).join("")
+      : "<option value=\"\">Upload a material first</option>";
+    elements.manualSystemMaterial.value = materials.some((material) => material.id === selectedId) ? selectedId : (materials[0] ? materials[0].id : "");
+    elements.manualSystemMaterial.disabled = !isPhoto || !materials.length;
+    if (isPhoto && materials.length) {
+      const selectedMaterial = materials.find((material) => material.id === elements.manualSystemMaterial.value) || materials[0];
+      if (elements.manualSystemTitle && !elements.manualSystemTitle.value.trim()) {
+        elements.manualSystemTitle.placeholder = selectedMaterial.title || "Photo slide title";
+      }
     }
   }
 
   if (elements.createSystemSlideButton) {
-    elements.createSystemSlideButton.textContent = isDivider ? "Create divider" : isQuote ? "Create quote slide" : "Create system slide";
+    elements.createSystemSlideButton.textContent = isDivider ? "Create divider" : isQuote ? "Create quote slide" : isPhoto ? "Create photo slide" : "Create system slide";
   }
 }
 
@@ -4455,12 +4483,20 @@ async function createSystemSlide() {
     elements.manualSystemSummary.focus();
     return;
   }
+  if (slideType === "photo" && (!elements.manualSystemMaterial || !elements.manualSystemMaterial.value)) {
+    window.alert("Choose a material for the photo slide.");
+    if (elements.manualSystemMaterial) {
+      elements.manualSystemMaterial.focus();
+    }
+    return;
+  }
 
   const done = setBusy(elements.createSystemSlideButton, "Creating...");
   try {
     const payload = await request("/api/slides/system", {
       body: JSON.stringify({
         afterSlideId: elements.manualSystemAfter.value,
+        materialId: elements.manualSystemMaterial ? elements.manualSystemMaterial.value : "",
         slideType,
         summary,
         title
@@ -4496,6 +4532,8 @@ async function createSystemSlide() {
       ? `Created divider slide ${title}.`
       : slideType === "quote"
         ? `Created quote slide ${title}.`
+        : slideType === "photo"
+          ? `Created photo slide ${title}.`
       : `Created system slide ${title}.`;
   } finally {
     done();

@@ -1410,9 +1410,29 @@ function createManualQuoteSlideSpec({ quote, targetIndex, title }) {
   };
 }
 
+function createManualPhotoSlideSpec({ caption, materialId, targetIndex, title }) {
+  const material = getMaterial(materialId);
+  const safeCaption = String(caption || material.caption || "").replace(/\s+/g, " ").trim();
+  const media = {
+    alt: String(material.alt || material.title).replace(/\s+/g, " ").trim() || material.title,
+    id: material.id,
+    src: material.url,
+    title: material.title,
+    ...(safeCaption ? { caption: safeCaption } : {})
+  };
+
+  return {
+    type: "photo",
+    index: targetIndex,
+    title: sentenceValue(title, material.title || "Photo"),
+    media,
+    ...(safeCaption ? { caption: safeCaption } : {})
+  };
+}
+
 async function handleManualSystemSlideCreate(req, res) {
   const body = await readJsonBody(req);
-  const slideType = ["divider", "quote"].includes(body.slideType) ? body.slideType : "content";
+  const slideType = ["divider", "quote", "photo"].includes(body.slideType) ? body.slideType : "content";
   const title = sentenceValue(body.title, "New system");
   const summary = sentenceValue(
     body.summary,
@@ -1425,6 +1445,8 @@ async function handleManualSystemSlideCreate(req, res) {
     ? createManualDividerSlideSpec({ targetIndex, title })
     : slideType === "quote"
       ? createManualQuoteSlideSpec({ quote: summary, targetIndex, title })
+      : slideType === "photo"
+        ? createManualPhotoSlideSpec({ caption: summary, materialId: body.materialId, targetIndex, title })
       : createManualSystemSlideSpec({ summary, targetIndex, title });
   const created = insertStructuredSlide(slideSpec, targetIndex);
   const currentContext = getDeckContext();
@@ -1447,6 +1469,14 @@ async function handleManualSystemSlideCreate(req, res) {
           notes: "Manual quote slide created from the Slide Studio panel.",
           layoutHint: "Keep the quote dominant with attribution and source attached below."
         }
+    : slideType === "photo"
+      ? {
+          title,
+          intent: `Use ${title} as a dominant visual evidence slide.`,
+          mustInclude: "One attached material, readable alt text, and a compact caption or source line when useful.",
+          notes: "Manual photo slide created from the Slide Studio panel.",
+          layoutHint: "Keep the image dominant and the caption attached to the visual."
+        }
     : {
         title,
         intent: summary,
@@ -1465,9 +1495,11 @@ async function handleManualSystemSlideCreate(req, res) {
       ? `Added manual divider slide ${title}.`
       : slideType === "quote"
         ? `Added manual quote slide ${title}.`
+        : slideType === "photo"
+          ? `Added manual photo slide ${title}.`
       : `Added manual system slide ${title}.`,
     ok: true,
-    operation: slideType === "divider" ? "add-divider-slide" : slideType === "quote" ? "add-quote-slide" : "add-system-slide",
+    operation: slideType === "divider" ? "add-divider-slide" : slideType === "quote" ? "add-quote-slide" : slideType === "photo" ? "add-photo-slide" : "add-system-slide",
     slideId: created.id,
     stage: "completed",
     status: "completed"

@@ -279,6 +279,30 @@
     `;
   }
 
+  function renderPhoto(slideSpec) {
+    const media = slideSpec && slideSpec.media && typeof slideSpec.media === "object"
+      ? slideSpec.media
+      : null;
+    const caption = slideSpec.caption || (media && media.caption) || "";
+    const mediaMarkup = media && media.src && media.alt
+      ? `
+        <figure class="dom-slide__media dom-media">
+          <img src="${escapeHtml(media.src)}" alt="${escapeHtml(media.alt)}">
+          ${caption ? `<figcaption class="dom-caption"${editAttrs("caption", "Caption")}><span class="source">${escapeHtml(caption)}</span></figcaption>` : ""}
+        </figure>
+      `
+      : "";
+
+    return `
+      <section class="dom-slide__photo-wrap">
+        <header class="dom-slide__photo-header">
+          <h1 class="dom-slide__title"${editAttrs("title", "Title")}>${escapeHtml(slideSpec.title || "")}</h1>
+        </header>
+        ${mediaMarkup}
+      </section>
+    `;
+  }
+
   function renderToc(slideSpec) {
     const cards = Array.isArray(slideSpec.cards) ? slideSpec.cards : [];
     const media = renderSlideMedia(slideSpec);
@@ -425,6 +449,8 @@
         return renderDivider(slideSpec);
       case "quote":
         return renderQuote(slideSpec);
+      case "photo":
+        return renderPhoto(slideSpec);
       case "cover":
         return renderCover(slideSpec);
       case "toc":

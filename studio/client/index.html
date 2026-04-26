@@ -374,6 +374,7 @@
                       <option value="content">System</option>
                       <option value="divider">Divider</option>
                       <option value="quote">Quote</option>
+                      <option value="photo">Photo</option>
                     </select>
                   </label>
 
@@ -390,6 +391,11 @@
                   <label class="field manual-system-summary-field">
                     <span>Summary</span>
                     <textarea id="manual-system-summary" placeholder="What boundary, signal, and guardrails should this system explain?"></textarea>
+                  </label>
+
+                  <label class="field manual-system-material-field" hidden>
+                    <span>Material</span>
+                    <select id="manual-system-material"></select>
                   </label>
 
                   <div class="button-row compact">

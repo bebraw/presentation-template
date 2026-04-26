@@ -53,4 +53,26 @@ assert.equal(
   "generated candidates should honor explicit media changes"
 );
 
+const photoBaseSlideSpec = {
+  type: "photo",
+  index: 1,
+  title: "Photo material slide",
+  caption: "Source: fixture",
+  media: baseSlideSpec.media
+};
+
+const photoCandidateWithoutMedia = {
+  type: "photo",
+  index: 1,
+  title: "Photo candidate",
+  caption: "Tighter visual evidence."
+};
+
+const preservedPhoto = _test.applyCandidateSlideDefaults(photoCandidateWithoutMedia, photoBaseSlideSpec);
+assert.deepEqual(
+  preservedPhoto.media,
+  photoBaseSlideSpec.media,
+  "generated photo candidates should preserve existing slide media when they do not mention media"
+);
+
 process.stdout.write("Slide media fixture validation passed.\n");

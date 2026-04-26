@@ -638,6 +638,40 @@ async function runPresentationWorkflowValidation(options: any = {}) {
           return !payload.slides.some((slide) => slide.title === "Workflow quote slide");
         });
 
+        await page.selectOption("#manual-system-type", "photo");
+        await page.fill("#manual-system-title", "Workflow photo slide");
+        await page.fill("#manual-system-summary", "Source: workflow smoke photo");
+        await page.selectOption("#manual-system-after", "slide-01");
+        const createPhotoSlideResponse = waitForJsonResponse(page, "/api/slides/system", 120_000);
+        await page.click("#create-system-slide-button");
+        await createPhotoSlideResponse;
+        await page.waitForFunction(async () => {
+          const response = await fetch("/api/state");
+          const payload = await response.json();
+          return payload.slides.some((slide) => slide.title === "Workflow photo slide");
+        });
+        const stateAfterPhotoInsert = await readWorkspaceState(page);
+        const insertedPhotoSlide = stateAfterPhotoInsert.slides.find((slide) => slide.title === "Workflow photo slide");
+        assert.ok(insertedPhotoSlide, "manual photo creation should add a selectable slide");
+        await page.waitForFunction(async (slideId) => {
+          const response = await fetch(`/api/slides/${slideId}`);
+          const payload = await response.json();
+          return payload.slideSpec
+            && payload.slideSpec.type === "photo"
+            && payload.slideSpec.media
+            && payload.slideSpec.media.alt === "Workflow material";
+        }, insertedPhotoSlide.id);
+
+        await page.selectOption("#manual-delete-slide", insertedPhotoSlide.id);
+        const deletePhotoSlideResponse = waitForJsonResponse(page, "/api/slides/delete", 120_000);
+        await page.click("#delete-slide-button");
+        await deletePhotoSlideResponse;
+        await page.waitForFunction(async () => {
+          const response = await fetch("/api/state");
+          const payload = await response.json();
+          return !payload.slides.some((slide) => slide.title === "Workflow photo slide");
+        });
+
         await page.click("#show-planning-page");
         await waitForPage(page, "#planning-page");
         await page.locator(".source-details summary").click();

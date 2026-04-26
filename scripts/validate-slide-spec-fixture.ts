@@ -85,4 +85,30 @@ assert.throws(
   "Slide spec validation should reject empty quote text"
 );
 
+assert.equal(
+  validateSlideSpec({
+    media: {
+      alt: "Fixture image",
+      caption: "Source: fixture",
+      id: "fixture-material",
+      src: "/presentation-materials/fixture/image.png",
+      title: "Fixture image"
+    },
+    caption: "A compact caption stays attached to the dominant photo.",
+    title: "Fixture photo",
+    type: "photo"
+  }).type,
+  "photo",
+  "Slide spec validation should accept first-class photo slides"
+);
+
+assert.throws(
+  () => validateSlideSpec({
+    title: "Broken photo",
+    type: "photo"
+  }),
+  /slideSpec\.media must be an object/,
+  "Slide spec validation should require media on photo slides"
+);
+
 process.stdout.write("Slide spec fixture validation passed.\n");

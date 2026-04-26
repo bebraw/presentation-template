@@ -16,6 +16,12 @@ function buildSlideTypeGuidance(slideType) {
         "Return the requested number of variants and keep one dominant quote as the visible content.",
         "Each slideSpec must include: title and quote. Attribution, source, and context are optional, but sourced quotes should keep attribution/source compact."
       ].join("\n");
+    case "photo":
+      return [
+        "The slide family is photo.",
+        "Return the requested number of variants and keep one dominant image as the visible content.",
+        "Each slideSpec must include: title. Preserve the existing media object unless the current slide spec already includes a safe replacement media object. Caption is optional and should stay compact."
+      ].join("\n");
     case "cover":
       return [
         "The slide family is cover.",

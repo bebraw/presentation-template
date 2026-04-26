@@ -390,7 +390,7 @@ function createIdeaThemes(slide, context) {
   ];
 }
 
-function buildIdeaSlideSpec(slideType, theme) {
+function buildIdeaSlideSpec(slideType, theme, baseSpec = null) {
   switch (slideType) {
     case "divider":
       return validateSlideSpec({
@@ -404,6 +404,13 @@ function buildIdeaSlideSpec(slideType, theme) {
         quote: theme.notes || theme.summary,
         title: theme.title,
         type: "quote"
+      });
+    case "photo":
+      return validateSlideSpec({
+        caption: theme.summary,
+        media: baseSpec && baseSpec.media ? { ...baseSpec.media } : undefined,
+        title: theme.title,
+        type: "photo"
       });
     case "cover":
       return validateSlideSpec({
@@ -471,6 +478,13 @@ function buildChangeSummary(slideType, theme, options: any = {}) {
         "Kept attribution/source fields compact so the quote remains the focal point.",
         modeLabel
       ];
+    case "photo":
+      return [
+        `Shifted the photo slide toward the ${theme.label.toLowerCase()} framing.`,
+        "Retitled the visual evidence while keeping the attached material dominant.",
+        "Kept the photo family and compact caption structure intact.",
+        modeLabel
+      ];
     case "cover":
       return [
         `Shifted the cover toward the ${theme.label.toLowerCase()} framing.`,
@@ -509,7 +523,7 @@ function buildChangeSummary(slideType, theme, options: any = {}) {
 
 function createLocalIdeateCandidates(slide, slideType, context, options: any = {}) {
   return createIdeaThemes(slide, context).map((theme) => {
-    const slideSpec = buildIdeaSlideSpec(slideType, theme);
+    const slideSpec = buildIdeaSlideSpec(slideType, theme, options.baseSlideSpec);
     return {
       changeSummary: buildChangeSummary(slideType, theme, options),
       generator: "local",
@@ -877,7 +891,7 @@ function createThemeDirections(slide, currentSpec, context) {
   ];
 }
 
-function buildThemeSlideSpec(slideType, theme) {
+function buildThemeSlideSpec(slideType, theme, baseSpec = null) {
   switch (slideType) {
     case "divider":
       return validateSlideSpec({
@@ -890,6 +904,13 @@ function buildThemeSlideSpec(slideType, theme) {
         quote: theme.note || theme.summary,
         title: theme.title,
         type: "quote"
+      });
+    case "photo":
+      return validateSlideSpec({
+        caption: theme.summary,
+        media: baseSpec && baseSpec.media ? { ...baseSpec.media } : undefined,
+        title: theme.title,
+        type: "photo"
       });
     case "cover":
     case "toc":
@@ -946,6 +967,13 @@ function buildThemeChangeSummary(slideType, theme, options: any = {}) {
         "Kept the quote family while changing the quote emphasis and attached context.",
         modeLabel
       ];
+    case "photo":
+      return [
+        `Reframed the photo slide around the ${theme.label.toLowerCase()}.`,
+        visualLabel,
+        "Kept the attached image dominant while changing title and caption framing.",
+        modeLabel
+      ];
     case "cover":
     case "toc":
       return [
@@ -986,7 +1014,7 @@ function createLocalThemeCandidates(slide, currentSpec, context, options: any = 
     notes: theme.notes,
     promptSummary: theme.promptSummary,
     provider: "local",
-    slideSpec: buildThemeSlideSpec(currentSpec.type, theme),
+    slideSpec: buildThemeSlideSpec(currentSpec.type, theme, currentSpec),
     visualTheme: theme.visualTheme
   }));
 }
@@ -1083,7 +1111,9 @@ function createWordingVariant(slideSpec, options: any = {}) {
   const mode = options.mode || "direct";
   const next = {
     ...slideSpec,
+    caption: slideSpec.caption ? tightenText(slideSpec.caption, mode) : slideSpec.caption,
     eyebrow: slideSpec.eyebrow ? tightenText(slideSpec.eyebrow, mode) : slideSpec.eyebrow,
+    quote: slideSpec.quote ? tightenText(slideSpec.quote, mode) : slideSpec.quote,
     summary: slideSpec.summary ? tightenText(slideSpec.summary, mode) : slideSpec.summary,
     title: slideSpec.title
   };
@@ -1102,6 +1132,17 @@ function createWordingVariant(slideSpec, options: any = {}) {
 
   if (next.resourcesTitle) {
     next.resourcesTitle = tightenText(next.resourcesTitle, mode);
+  }
+
+  if (next.context) {
+    next.context = tightenText(next.context, mode);
+  }
+
+  if (next.media && next.media.caption) {
+    next.media = {
+      ...next.media,
+      caption: tightenText(next.media.caption, mode)
+    };
   }
 
   if (Array.isArray(next.cards)) {
@@ -1845,6 +1886,53 @@ function createLocalStructureCandidates(slide, currentSpec, context, options: an
     }));
   }
 
+  if (currentSpec.type === "photo") {
+    return [
+      {
+        label: "Evidence photo",
+        notes: "Frames the image as visual evidence for the current section.",
+        promptSummary: "Uses the slide intent to retitle the photo as a proof point.",
+        slideSpec: validateSlideSpec({
+          ...currentSpec,
+          caption: sentence(structureContext.intent, currentSpec.caption || currentSpec.media.caption || "", 16),
+          title: sentence(structureContext.outlineCurrent, currentSpec.title, 8)
+        })
+      },
+      {
+        label: "Context photo",
+        notes: "Makes the caption explain why the viewer should inspect the image.",
+        promptSummary: "Uses saved notes and audience context to tighten the photo caption.",
+        slideSpec: validateSlideSpec({
+          ...currentSpec,
+          caption: sentence(`For ${structureContext.audience}: ${structureContext.mustInclude}.`, currentSpec.caption || "", 16)
+        })
+      },
+      {
+        label: "Handoff photo",
+        notes: "Points the visual toward the next slide's job.",
+        promptSummary: "Uses the next-slide title to make the image act as a handoff.",
+        slideSpec: validateSlideSpec({
+          ...currentSpec,
+          caption: sentence(`Use this image to set up ${structureContext.nextTitle}.`, currentSpec.caption || "", 14)
+        })
+      }
+    ].map((variant) => ({
+      changeSummary: [
+        `Reworked the photo toward a ${variant.label.toLowerCase()}.`,
+        "Changed the title/caption while preserving the attached material.",
+        "Kept the photo family and single-image structure intact.",
+        modeLabel
+      ],
+      generator: "local",
+      label: variant.label,
+      model: null,
+      notes: variant.notes,
+      promptSummary: variant.promptSummary,
+      provider: "local",
+      slideSpec: variant.slideSpec
+    }));
+  }
+
   switch (currentSpec.type) {
     case "cover":
     case "toc":
@@ -2025,6 +2113,16 @@ function rewriteQuoteSlideSpec(baseSpec, proposedIndex, proposedTitle, content) 
     source: baseSpec.source || content.source,
     title: proposedTitle,
     type: "quote"
+  });
+}
+
+function rewritePhotoSlideSpec(baseSpec, proposedIndex, proposedTitle, content) {
+  return validateSlideSpec({
+    caption: content.caption,
+    index: proposedIndex,
+    media: baseSpec.media ? { ...baseSpec.media } : undefined,
+    title: proposedTitle,
+    type: "photo"
   });
 }
 
@@ -3167,6 +3265,10 @@ function createLocalDeckStructureCandidates(context) {
               quote: "A deck earns trust when the decision, proof, and next move stay visible.",
               source: "Authored deck copy"
             });
+          case "photo":
+            return rewritePhotoSlideSpec(baseSpec, details.proposedIndex, details.proposedTitle, {
+              caption: "Use the image as visual evidence for the decision, proof, and next move."
+            });
           case "cover":
             return rewriteCoverSlideSpec(baseSpec, details.proposedIndex, details.proposedTitle, {
               cards: [
@@ -3322,6 +3424,10 @@ function createLocalDeckStructureCandidates(context) {
               context: `Use this pull quote to keep ${objective} attached to validation and ownership.`,
               quote: "A maintained deck keeps the source, preview, and validation path in the same loop.",
               source: "Authored deck copy"
+            });
+          case "photo":
+            return rewritePhotoSlideSpec(baseSpec, details.proposedIndex, details.proposedTitle, {
+              caption: "Keep the image attached to the source, preview, and validation loop."
             });
           case "cover":
             return rewriteCoverSlideSpec(baseSpec, details.proposedIndex, details.proposedTitle, {
@@ -3624,7 +3730,9 @@ async function ideateSlide(slideId, options: any = {}) {
     });
     const candidates = generation.mode === "llm"
       ? await createLlmIdeateCandidates(slide, slideType, serializeSlideSpec(originalSlideSpec), context, candidateCount, options)
-      : fitCandidateCount(createLocalIdeateCandidates(slide, slideType, context), candidateCount);
+      : fitCandidateCount(createLocalIdeateCandidates(slide, slideType, context, {
+          baseSlideSpec: originalSlideSpec
+        }), candidateCount);
 
     reportProgress(options, {
       message: `Rendering ${candidates.length} candidate preview${candidates.length === 1 ? "" : "s"}...`,

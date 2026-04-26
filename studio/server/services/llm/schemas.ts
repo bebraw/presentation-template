@@ -86,6 +86,21 @@ function createLayoutSchema() {
   };
 }
 
+function createMediaSchema() {
+  return {
+    additionalProperties: false,
+    properties: {
+      alt: { type: "string" },
+      caption: { type: "string" },
+      id: { type: "string" },
+      src: { type: "string" },
+      title: { type: "string" }
+    },
+    required: ["id", "src", "alt"],
+    type: "object"
+  };
+}
+
 function getSlideSpecSchema(slideType) {
   switch (slideType) {
     case "divider":
@@ -110,6 +125,18 @@ function getSlideSpecSchema(slideType) {
           type: { const: "quote", type: "string" }
         },
         required: ["type", "title", "quote"],
+        type: "object"
+      };
+    case "photo":
+      return {
+        additionalProperties: false,
+        properties: {
+          caption: { type: "string" },
+          media: createMediaSchema(),
+          title: { type: "string" },
+          type: { const: "photo", type: "string" }
+        },
+        required: ["type", "title"],
         type: "object"
       };
     case "cover":

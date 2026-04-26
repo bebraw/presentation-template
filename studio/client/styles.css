@@ -1621,14 +1621,16 @@ html[data-app-theme="dark"] .theme-toggle-knob {
 }
 
 .manual-delete-details,
-.material-details {
+.material-details,
+.layout-library-details {
   margin-top: 0.7rem;
   padding-top: 0.25rem;
 }
 
 .slide-operations-panel .manual-system-details,
 .slide-operations-panel .manual-delete-details,
-.slide-operations-panel .material-details {
+.slide-operations-panel .material-details,
+.slide-operations-panel .layout-library-details {
   min-width: 0;
   margin-top: 0;
   padding: 0.62rem 0.7rem;
@@ -1639,13 +1641,15 @@ html[data-app-theme="dark"] .theme-toggle-knob {
 
 .slide-operations-panel .manual-system-details[open],
 .slide-operations-panel .manual-delete-details[open],
-.slide-operations-panel .material-details[open] {
+.slide-operations-panel .material-details[open],
+.slide-operations-panel .layout-library-details[open] {
   grid-column: 1 / -1;
 }
 
 .manual-system-details summary,
 .manual-delete-details summary,
-.material-details summary {
+.material-details summary,
+.layout-library-details summary {
   display: flex;
   gap: 1rem;
   align-items: center;
@@ -1663,12 +1667,14 @@ html[data-app-theme="dark"] .theme-toggle-knob {
 
 .manual-system-details summary::-webkit-details-marker,
 .manual-delete-details summary::-webkit-details-marker,
-.material-details summary::-webkit-details-marker {
+.material-details summary::-webkit-details-marker,
+.layout-library-details summary::-webkit-details-marker {
   display: none;
 }
 
 .manual-system-grid,
-.manual-delete-grid {
+.manual-delete-grid,
+.layout-library-grid {
   display: grid;
   grid-template-columns: minmax(0, 1fr) minmax(12rem, 0.36fr);
   gap: 0.8rem;
@@ -1676,7 +1682,8 @@ html[data-app-theme="dark"] .theme-toggle-knob {
 }
 
 .manual-system-summary-field,
-.manual-system-grid .button-row {
+.manual-system-grid .button-row,
+.layout-library-grid .button-row {
   grid-column: 1 / -1;
 }
 

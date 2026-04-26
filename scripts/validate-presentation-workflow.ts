@@ -548,6 +548,27 @@ async function runPresentationWorkflowValidation(options: any = {}) {
         }, variantTitle);
         await page.click("#structured-draft-toggle");
 
+        await page.locator(".layout-library-details summary").click();
+        await page.fill("#layout-save-name", "Workflow saved layout");
+        const saveLayoutResponse = waitForJsonResponse(page, "/api/layouts/save", 60_000);
+        await page.click("#save-layout-button");
+        await saveLayoutResponse;
+        await page.waitForFunction(async () => {
+          const response = await fetch("/api/state");
+          const payload = await response.json();
+          return Array.isArray(payload.layouts)
+            && payload.layouts.some((layout) => layout.name === "Workflow saved layout" && layout.treatment === "standard");
+        });
+        await page.selectOption("#layout-library-select", await page.locator("#layout-library-select option", { hasText: "Workflow saved layout" }).first().getAttribute("value"));
+        const applyLayoutResponse = waitForJsonResponse(page, "/api/layouts/apply", 60_000);
+        await page.click("#apply-layout-button");
+        await applyLayoutResponse;
+        await page.waitForFunction(async () => {
+          const response = await fetch("/api/slides/slide-01");
+          const payload = await response.json();
+          return payload.slideSpec && payload.slideSpec.layout === "standard";
+        });
+
         await page.locator(".manual-system-details summary").click();
         await page.fill("#manual-system-title", "Workflow system boundary");
         await page.fill("#manual-system-summary", "Verify manual slide creation and removal through the browser workflow.");

@@ -12,6 +12,7 @@ const state: any = {
     slides: [],
     theme: null
   },
+  layouts: [],
   materials: [],
   presentations: {
     activePresentationId: null,
@@ -127,6 +128,9 @@ const elements: Record<string, any> = {
   deckThemeName: document.getElementById("deck-theme-name"),
   deckTitle: document.getElementById("deck-title"),
   deckTone: document.getElementById("deck-tone"),
+  applyLayoutButton: document.getElementById("apply-layout-button"),
+  layoutLibrarySelect: document.getElementById("layout-library-select"),
+  layoutSaveName: document.getElementById("layout-save-name"),
   llmStatusNote: document.getElementById("llm-status-note"),
   llmNavStatus: document.getElementById("llm-nav-status"),
   llmPopover: document.getElementById("llm-status-popover"),
@@ -183,6 +187,7 @@ const elements: Record<string, any> = {
   regeneratePresentationOutlineButton: document.getElementById("regenerate-presentation-outline-button"),
   regeneratePresentationOutlineWithSourcesButton: document.getElementById("regenerate-presentation-outline-with-sources-button"),
   saveDeckContextButton: document.getElementById("save-deck-context-button"),
+  saveLayoutButton: document.getElementById("save-layout-button"),
   saveDeckThemeButton: document.getElementById("save-deck-theme-button"),
   savePresentationThemeButton: document.getElementById("save-presentation-theme-button"),
   openCreatedPresentationButton: document.getElementById("open-created-presentation-button"),
@@ -780,6 +785,8 @@ function renderStatus() {
   elements.ideateThemeButton.disabled = !selected || workflowRunning;
   elements.redoLayoutButton.disabled = !selected || workflowRunning;
   elements.captureVariantButton.disabled = !selected;
+  elements.saveLayoutButton.disabled = !selected || !state.selectedSlideSpec;
+  elements.applyLayoutButton.disabled = !selected || !state.selectedSlideSpec || !elements.layoutLibrarySelect.value;
   elements.materialDetachButton.disabled = !selected || !state.selectedSlideSpec || !state.selectedSlideSpec.media;
   elements.materialUploadButton.disabled = workflowRunning;
   elements.openPresentationModeButton.disabled = !getPresentationState().activePresentationId;
@@ -794,6 +801,7 @@ function renderStatus() {
   renderCreationDraft();
   renderWorkflowHistory();
   renderMaterials();
+  renderLayoutLibrary();
   renderSources();
   renderSourceRetrieval();
 
@@ -2363,6 +2371,28 @@ function renderMaterials() {
   });
 
   renderManualSlideForm();
+}
+
+function renderLayoutLibrary() {
+  if (!elements.layoutLibrarySelect) {
+    return;
+  }
+
+  const layouts = Array.isArray(state.layouts) ? state.layouts : [];
+  const selectedId = elements.layoutLibrarySelect.value;
+  elements.layoutLibrarySelect.innerHTML = layouts.length
+    ? layouts.map((layout) => {
+        const label = `${layout.name || layout.id} (${layout.treatment || "standard"})`;
+        return `<option value="${escapeHtml(layout.id)}">${escapeHtml(label)}</option>`;
+      }).join("")
+    : "<option value=\"\">No saved layouts</option>";
+  elements.layoutLibrarySelect.value = layouts.some((layout) => layout.id === selectedId)
+    ? selectedId
+    : (layouts[0] ? layouts[0].id : "");
+  elements.layoutLibrarySelect.disabled = !layouts.length;
+  if (elements.applyLayoutButton) {
+    elements.applyLayoutButton.disabled = !state.selectedSlideId || !state.selectedSlideSpec || !elements.layoutLibrarySelect.value;
+  }
 }
 
 function renderSources() {
@@ -4367,6 +4397,7 @@ async function refreshState() {
   state.context = payload.context;
   state.creationDraft = payload.creationDraft || null;
   state.deckStructureCandidates = [];
+  state.layouts = payload.layouts || [];
   state.materials = payload.materials || [];
   setDomPreviewState(payload);
   state.presentations = payload.presentations || { activePresentationId: null, presentations: [] };
@@ -4403,6 +4434,7 @@ async function refreshState() {
   renderAssistant();
   renderStatus();
   renderPreviews();
+  renderLayoutLibrary();
   renderSources();
   renderVariants();
 
@@ -4812,6 +4844,62 @@ async function detachMaterialFromSlide() {
     });
     applySlideMaterialPayload(payload, payload.slideSpec);
     elements.operationStatus.textContent = "Detached material from the selected slide.";
+  } finally {
+    done();
+  }
+}
+
+async function saveCurrentLayout() {
+  if (!state.selectedSlideId || !state.selectedSlideSpec) {
+    return;
+  }
+
+  const fallbackName = `${state.selectedSlideSpec.layout || "standard"} ${state.selectedSlideSpec.type || "slide"}`;
+  const done = setBusy(elements.saveLayoutButton, "Saving...");
+  try {
+    const payload = await request("/api/layouts/save", {
+      body: JSON.stringify({
+        name: elements.layoutSaveName.value.trim() || fallbackName,
+        slideId: state.selectedSlideId
+      }),
+      method: "POST"
+    });
+    state.layouts = payload.layouts || state.layouts;
+    elements.layoutSaveName.value = "";
+    renderLayoutLibrary();
+    if (payload.layout && elements.layoutLibrarySelect) {
+      elements.layoutLibrarySelect.value = payload.layout.id;
+    }
+    elements.operationStatus.textContent = `Saved layout ${payload.layout.name}.`;
+  } finally {
+    done();
+  }
+}
+
+async function applySavedLayout() {
+  if (!state.selectedSlideId || !elements.layoutLibrarySelect.value) {
+    return;
+  }
+
+  const done = setBusy(elements.applyLayoutButton, "Applying...");
+  try {
+    const payload = await request("/api/layouts/apply", {
+      body: JSON.stringify({
+        layoutId: elements.layoutLibrarySelect.value,
+        slideId: state.selectedSlideId
+      }),
+      method: "POST"
+    });
+    state.layouts = payload.layouts || state.layouts;
+    applySlideSpecPayload(payload, payload.slideSpec);
+    if (payload.domPreview) {
+      setDomPreviewState(payload);
+    }
+    renderLayoutLibrary();
+    renderSlideFields();
+    renderPreviews();
+    renderVariants();
+    elements.operationStatus.textContent = "Applied saved layout to the selected slide.";
   } finally {
     done();
   }
@@ -5310,6 +5398,8 @@ elements.createSystemSlideButton.addEventListener("click", () => createSystemSli
 elements.deleteSlideButton.addEventListener("click", () => deleteSlideFromDeck().catch((error) => window.alert(error.message)));
 elements.materialUploadButton.addEventListener("click", () => uploadMaterial().catch((error) => window.alert(error.message)));
 elements.materialDetachButton.addEventListener("click", () => detachMaterialFromSlide().catch((error) => window.alert(error.message)));
+elements.saveLayoutButton.addEventListener("click", () => saveCurrentLayout().catch((error) => window.alert(error.message)));
+elements.applyLayoutButton.addEventListener("click", () => applySavedLayout().catch((error) => window.alert(error.message)));
 elements.addSourceButton.addEventListener("click", () => addSource().catch((error) => window.alert(error.message)));
 elements.validateButton.addEventListener("click", () => validate(false).catch((error) => window.alert(error.message)));
 elements.validateRenderButton.addEventListener("click", () => validate(true).catch((error) => window.alert(error.message)));

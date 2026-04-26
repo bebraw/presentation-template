@@ -57,6 +57,7 @@ function getPresentationPaths(id) {
     metaFile: path.join(rootDir, "presentation.json"),
     materialsDir: path.join(rootDir, "materials"),
     materialsFile: path.join(rootDir, "state", "materials.json"),
+    layoutsFile: path.join(rootDir, "state", "layouts.json"),
     rootDir,
     slidesDir: path.join(rootDir, "slides"),
     stateDir: path.join(rootDir, "state"),

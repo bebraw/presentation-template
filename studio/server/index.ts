@@ -11,6 +11,7 @@ const { getAssistantSession, getAssistantSuggestions, handleAssistantMessage } =
 const { buildAndRenderDeck, getPreviewManifest } = require("./services/build.ts");
 const { getDomPreviewState, renderDomPreviewDocument, renderPresentationPreviewDocument } = require("./services/dom-preview.ts");
 const { importImageSearchResults } = require("./services/image-search.ts");
+const { applyLayoutToSlideSpec, readLayouts, saveLayoutFromSlideSpec } = require("./services/layouts.ts");
 const { getLlmStatus, verifyLlmConnection } = require("./services/llm/client.ts");
 const { createMaterialFromDataUrl, getMaterial, getMaterialFilePath, listMaterials } = require("./services/materials.ts");
 const { clientDir, outputDir } = require("./services/paths.ts");
@@ -281,6 +282,7 @@ function getWorkspaceState() {
     context: getDeckContext(),
     domPreview: getDomPreviewState(),
     creationDraft: getPresentationCreationDraft(),
+    layouts: readLayouts().layouts,
     materials: listMaterials(),
     presentations: listPresentations(),
     previews: getPreviewManifest(),
@@ -295,6 +297,53 @@ function getWorkspaceState() {
     },
     variants: listAllVariants()
   };
+}
+
+async function handleLayoutSave(req, res) {
+  const body = await readJsonBody(req);
+  const slideId = typeof body.slideId === "string" ? body.slideId : "";
+  if (!slideId) {
+    throw new Error("Expected slideId when saving a layout");
+  }
+
+  const slideSpec = readSlideSpec(slideId);
+  const saved = saveLayoutFromSlideSpec(slideSpec, {
+    description: body.description,
+    name: body.name
+  });
+  publishRuntimeState();
+
+  createJsonResponse(res, 200, {
+    layout: saved.layout,
+    layouts: saved.state.layouts
+  });
+}
+
+async function handleLayoutApply(req, res) {
+  const body = await readJsonBody(req);
+  const slideId = typeof body.slideId === "string" ? body.slideId : "";
+  const layoutId = typeof body.layoutId === "string" ? body.layoutId : "";
+  if (!slideId || !layoutId) {
+    throw new Error("Expected slideId and layoutId when applying a layout");
+  }
+
+  const currentSpec = readSlideSpec(slideId);
+  const nextSpec = applyLayoutToSlideSpec(currentSpec, layoutId);
+  writeSlideSpec(slideId, nextSpec);
+  const structured = describeStructuredSlide(slideId);
+  runtimeState.lastError = null;
+  publishRuntimeState();
+
+  createJsonResponse(res, 200, {
+    domPreview: getDomPreviewState(),
+    layouts: readLayouts().layouts,
+    previews: getPreviewManifest(),
+    slide: getSlide(slideId),
+    slideSpec: structured.slideSpec,
+    slideSpecError: structured.slideSpecError,
+    source: structured.slideSpec ? serializeSlideSpec(structured.slideSpec) : readSlideSource(slideId),
+    structured: structured.structured
+  });
 }
 
 function serializeSlideSpec(slideSpec) {
@@ -2086,6 +2135,21 @@ async function handleApi(req, res, url) {
 
   if (req.method === "POST" && url.pathname === "/api/themes/save") {
     await handleRuntimeThemeSave(req, res);
+    return;
+  }
+
+  if (req.method === "GET" && url.pathname === "/api/layouts") {
+    createJsonResponse(res, 200, { layouts: readLayouts().layouts });
+    return;
+  }
+
+  if (req.method === "POST" && url.pathname === "/api/layouts/save") {
+    await handleLayoutSave(req, res);
+    return;
+  }
+
+  if (req.method === "POST" && url.pathname === "/api/layouts/apply") {
+    await handleLayoutApply(req, res);
     return;
   }
 

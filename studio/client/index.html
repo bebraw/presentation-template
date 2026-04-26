@@ -468,6 +468,37 @@
                   <div class="material-list" id="material-list"></div>
                 </div>
               </details>
+
+              <details class="layout-library-details">
+                <summary>
+                  <span class="disclosure-copy">
+                    <strong>Layout library</strong>
+                    <small>Save or reuse current built-in layout treatments.</small>
+                  </span>
+                  <span class="disclosure-action" aria-hidden="true">
+                    <span class="disclosure-action-closed">Manage layouts</span>
+                    <span class="disclosure-action-open">Hide layouts</span>
+                    <span class="disclosure-action-mark"></span>
+                  </span>
+                </summary>
+
+                <div class="layout-library-grid">
+                  <label class="field">
+                    <span>Name</span>
+                    <input id="layout-save-name" type="text" placeholder="Layout name">
+                  </label>
+
+                  <label class="field">
+                    <span>Saved layout</span>
+                    <select id="layout-library-select"></select>
+                  </label>
+
+                  <div class="button-row compact">
+                    <button id="save-layout-button" type="button">Save current layout</button>
+                    <button id="apply-layout-button" class="secondary" type="button">Apply layout</button>
+                  </div>
+                </div>
+              </details>
             </article>
           </section>
 

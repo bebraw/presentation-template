@@ -10,6 +10,7 @@ const {
 
 const allowedStateFiles = new Set([
   "deck-context.json",
+  "layouts.json",
   "materials.json",
   "presentations.json",
   "runtime.json",
@@ -41,7 +42,7 @@ function isAllowedStateFile(targetPath) {
   }
 
   return isWithinRoot(targetPath, presentationsDir)
-    && (baseName === "deck-context.json" || baseName === "materials.json" || baseName === "sources.json" || baseName === "variants.json" || baseName === "presentation.json");
+    && (baseName === "deck-context.json" || baseName === "layouts.json" || baseName === "materials.json" || baseName === "sources.json" || baseName === "variants.json" || baseName === "presentation.json");
 }
 
 function isAllowedMaterialFile(targetPath) {
@@ -117,6 +118,7 @@ function describeAllowedWriteTargets() {
     "`presentations/<id>/slides/slide-*.json`",
     "`presentations/<id>/materials/**`",
     "`presentations/<id>/state/deck-context.json`",
+    "`presentations/<id>/state/layouts.json`",
     "`presentations/<id>/state/materials.json`",
     "`presentations/<id>/state/sources.json`",
     "`presentations/<id>/state/variants.json`",

@@ -1,6 +1,7 @@
 const assert = require("node:assert/strict");
 const fs = require("node:fs");
 const path = require("node:path");
+const { _test: layoutTest } = require("../studio/server/services/layouts.ts");
 const { validateSlideSpec } = require("../studio/server/services/slide-specs/index.ts");
 
 const presentationsRoot = path.join(process.cwd(), "presentations");
@@ -109,6 +110,28 @@ assert.throws(
   }),
   /slideSpec\.media must be an object/,
   "Slide spec validation should require media on photo slides"
+);
+
+assert.deepEqual(
+  layoutTest.normalizeLayout({
+    id: "fixture-focus",
+    name: "Fixture focus",
+    supportedTypes: ["content"],
+    treatment: "focus"
+  }).supportedTypes,
+  ["content"],
+  "Layout validation should accept known built-in treatments"
+);
+
+assert.throws(
+  () => layoutTest.normalizeLayout({
+    id: "fixture-freeform",
+    name: "Fixture freeform",
+    supportedTypes: ["content"],
+    treatment: "freeform"
+  }),
+  /Layout treatment must be one of/,
+  "Layout validation should reject unknown treatments"
 );
 
 process.stdout.write("Slide spec fixture validation passed.\n");

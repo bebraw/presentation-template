@@ -189,8 +189,8 @@ const redoLayoutPrompts = buildRedoLayoutPrompts({
 
 assert.match(
   redoLayoutPrompts.userPrompt,
-  /oldFamily, newFamily, droppedFields, preservedFields, and rationale/,
-  "LLM redo-layout prompts should require explicit family-change metadata"
+  /targetFamily, droppedFields, preservedFields, emphasis, and rationale/,
+  "LLM redo-layout prompts should require intent-only review metadata"
 );
 assert.match(
   redoLayoutPrompts.userPrompt,
@@ -199,19 +199,20 @@ assert.match(
 );
 
 const redoLayoutSchema = getRedoLayoutResponseSchema(2);
-const redoLayoutVariantSchema = redoLayoutSchema.properties.variants.items;
+const redoLayoutIntentSchema = redoLayoutSchema.properties.candidates.items;
 assert.equal(
-  redoLayoutVariantSchema.properties.slideSpec.anyOf.length,
+  redoLayoutIntentSchema.properties.targetFamily.enum.length,
   8,
-  "LLM redo-layout schema should allow every structured slide family"
+  "LLM redo-layout intent schema should allow every structured target family"
 );
 assert.ok(
-  redoLayoutVariantSchema.required.includes("oldFamily")
-    && redoLayoutVariantSchema.required.includes("newFamily")
-    && redoLayoutVariantSchema.required.includes("droppedFields")
-    && redoLayoutVariantSchema.required.includes("preservedFields")
-    && redoLayoutVariantSchema.required.includes("rationale"),
-  "LLM redo-layout schema should require explicit family-change review fields"
+  !Object.hasOwn(redoLayoutIntentSchema.properties, "slideSpec")
+    && redoLayoutIntentSchema.required.includes("targetFamily")
+    && redoLayoutIntentSchema.required.includes("droppedFields")
+    && redoLayoutIntentSchema.required.includes("preservedFields")
+    && redoLayoutIntentSchema.required.includes("emphasis")
+    && redoLayoutIntentSchema.required.includes("rationale"),
+  "LLM redo-layout schema should require intent fields without accepting slide specs"
 );
 
 process.stdout.write("Slide media fixture validation passed.\n");

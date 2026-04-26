@@ -26,18 +26,10 @@ function createBaseVariantSchema(slideSpecSchema) {
   };
 }
 
-function createRedoLayoutVariantSchema() {
+function createRedoLayoutIntentSchema() {
   return {
     additionalProperties: false,
     properties: {
-      changeSummary: {
-        items: {
-          type: "string"
-        },
-        maxItems: 4,
-        minItems: 2,
-        type: "array"
-      },
       droppedFields: {
         items: {
           type: "string"
@@ -48,15 +40,11 @@ function createRedoLayoutVariantSchema() {
       label: {
         type: "string"
       },
-      newFamily: {
+      targetFamily: {
         enum: ["cover", "toc", "content", "summary", "divider", "quote", "photo", "photoGrid"],
         type: "string"
       },
-      notes: {
-        type: "string"
-      },
-      oldFamily: {
-        enum: ["cover", "toc", "content", "summary", "divider", "quote", "photo", "photoGrid"],
+      emphasis: {
         type: "string"
       },
       preservedFields: {
@@ -72,21 +60,9 @@ function createRedoLayoutVariantSchema() {
       },
       rationale: {
         type: "string"
-      },
-      slideSpec: {
-        anyOf: [
-          getSlideSpecSchema("cover"),
-          getSlideSpecSchema("toc"),
-          getSlideSpecSchema("content"),
-          getSlideSpecSchema("summary"),
-          getSlideSpecSchema("divider"),
-          getSlideSpecSchema("quote"),
-          getSlideSpecSchema("photo"),
-          getSlideSpecSchema("photoGrid")
-        ]
       }
     },
-    required: ["label", "promptSummary", "notes", "changeSummary", "oldFamily", "newFamily", "droppedFields", "preservedFields", "rationale", "slideSpec"],
+    required: ["targetFamily", "label", "rationale", "preservedFields", "droppedFields", "emphasis"],
     type: "object"
   };
 }
@@ -354,14 +330,14 @@ function getRedoLayoutResponseSchema(candidateCount = 3) {
   return {
     additionalProperties: false,
     properties: {
-      variants: {
-        items: createRedoLayoutVariantSchema(),
+      candidates: {
+        items: createRedoLayoutIntentSchema(),
         maxItems: candidateCount,
         minItems: candidateCount,
         type: "array"
       }
     },
-    required: ["variants"],
+    required: ["candidates"],
     type: "object"
   };
 }

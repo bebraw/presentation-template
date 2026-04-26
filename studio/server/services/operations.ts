@@ -1104,127 +1104,80 @@ async function createLlmRedoLayoutCandidates(slide, currentSpec, source, context
     userPrompt: prompts.userPrompt
   });
 
-  if (!result.data || !Array.isArray(result.data.variants) || result.data.variants.length !== count) {
-    throw new Error(`LLM redo-layout did not return ${count} structured variants`);
-  }
-
-  return result.data.variants.map((variant) => {
-    const declaredOldFamily = String(variant.oldFamily || currentSpec.type);
-    const declaredNewFamily = String(variant.newFamily || (variant.slideSpec && variant.slideSpec.type) || currentSpec.type);
-    let repairedFamilyChange = false;
-    let slideSpec;
-
-    try {
-      slideSpec = validateSlideSpec(variant.slideSpec);
-    } catch (error) {
-      const repaired = repairLlmRedoFamilyCandidate(slide, currentSpec, context, declaredNewFamily, options);
-      if (repaired) {
-        slideSpec = repaired.slideSpec;
-        repairedFamilyChange = true;
-      } else {
-        slideSpec = validateSlideSpec(mergeLlmRedoSameFamilySpec(currentSpec, variant.slideSpec));
-      }
-    }
-
-    if (declaredNewFamily !== currentSpec.type && slideSpec.type === currentSpec.type) {
-      const repaired = repairLlmRedoFamilyCandidate(slide, currentSpec, context, declaredNewFamily, options);
-      if (repaired) {
-        slideSpec = repaired.slideSpec;
-        repairedFamilyChange = true;
-      }
-    }
-
-    const oldFamily = currentSpec.type;
-    const newFamily = slideSpec.type;
-
-    const droppedFields = Array.isArray(variant.droppedFields) ? variant.droppedFields.filter(Boolean) : [];
-    const preservedFields = Array.isArray(variant.preservedFields) ? variant.preservedFields.filter(Boolean) : [];
-    const metadataCorrection = declaredOldFamily !== oldFamily || declaredNewFamily !== newFamily
-      ? `Corrected LLM family metadata from ${declaredOldFamily} -> ${declaredNewFamily} to ${oldFamily} -> ${newFamily}.`
-      : "";
-    const repairSummary = repairedFamilyChange
-      ? `Repaired LLM ${declaredNewFamily} candidate with the validated local ${newFamily} family transform.`
-      : "";
-    const changeSummary = [
-      oldFamily === newFamily
-        ? `Kept slide family as ${newFamily}.`
-        : `Changed slide family from ${oldFamily} to ${newFamily}.`,
-      droppedFields.length
-        ? `Dropped fields: ${droppedFields.slice(0, 6).join(", ")}.`
-        : "No stored structured fields were dropped.",
-      preservedFields.length
-        ? `Preserved fields: ${preservedFields.slice(0, 6).join(", ")}.`
-        : "Preserved the current slide title and core intent.",
-      repairSummary || metadataCorrection || sentence(variant.rationale, "Changed the layout family to improve the slide's reading path.", 18)
-    ];
-
-    return {
-      changeSummary: changeSummary.slice(0, 4),
-      generator: "llm",
-      label: variant.label,
-      model: result.model,
-      notes: variant.notes,
-      promptSummary: variant.promptSummary,
-      provider: result.provider,
-      slideSpec
-    };
-  });
-}
-
-function mergeLlmRedoSameFamilySpec(currentSpec, candidateSpec) {
-  const source = candidateSpec && typeof candidateSpec === "object" && !Array.isArray(candidateSpec)
-    ? candidateSpec
-    : {};
-  const merged = {
-    ...currentSpec,
-    ...source
-  };
-
-  Object.keys(currentSpec || {}).forEach((key) => {
-    const value = merged[key];
-    if (
-      value === null ||
-      value === undefined ||
-      (typeof value === "string" && !value.trim()) ||
-      (Array.isArray(value) && (!value.length || hasInvalidStructuredItems(value)))
-    ) {
-      merged[key] = currentSpec[key];
-    }
-  });
-
-  return merged;
-}
-
-function hasInvalidStructuredItems(items) {
-  return items.some((item) => {
-    if (!item || typeof item !== "object" || Array.isArray(item)) {
-      return true;
-    }
-
-    if (Object.hasOwn(item, "id") && !String(item.id || "").trim()) {
-      return true;
-    }
-
-    if (Object.hasOwn(item, "title") && !String(item.title || "").trim()) {
-      return true;
-    }
-
-    if (Object.hasOwn(item, "body") && !String(item.body || "").trim()) {
-      return true;
-    }
-
-    return false;
-  });
-}
-
-function repairLlmRedoFamilyCandidate(slide, currentSpec, context, declaredNewFamily, options: any = {}) {
-  if (!declaredNewFamily || declaredNewFamily === currentSpec.type) {
-    return null;
+  if (!result.data || !Array.isArray(result.data.candidates) || result.data.candidates.length !== count) {
+    throw new Error(`LLM redo-layout did not return ${count} structured intent candidates`);
   }
 
   const structureContext = collectStructureContext(slide, currentSpec, context);
-  return createLocalFamilyChangeCandidates(currentSpec, structureContext, options)
-    .find((candidate) => candidate.slideSpec && candidate.slideSpec.type === declaredNewFamily) || null;
+  return result.data.candidates.map((intent) => createLlmRedoLayoutCandidateFromIntent(
+    currentSpec,
+    structureContext,
+    intent,
+    result,
+    options
+  ));
+}
+
+function createLlmRedoLayoutCandidateFromIntent(currentSpec, structureContext, intent, result, options: any = {}) {
+  const targetFamily = String(intent.targetFamily || currentSpec.type);
+  const droppedFields = Array.isArray(intent.droppedFields) ? intent.droppedFields.filter(Boolean) : [];
+  const preservedFields = Array.isArray(intent.preservedFields) ? intent.preservedFields.filter(Boolean) : [];
+  const localFamilyCandidate = targetFamily !== currentSpec.type
+    ? createLocalFamilyChangeCandidates(currentSpec, structureContext, options)
+      .find((candidate) => candidate.slideSpec && candidate.slideSpec.type === targetFamily)
+    : null;
+  const slideSpec = localFamilyCandidate
+    ? localFamilyCandidate.slideSpec
+    : createSameFamilyLayoutIntentSpec(currentSpec, intent);
+  const newFamily = slideSpec.type;
+  const changeSummary = [
+    currentSpec.type === newFamily
+      ? `Kept slide family as ${newFamily}.`
+      : `Changed slide family from ${currentSpec.type} to ${newFamily}.`,
+    droppedFields.length
+      ? `Intent drops fields: ${droppedFields.slice(0, 6).join(", ")}.`
+      : "Intent keeps the existing structured fields.",
+    preservedFields.length
+      ? `Intent preserves fields: ${preservedFields.slice(0, 6).join(", ")}.`
+      : "Intent preserves the current slide title and core message.",
+    sentence(intent.rationale || intent.emphasis, "Selected the layout intent before local validation builds the candidate.", 18)
+  ];
+
+  return {
+    changeSummary,
+    generator: "llm",
+    label: intent.label || `Use ${targetFamily} layout intent`,
+    model: result.model,
+    notes: intent.rationale || intent.emphasis || "",
+    promptSummary: `LLM selected ${targetFamily} layout intent: ${sentence(intent.emphasis, intent.label || targetFamily, 12)}`,
+    provider: result.provider,
+    slideSpec
+  };
+}
+
+function createSameFamilyLayoutIntentSpec(currentSpec, intent) {
+  const emphasis = String(intent.emphasis || intent.label || "").toLowerCase();
+  const nextSpec = {
+    ...currentSpec
+  };
+
+  if (currentSpec.type === "content") {
+    if (/guardrail|solution|capabilit/.test(emphasis)) {
+      nextSpec.layout = "checklist";
+    } else if (/signal|problem|drift|timeline|process/.test(emphasis)) {
+      nextSpec.layout = "steps";
+    } else if (/quote|summary|impact|focus/.test(emphasis)) {
+      nextSpec.layout = "focus";
+    } else {
+      nextSpec.layout = currentSpec.layout || "standard";
+    }
+  } else if (currentSpec.type === "summary") {
+    nextSpec.layout = /resource|reference|handoff/.test(emphasis) ? "strip" : currentSpec.layout || "standard";
+  } else if (["cover", "toc", "photoGrid"].includes(currentSpec.type)) {
+    nextSpec.layout = currentSpec.layout || "standard";
+  }
+
+  return validateSlideSpec(nextSpec);
 }
 
 function normalizeSentence(value) {

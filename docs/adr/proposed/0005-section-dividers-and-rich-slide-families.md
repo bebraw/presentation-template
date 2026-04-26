@@ -228,7 +228,7 @@ Every saved layout definition should pass validation before it can be used:
    Let deck-plan and slide-drafting schemas choose among supported slide families and saved layout definitions. Prompt language should map user requests such as "quote slide", "photo slide", "before/after", and "split photos" to the corresponding family and, when useful, a generated layout candidate.
 
 11. Add layout candidate generation.
-    `redo-layout` should generate layout candidates that may either reuse an existing library layout or propose a new declarative JSON layout definition. Photo-grid redo-layout candidates now propose schema-backed reusable arrangement definitions for lead-image, comparison, and evidence grids. LLM-mode redo-layout can now propose explicit family-changing candidates with old/new family, dropped-field, preserved-field, and rationale metadata before preview/apply.
+    `redo-layout` should generate layout candidates that may either reuse an existing library layout or propose a new declarative JSON layout definition. Photo-grid redo-layout candidates now propose schema-backed reusable arrangement definitions for lead-image, comparison, and evidence grids. LLM-mode redo-layout now asks the model for intent only, then local validated transforms build family-changing slide specs from target-family, dropped-field, preserved-field, emphasis, and rationale metadata before preview/apply.
 
 12. Expand validation fixtures.
     Add fixture slides and fixture layout definitions for divider, quote, photo, photo-grid, and generated layout-library candidates. Cover text fit, media bounds, caption/source attachment, render baselines, workflow creation, and generated candidate validation.
@@ -253,7 +253,7 @@ Every saved layout definition should pass validation before it can be used:
 7. Generated layout candidates with save/favorite/apply review. Initial photo-grid candidates now carry reusable arrangement definitions.
 8. `mediaItems` model.
 9. Photo-grid family.
-10. Family-changing generation and compare support. Local structure candidates and LLM-mode redo-layout candidates now make common family changes explicit in compare/apply review.
+10. Family-changing generation and compare support. Local structure candidates and intent-only LLM-mode redo-layout candidates now make common family changes explicit in compare/apply review.
 
 This order improves long-deck clarity first, then turns layout into a reusable library asset before expanding visual expressiveness. Each slice should stay small enough to validate from the rendered PDF.
 

@@ -94,16 +94,16 @@ function buildIdeateSlidePrompts(options) {
 
 function buildRedoLayoutPrompts(options) {
   const developerPrompt = [
-    "You are generating presentation slide layout candidates for a local studio workflow.",
+    "You are selecting presentation slide layout transformation intent for a local studio workflow.",
     "Return structured data only and stay within the provided schema.",
     "Do not emit JavaScript, markdown fences, or explanatory prose outside the schema.",
-    "You may change the slide family only when the new family better fits the available content or media.",
-    "Every family change must be explicit: identify the old family, new family, dropped fields, preserved fields, and rationale.",
-    "Keep the slide concise, presentation-scaled, and compatible with the allowed structured slide families."
+    "Do not write slideSpec JSON. Local code will build and validate the actual slide candidate.",
+    "Prefer a family change when the target family better fits the available content or media.",
+    "Keep intent concise, presentation-scaled, and compatible with the allowed structured slide families."
   ].join("\n\n");
 
   const userPrompt = [
-    `Generate ${options.candidateCount} redo-layout candidates from the current presentation context.`,
+    `Choose ${options.candidateCount} redo-layout transformation intents from the current presentation context.`,
     "",
     `Slide id: ${options.slide.id}`,
     `Slide title: ${options.slide.title}`,
@@ -120,7 +120,7 @@ function buildRedoLayoutPrompts(options) {
     "",
     "Allowed slide families: divider, quote, photo, photoGrid, cover, toc, content, summary.",
     "Prefer a family-changing candidate when it improves the slide: text-heavy claims can become quote slides, image-backed slides can become photo or photoGrid slides, and section markers can become divider slides.",
-    "For each candidate, state oldFamily, newFamily, droppedFields, preservedFields, and rationale. The slideSpec.type must match newFamily."
+    "For each candidate, state targetFamily, droppedFields, preservedFields, emphasis, and rationale. Do not return a slideSpec."
   ].join("\n");
 
   return {

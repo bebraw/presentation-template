@@ -253,7 +253,7 @@ Every saved layout definition should pass validation before it can be used:
 7. Generated layout candidates with save/favorite/apply review.
 8. `mediaItems` model.
 9. Photo-grid family.
-10. Family-changing generation and compare support.
+10. Family-changing generation and compare support. Initial local structure candidates now make common family changes explicit in compare/apply review; LLM-backed family changes can follow once generated layout definitions are in place.
 
 This order improves long-deck clarity first, then turns layout into a reusable library asset before expanding visual expressiveness. Each slice should stay small enough to validate from the rendered PDF.
 

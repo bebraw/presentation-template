@@ -1928,12 +1928,237 @@ function createSummaryStructureCandidates(currentSpec, structureContext, options
   }));
 }
 
+function collectFamilyChangeText(spec) {
+  if (!spec || typeof spec !== "object") {
+    return [];
+  }
+
+  const parts = [
+    spec.eyebrow,
+    spec.title,
+    spec.summary,
+    spec.note,
+    spec.caption,
+    spec.context,
+    spec.quote,
+    spec.signalsTitle,
+    spec.guardrailsTitle,
+    spec.resourcesTitle
+  ];
+
+  ["cards", "signals", "guardrails", "bullets", "resources"].forEach((field) => {
+    if (!Array.isArray(spec[field])) {
+      return;
+    }
+
+    spec[field].forEach((item) => {
+      if (!item || typeof item !== "object") {
+        return;
+      }
+
+      parts.push(item.title, item.body, item.label, item.value);
+    });
+  });
+
+  return parts
+    .filter((part) => typeof part === "string")
+    .map((part) => part.trim())
+    .filter(Boolean);
+}
+
+function firstFamilyChangeText(spec, fallback, maxWords = 18) {
+  return sentence(collectFamilyChangeText(spec).find((part) => part !== spec.title), fallback, maxWords);
+}
+
+function summarizeDroppedFamilyFields(currentSpec, nextSpec) {
+  const nextType = nextSpec.type;
+  const dropped = [];
+
+  [
+    "cards",
+    "signals",
+    "guardrails",
+    "bullets",
+    "resources",
+    "quote",
+    "media",
+    "mediaItems",
+    "summary",
+    "note",
+    "caption"
+  ].forEach((field) => {
+    const nextValue = nextSpec[field];
+    const currentValue = currentSpec[field];
+    const explicitlyCleared = Object.hasOwn(nextSpec, field) && (
+      nextValue === null ||
+      (Array.isArray(currentValue) && currentValue.length > 0 && Array.isArray(nextValue) && nextValue.length === 0)
+    );
+
+    if (
+      Object.hasOwn(currentSpec, field) &&
+      (!Object.hasOwn(nextSpec, field) || explicitlyCleared) &&
+      currentValue !== undefined &&
+      currentValue !== null
+    ) {
+      dropped.push(field);
+    }
+  });
+
+  if (!dropped.length) {
+    return `Changed the slide family from ${currentSpec.type} to ${nextType} without dropping stored structured fields.`;
+  }
+
+  return `Changed the slide family from ${currentSpec.type} to ${nextType}; dropped ${dropped.slice(0, 4).join(", ")}${dropped.length > 4 ? ", ..." : ""} from the candidate spec.`;
+}
+
+function createFamilyChangeCandidate(currentSpec, structureContext, nextSpec, details, options: any = {}) {
+  const modeLabel = describeVariantPersistence(options);
+  const slideSpec = validateSlideSpec(nextSpec);
+
+  return {
+    changeSummary: [
+      `Changed slide family from ${currentSpec.type} to ${slideSpec.type}.`,
+      summarizeDroppedFamilyFields(currentSpec, slideSpec),
+      details.preservation,
+      modeLabel
+    ],
+    generator: "local",
+    label: details.label,
+    model: null,
+    notes: details.notes,
+    promptSummary: details.promptSummary,
+    provider: "local",
+    slideSpec
+  };
+}
+
+function collectFamilyMediaItems(currentSpec) {
+  if (Array.isArray(currentSpec.mediaItems) && currentSpec.mediaItems.length) {
+    return currentSpec.mediaItems.map((item) => ({ ...item }));
+  }
+
+  if (currentSpec.media) {
+    return [{ ...currentSpec.media }];
+  }
+
+  return [];
+}
+
+function createLocalFamilyChangeCandidates(currentSpec, structureContext, options: any = {}) {
+  const candidates = [];
+  const baseTitle = sentence(currentSpec.title || structureContext.currentTitle, "Untitled slide", 8);
+  const textClaim = firstFamilyChangeText(currentSpec, structureContext.mustInclude, 18);
+  const mediaItems = collectFamilyMediaItems(currentSpec);
+
+  if (!["divider"].includes(currentSpec.type)) {
+    candidates.push(createFamilyChangeCandidate(
+      currentSpec,
+      structureContext,
+      {
+        index: currentSpec.index,
+        layout: undefined,
+        media: null,
+        mediaItems: [],
+        title: sentence(baseTitle, "Section break", 8),
+        type: "divider"
+      },
+      {
+        label: "Change family: divider",
+        notes: "Turns the current slide into a title-only section marker.",
+        preservation: "Preserved the current title as the divider text and removed body-level content.",
+        promptSummary: "Converts the slide into a first-class divider candidate."
+      },
+      options
+    ));
+  }
+
+  if (!["quote"].includes(currentSpec.type)) {
+    candidates.push(createFamilyChangeCandidate(
+      currentSpec,
+      structureContext,
+      {
+        attribution: currentSpec.attribution,
+        context: sentence(structureContext.intent, currentSpec.context || "", 16),
+        index: currentSpec.index,
+        layout: undefined,
+        media: null,
+        mediaItems: [],
+        quote: textClaim,
+        source: currentSpec.source,
+        title: baseTitle,
+        type: "quote"
+      },
+      {
+        label: "Change family: quote",
+        notes: "Turns the strongest available text into a dominant pull quote.",
+        preservation: "Preserved one compact claim as the quote and kept attribution/source when available.",
+        promptSummary: "Converts the slide into a quote-family candidate."
+      },
+      options
+    ));
+  }
+
+  if (currentSpec.type !== "photo" && (currentSpec.media || mediaItems.length)) {
+    const media = currentSpec.media ? { ...currentSpec.media } : { ...mediaItems[0] };
+    candidates.push(createFamilyChangeCandidate(
+      currentSpec,
+      structureContext,
+      {
+        caption: sentence(currentSpec.caption || structureContext.intent, "Use the image as visual evidence.", 16),
+        index: currentSpec.index,
+        layout: undefined,
+        media,
+        mediaItems: [],
+        title: baseTitle,
+        type: "photo"
+      },
+      {
+        label: "Change family: photo",
+        notes: "Turns the slide into one dominant image with a compact caption.",
+        preservation: "Preserved the first attached media item as the dominant photo.",
+        promptSummary: "Converts the slide into a photo-family candidate."
+      },
+      options
+    ));
+  }
+
+  if (currentSpec.type !== "photoGrid" && mediaItems.length >= 2) {
+    candidates.push(createFamilyChangeCandidate(
+      currentSpec,
+      structureContext,
+      {
+        caption: sentence(currentSpec.caption || structureContext.intent, "Compare the image set.", 16),
+        index: currentSpec.index,
+        layout: undefined,
+        media: null,
+        mediaItems: mediaItems.slice(0, 4),
+        summary: sentence(structureContext.mustInclude, currentSpec.summary || "", 16),
+        title: baseTitle,
+        type: "photoGrid"
+      },
+      {
+        label: "Change family: photo grid",
+        notes: "Turns attached images into a two-to-four image comparison grid.",
+        preservation: "Preserved up to four attached media items and kept captions/source metadata with each image.",
+        promptSummary: "Converts the slide into a photo-grid-family candidate."
+      },
+      options
+    ));
+  }
+
+  return candidates;
+}
+
 function createLocalStructureCandidates(slide, currentSpec, context, options: any = {}) {
   const structureContext = collectStructureContext(slide, currentSpec, context);
   const modeLabel = describeVariantPersistence(options);
+  const withFamilyChanges = (candidates) => [
+    ...candidates,
+    ...createLocalFamilyChangeCandidates(currentSpec, structureContext, options)
+  ];
 
   if (currentSpec.type === "divider") {
-    return [
+    return withFamilyChanges([
       {
         label: "Boundary divider",
         notes: "Frames the divider as a boundary between the previous and next sections.",
@@ -1975,11 +2200,11 @@ function createLocalStructureCandidates(slide, currentSpec, context, options: an
       promptSummary: variant.promptSummary,
       provider: "local",
       slideSpec: variant.slideSpec
-    }));
+    })));
   }
 
   if (currentSpec.type === "quote") {
-    return [
+    return withFamilyChanges([
       {
         label: "Claim quote",
         notes: "Turns the pull quote into a sharper claim for the current section.",
@@ -2025,11 +2250,11 @@ function createLocalStructureCandidates(slide, currentSpec, context, options: an
       promptSummary: variant.promptSummary,
       provider: "local",
       slideSpec: variant.slideSpec
-    }));
+    })));
   }
 
   if (currentSpec.type === "photo") {
-    return [
+    return withFamilyChanges([
       {
         label: "Evidence photo",
         notes: "Frames the image as visual evidence for the current section.",
@@ -2072,11 +2297,11 @@ function createLocalStructureCandidates(slide, currentSpec, context, options: an
       promptSummary: variant.promptSummary,
       provider: "local",
       slideSpec: variant.slideSpec
-    }));
+    })));
   }
 
   if (currentSpec.type === "photoGrid") {
-    return [
+    return withFamilyChanges([
       {
         label: "Comparison grid",
         notes: "Frames the image set as a direct comparison.",
@@ -2119,17 +2344,17 @@ function createLocalStructureCandidates(slide, currentSpec, context, options: an
       promptSummary: variant.promptSummary,
       provider: "local",
       slideSpec: variant.slideSpec
-    }));
+    })));
   }
 
   switch (currentSpec.type) {
     case "cover":
     case "toc":
-      return createCardStructureCandidates(currentSpec, structureContext, options);
+      return withFamilyChanges(createCardStructureCandidates(currentSpec, structureContext, options));
     case "content":
-      return createContentStructureCandidates(currentSpec, structureContext, options);
+      return withFamilyChanges(createContentStructureCandidates(currentSpec, structureContext, options));
     case "summary":
-      return createSummaryStructureCandidates(currentSpec, structureContext, options);
+      return withFamilyChanges(createSummaryStructureCandidates(currentSpec, structureContext, options));
     default:
       throw new Error(`Ideate Structure does not support slide type "${currentSpec.type}" yet`);
   }
@@ -4422,6 +4647,7 @@ async function applyDeckStructureCandidate(candidate, options: any = {}) {
 module.exports = {
   _test: {
     applyCandidateSlideDefaults,
+    createLocalFamilyChangeCandidates,
     createLocalDeckStructureCandidates
   },
   applyDeckStructureCandidate,

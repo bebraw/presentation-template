@@ -1346,7 +1346,7 @@ function renderDeckDiffSupport(support) {
 }
 
 function buildStructuredComparison(currentSpec, variantSpec) {
-  if (!currentSpec || !variantSpec || currentSpec.type !== variantSpec.type) {
+  if (!currentSpec || !variantSpec) {
     return null;
   }
 
@@ -1369,6 +1369,27 @@ function buildStructuredComparison(currentSpec, variantSpec) {
       label
     });
   };
+
+  if (currentSpec.type !== variantSpec.type) {
+    pushChange("family", "Slide family", currentSpec.type, variantSpec.type);
+
+    return {
+      changes,
+      groupDetails: [
+        {
+          changes,
+          group: "family",
+          label: "Slide family"
+        }
+      ],
+      groups: ["family"],
+      summaryLines: [
+        `Changed slide family from ${currentSpec.type} to ${variantSpec.type}.`,
+        "Review dropped or transformed fields in the JSON diff before applying."
+      ],
+      totalChanges: changes.length
+    };
+  }
 
   pushChange("framing", "Title", currentSpec.title, variantSpec.title);
   if (currentSpec.type !== "divider") {
@@ -1540,6 +1561,10 @@ function buildVariantDecisionSupport(currentSpec, variantSpec, structuredCompari
 
   if (contentAreas >= 3) {
     cues.push("Several content areas move together; compare the visual hierarchy.");
+  }
+
+  if (structuredComparison && structuredComparison.groups.includes("family")) {
+    cues.push("Slide family changes can drop incompatible fields; inspect the JSON diff before applying.");
   }
 
   return {

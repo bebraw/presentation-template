@@ -123,4 +123,48 @@ assert.deepEqual(
   "generated photo grid candidates should preserve existing mediaItems when they do not mention mediaItems"
 );
 
+const familyContext = {
+  audience: "fixture reviewer",
+  currentTitle: "Material slide",
+  intent: "Show the attached material as visual evidence.",
+  layoutHint: "Use one clear reading path.",
+  mustInclude: "The material remains inspectable.",
+  nextTitle: "Next fixture slide",
+  note: "Compare before apply.",
+  objective: "Keep generated candidates reviewable.",
+  outlineCurrent: "Material evidence",
+  outlineNext: "Validation",
+  previousTitle: "Previous fixture slide",
+  themeBrief: "Quiet and practical.",
+  tone: "direct"
+};
+
+const familyChangeCandidates = _test.createLocalFamilyChangeCandidates(baseSlideSpec, familyContext);
+const familyChangeTypes = familyChangeCandidates.map((candidate) => candidate.slideSpec.type);
+
+assert.ok(
+  familyChangeTypes.includes("quote"),
+  "family-changing candidates should include quote conversion for text-heavy slides"
+);
+assert.ok(
+  familyChangeTypes.includes("photo"),
+  "family-changing candidates should include photo conversion when media exists"
+);
+assert.ok(
+  familyChangeTypes.includes("photoGrid"),
+  "family-changing candidates should include photoGrid conversion when multiple media items exist"
+);
+
+const photoGridFamilyCandidate = familyChangeCandidates.find((candidate) => candidate.slideSpec.type === "photoGrid");
+assert.deepEqual(
+  photoGridFamilyCandidate.slideSpec.mediaItems,
+  baseSlideSpec.mediaItems,
+  "photoGrid family conversion should preserve existing mediaItems"
+);
+assert.match(
+  photoGridFamilyCandidate.changeSummary.join(" "),
+  /Changed slide family from content to photoGrid/,
+  "family-changing candidates should make the type change explicit"
+);
+
 process.stdout.write("Slide media fixture validation passed.\n");

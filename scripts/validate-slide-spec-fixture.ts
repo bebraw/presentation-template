@@ -232,4 +232,67 @@ assert.equal(
   "Favorite layout validation should keep only supported slide families"
 );
 
+const exportedLayout = layoutTest.createLayoutExchangeDocument({
+  id: "fixture-exchange",
+  name: "Fixture exchange",
+  description: "Portable fixture layout.",
+  supportedTypes: ["content"],
+  treatment: "focus"
+});
+
+assert.equal(
+  exportedLayout.kind,
+  "slideotter.layout",
+  "Layout exchange documents should use the canonical kind"
+);
+assert.deepEqual(
+  layoutTest.readLayoutFromExchangeDocument(exportedLayout).supportedTypes,
+  ["content"],
+  "Layout exchange import should read canonical wrapper documents"
+);
+assert.equal(
+  layoutTest.readLayoutFromExchangeDocument({
+    id: "fixture-raw-exchange",
+    name: "Fixture raw exchange",
+    supportedTypes: ["summary"],
+    treatment: "strip"
+  }).treatment,
+  "strip",
+  "Layout exchange import should also accept raw layout JSON"
+);
+assert.equal(
+  layoutTest.normalizeLayoutCollectionId(
+    { id: "fixture-exchange", name: "Fixture exchange", supportedTypes: ["content"], treatment: "focus" },
+    [{ id: "fixture-exchange" }, { id: "fixture-exchange-2" }]
+  ).id,
+  "fixture-exchange-3",
+  "Imported layouts should normalize duplicate ids"
+);
+
+assert.throws(
+  () => layoutTest.readLayoutFromExchangeDocument({
+    kind: "slideotter.layout",
+    layout: {
+      id: "fixture-broken-exchange",
+      name: "Fixture broken exchange",
+      supportedTypes: ["content"],
+      treatment: "focus"
+    },
+    schemaVersion: 99
+  }),
+  /Layout exchange schemaVersion must be/,
+  "Layout exchange import should reject unsupported schema versions"
+);
+
+assert.throws(
+  () => layoutTest.readLayoutFromExchangeDocument({
+    id: "fixture-broken-treatment",
+    name: "Fixture broken treatment",
+    supportedTypes: ["content"],
+    treatment: "freeform"
+  }),
+  /Layout treatment must be one of/,
+  "Layout exchange import should reject invalid layout documents"
+);
+
 process.stdout.write("Slide spec fixture validation passed.\n");

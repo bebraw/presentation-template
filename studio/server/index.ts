@@ -11,7 +11,18 @@ const { getAssistantSession, getAssistantSuggestions, handleAssistantMessage } =
 const { buildAndRenderDeck, getPreviewManifest } = require("./services/build.ts");
 const { getDomPreviewState, renderDomPreviewDocument, renderPresentationPreviewDocument } = require("./services/dom-preview.ts");
 const { importImageSearchResults } = require("./services/image-search.ts");
-const { applyLayoutToSlideSpec, deleteFavoriteLayout, readFavoriteLayouts, readLayouts, saveFavoriteLayoutFromDeckLayout, saveLayoutFromSlideSpec } = require("./services/layouts.ts");
+const {
+  applyLayoutToSlideSpec,
+  deleteFavoriteLayout,
+  exportDeckLayout,
+  exportFavoriteLayout,
+  importDeckLayout,
+  importFavoriteLayout,
+  readFavoriteLayouts,
+  readLayouts,
+  saveFavoriteLayoutFromDeckLayout,
+  saveLayoutFromSlideSpec
+} = require("./services/layouts.ts");
 const { getLlmStatus, verifyLlmConnection } = require("./services/llm/client.ts");
 const { createMaterialFromDataUrl, getMaterial, getMaterialFilePath, listMaterials } = require("./services/materials.ts");
 const { clientDir, outputDir } = require("./services/paths.ts");
@@ -348,6 +359,41 @@ async function handleFavoriteLayoutDelete(req, res) {
 
   createJsonResponse(res, 200, {
     favoriteLayouts: state.layouts
+  });
+}
+
+async function handleLayoutExport(req, res) {
+  const body = await readJsonBody(req);
+  const layoutId = typeof body.layoutId === "string" ? body.layoutId : "";
+  const scope = typeof body.scope === "string" ? body.scope : "deck";
+  if (!layoutId) {
+    throw new Error("Expected layoutId when exporting a layout");
+  }
+
+  const document = scope === "favorite"
+    ? exportFavoriteLayout(layoutId)
+    : exportDeckLayout(layoutId);
+
+  createJsonResponse(res, 200, { document });
+}
+
+async function handleLayoutImport(req, res) {
+  const body = await readJsonBody(req);
+  const scope = typeof body.scope === "string" ? body.scope : "deck";
+  const document = body.document && typeof body.document === "object" ? body.document : null;
+  if (!document) {
+    throw new Error("Expected document when importing a layout");
+  }
+
+  const saved = scope === "favorite"
+    ? importFavoriteLayout(document, { description: body.description, id: body.id, name: body.name })
+    : importDeckLayout(document, { description: body.description, id: body.id, name: body.name });
+  publishRuntimeState();
+
+  createJsonResponse(res, 200, {
+    favoriteLayouts: readFavoriteLayouts().layouts,
+    layout: saved.layout,
+    layouts: readLayouts().layouts
   });
 }
 
@@ -2188,6 +2234,16 @@ async function handleApi(req, res, url) {
 
   if (req.method === "POST" && url.pathname === "/api/layouts/favorites/delete") {
     await handleFavoriteLayoutDelete(req, res);
+    return;
+  }
+
+  if (req.method === "POST" && url.pathname === "/api/layouts/export") {
+    await handleLayoutExport(req, res);
+    return;
+  }
+
+  if (req.method === "POST" && url.pathname === "/api/layouts/import") {
+    await handleLayoutImport(req, res);
     return;
   }
 

@@ -9,6 +9,7 @@ const {
 } = require("./write-boundary.ts");
 
 const schemaVersion = 1;
+const exchangeKind = "slideotter.layout";
 const knownTreatments = new Set(["callout", "checklist", "focus", "standard", "steps", "strip"]);
 const supportedSlideTypes = new Set(["cover", "toc", "content", "summary"]);
 const defaultLayouts = {
@@ -67,6 +68,53 @@ function normalizeLayout(layout) {
     createdAt: source.createdAt || now,
     updatedAt: source.updatedAt || now
   };
+}
+
+function normalizeLayoutCollectionId(layout, existingLayouts, preferredId = null) {
+  const existingIds = new Set(
+    (Array.isArray(existingLayouts) ? existingLayouts : [])
+      .map((entry) => entry && entry.id)
+      .filter(Boolean)
+  );
+  const baseId = slugPart(preferredId || layout.id || layout.name || layout.treatment, "layout");
+  let id = baseId;
+  let suffix = 2;
+
+  while (existingIds.has(id)) {
+    id = `${baseId}-${suffix}`;
+    suffix += 1;
+  }
+
+  return {
+    ...layout,
+    id
+  };
+}
+
+function createLayoutExchangeDocument(layout) {
+  const normalized = normalizeLayout(layout);
+  return {
+    exportedAt: new Date().toISOString(),
+    kind: exchangeKind,
+    layout: normalized,
+    schemaVersion
+  };
+}
+
+function readLayoutFromExchangeDocument(document) {
+  const source = document && typeof document === "object" && !Array.isArray(document)
+    ? document
+    : {};
+
+  if (source.kind === exchangeKind || source.layout) {
+    if (source.schemaVersion !== schemaVersion) {
+      throw new Error(`Layout exchange schemaVersion must be ${schemaVersion}`);
+    }
+
+    return normalizeLayout(source.layout);
+  }
+
+  return normalizeLayout(source);
 }
 
 function readLayouts() {
@@ -137,6 +185,10 @@ function getLayout(layoutId) {
   return layout;
 }
 
+function exportDeckLayout(layoutId) {
+  return createLayoutExchangeDocument(getLayout(layoutId));
+}
+
 function readFavoriteLayouts() {
   const runtime = readRuntime();
   const layouts = Array.isArray(runtime.savedLayouts)
@@ -167,6 +219,75 @@ function saveFavoriteLayout(layout) {
   writeRuntime(nextRuntime);
   return {
     layout: favorite,
+    state: readFavoriteLayouts()
+  };
+}
+
+function getFavoriteLayout(layoutId) {
+  const layout = readFavoriteLayouts().layouts.find((entry) => entry.id === layoutId);
+  if (!layout) {
+    throw new Error(`Unknown favorite layout "${layoutId}"`);
+  }
+  return layout;
+}
+
+function exportFavoriteLayout(layoutId) {
+  return createLayoutExchangeDocument(getFavoriteLayout(layoutId));
+}
+
+function importDeckLayout(document, fields: any = {}) {
+  const current = readLayouts();
+  const timestamp = new Date().toISOString();
+  const imported = normalizeLayoutCollectionId(
+    normalizeLayout({
+      ...readLayoutFromExchangeDocument(document),
+      createdAt: timestamp,
+      updatedAt: timestamp
+    }),
+    current.layouts,
+    fields.id
+  );
+  const layout = normalizeLayout({
+    ...imported,
+    description: fields.description || imported.description,
+    name: fields.name || imported.name
+  });
+
+  return {
+    layout,
+    state: writeLayouts({ layouts: [...current.layouts, layout] })
+  };
+}
+
+function importFavoriteLayout(document, fields: any = {}) {
+  const current = readFavoriteLayouts();
+  const runtime = readRuntime();
+  const timestamp = new Date().toISOString();
+  const imported = normalizeLayoutCollectionId(
+    normalizeLayout({
+      ...readLayoutFromExchangeDocument(document),
+      createdAt: timestamp,
+      updatedAt: timestamp
+    }),
+    current.layouts,
+    fields.id
+  );
+  const layout = normalizeLayout({
+    ...imported,
+    description: fields.description || imported.description,
+    name: fields.name || imported.name
+  });
+  const nextRuntime = {
+    ...runtime,
+    savedLayouts: [
+      layout,
+      ...(Array.isArray(runtime.savedLayouts) ? runtime.savedLayouts : [])
+    ].slice(0, 50)
+  };
+
+  writeRuntime(nextRuntime);
+  return {
+    layout,
     state: readFavoriteLayouts()
   };
 }
@@ -221,6 +342,10 @@ function applyLayoutToSlideSpec(slideSpec, layoutRef) {
 
 module.exports = {
   applyLayoutToSlideSpec,
+  exportDeckLayout,
+  exportFavoriteLayout,
+  importDeckLayout,
+  importFavoriteLayout,
   deleteFavoriteLayout,
   getLayoutByRef,
   knownTreatments,
@@ -230,6 +355,9 @@ module.exports = {
   saveLayoutFromSlideSpec,
   supportedSlideTypes,
   _test: {
+    createLayoutExchangeDocument,
+    readLayoutFromExchangeDocument,
+    normalizeLayoutCollectionId,
     normalizeLayout
   }
 };

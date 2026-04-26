@@ -1156,7 +1156,7 @@ function createLlmRedoLayoutCandidateFromIntent(currentSpec, structureContext, i
 }
 
 function createSameFamilyLayoutIntentSpec(currentSpec, intent) {
-  const emphasis = String(intent.emphasis || intent.label || "").toLowerCase();
+  const emphasis = String([intent.emphasis, intent.label, intent.rationale].filter(Boolean).join(" ")).toLowerCase();
   const nextSpec = {
     ...currentSpec
   };
@@ -1173,7 +1173,21 @@ function createSameFamilyLayoutIntentSpec(currentSpec, intent) {
     }
   } else if (currentSpec.type === "summary") {
     nextSpec.layout = /resource|reference|handoff/.test(emphasis) ? "strip" : currentSpec.layout || "standard";
-  } else if (["cover", "toc", "photoGrid"].includes(currentSpec.type)) {
+  } else if (currentSpec.type === "photoGrid") {
+    const mediaItems = Array.isArray(currentSpec.mediaItems)
+      ? currentSpec.mediaItems.map((item) => ({ ...item }))
+      : [];
+    if (/compare|comparison|side-by-side|contrast/.test(emphasis)) {
+      nextSpec.layout = "standard";
+      nextSpec.mediaItems = rotateItems(mediaItems, 1);
+    } else if (/evidence|proof|sequence|story|set/.test(emphasis)) {
+      nextSpec.layout = "strip";
+      nextSpec.mediaItems = rotateItems(mediaItems, mediaItems.length > 2 ? 2 : 1);
+    } else {
+      nextSpec.layout = "focus";
+      nextSpec.mediaItems = mediaItems;
+    }
+  } else if (["cover", "toc"].includes(currentSpec.type)) {
     nextSpec.layout = currentSpec.layout || "standard";
   }
 

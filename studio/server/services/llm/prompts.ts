@@ -93,6 +93,14 @@ function buildIdeateSlidePrompts(options) {
 }
 
 function buildRedoLayoutPrompts(options) {
+  const familyGuidance = options.slideType === "photoGrid"
+    ? "Current slide is photoGrid: set targetFamily to photoGrid for every candidate. Propose arrangement intents such as lead image, comparison grid, or evidence grid."
+    : options.slideType === "photo" || options.slideType === "content"
+      ? "When the slide has mediaItems or media, consider photo or photoGrid if the visual evidence should lead."
+      : "Prefer family changes only when they make the slide clearer than a same-family layout change.";
+  const familyChangeGuidance = options.slideType === "photoGrid"
+    ? "Do not convert photoGrid slides to photo, content, summary, divider, quote, cover, or toc during Redo Layout; keep the slide family and vary the arrangement intent."
+    : "Prefer a family-changing candidate when it improves the slide: text-heavy claims can become quote slides, image-backed slides can become photo or photoGrid slides, and section markers can become divider slides.";
   const developerPrompt = [
     "You are selecting presentation slide layout transformation intent for a local studio workflow.",
     "Return structured data only and stay within the provided schema.",
@@ -119,7 +127,8 @@ function buildRedoLayoutPrompts(options) {
     options.source,
     "",
     "Allowed slide families: divider, quote, photo, photoGrid, cover, toc, content, summary.",
-    "Prefer a family-changing candidate when it improves the slide: text-heavy claims can become quote slides, image-backed slides can become photo or photoGrid slides, and section markers can become divider slides.",
+    familyChangeGuidance,
+    familyGuidance,
     "For each candidate, state targetFamily, droppedFields, preservedFields, emphasis, and rationale. Do not return a slideSpec."
   ].join("\n");
 

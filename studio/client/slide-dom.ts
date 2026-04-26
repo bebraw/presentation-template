@@ -255,6 +255,30 @@
     `;
   }
 
+  function renderQuote(slideSpec) {
+    const attribution = slideSpec.attribution
+      ? `<p class="dom-slide__quote-attribution"${editAttrs("attribution", "Attribution")}>${escapeHtml(slideSpec.attribution)}</p>`
+      : "";
+    const source = slideSpec.source
+      ? `<p class="dom-slide__quote-source"${editAttrs("source", "Source")}>${escapeHtml(slideSpec.source)}</p>`
+      : "";
+    const context = slideSpec.context
+      ? `<p class="dom-slide__quote-context"${editAttrs("context", "Context")}>${escapeHtml(slideSpec.context)}</p>`
+      : "";
+
+    return `
+      <section class="dom-slide__quote-wrap">
+        <p class="dom-slide__eyebrow"${editAttrs("title", "Title")}>${escapeHtml(slideSpec.title || "")}</p>
+        <blockquote class="dom-slide__quote"${editAttrs("quote", "Quote")}>${escapeHtml(slideSpec.quote || "")}</blockquote>
+        <footer class="dom-slide__quote-footer">
+          ${attribution}
+          ${source}
+          ${context}
+        </footer>
+      </section>
+    `;
+  }
+
   function renderToc(slideSpec) {
     const cards = Array.isArray(slideSpec.cards) ? slideSpec.cards : [];
     const media = renderSlideMedia(slideSpec);
@@ -399,6 +423,8 @@
     switch (slideSpec && slideSpec.type) {
       case "divider":
         return renderDivider(slideSpec);
+      case "quote":
+        return renderQuote(slideSpec);
       case "cover":
         return renderCover(slideSpec);
       case "toc":

@@ -10,6 +10,12 @@ function buildSlideTypeGuidance(slideType) {
         "Return the requested number of variants and keep the divider structure intact.",
         "Each slideSpec must include: title."
       ].join("\n");
+    case "quote":
+      return [
+        "The slide family is quote.",
+        "Return the requested number of variants and keep one dominant quote as the visible content.",
+        "Each slideSpec must include: title and quote. Attribution, source, and context are optional, but sourced quotes should keep attribution/source compact."
+      ].join("\n");
     case "cover":
       return [
         "The slide family is cover.",

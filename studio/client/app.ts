@@ -2750,25 +2750,32 @@ function renderSavedThemes() {
 function renderManualSlideForm() {
   const slideType = elements.manualSystemType ? elements.manualSystemType.value : "content";
   const isDivider = slideType === "divider";
+  const isQuote = slideType === "quote";
   const summaryField = document.querySelector(".manual-system-summary-field");
 
   if (elements.manualSystemTitle) {
-    elements.manualSystemTitle.placeholder = isDivider ? "Section title" : "System name";
+    elements.manualSystemTitle.placeholder = isDivider ? "Section title" : isQuote ? "Quote slide title" : "System name";
   }
 
   if (elements.manualSystemSummary) {
     elements.manualSystemSummary.placeholder = isDivider
       ? "Optional notes for yourself; divider slides stay title-only."
+      : isQuote
+        ? "Paste the quote or pull quote text. Attribution and source can be added in JSON."
       : "What boundary, signal, and guardrails should this system explain?";
     elements.manualSystemSummary.disabled = isDivider;
   }
 
   if (summaryField instanceof HTMLElement) {
     summaryField.hidden = isDivider;
+    const label = summaryField.querySelector("span");
+    if (label) {
+      label.textContent = isQuote ? "Quote" : "Summary";
+    }
   }
 
   if (elements.createSystemSlideButton) {
-    elements.createSystemSlideButton.textContent = isDivider ? "Create divider" : "Create system slide";
+    elements.createSystemSlideButton.textContent = isDivider ? "Create divider" : isQuote ? "Create quote slide" : "Create system slide";
   }
 }
 
@@ -4439,8 +4446,13 @@ async function createSystemSlide() {
   const slideType = elements.manualSystemType ? elements.manualSystemType.value : "content";
   const summary = slideType === "divider" ? "" : elements.manualSystemSummary.value.trim();
   if (!title) {
-    window.alert(slideType === "divider" ? "Add a title for the divider slide." : "Add a title for the system slide.");
+    window.alert(slideType === "divider" ? "Add a title for the divider slide." : slideType === "quote" ? "Add a title for the quote slide." : "Add a title for the system slide.");
     elements.manualSystemTitle.focus();
+    return;
+  }
+  if (slideType === "quote" && !summary) {
+    window.alert("Add the quote text.");
+    elements.manualSystemSummary.focus();
     return;
   }
 
@@ -4482,6 +4494,8 @@ async function createSystemSlide() {
     await loadSlide(state.selectedSlideId);
     elements.operationStatus.textContent = slideType === "divider"
       ? `Created divider slide ${title}.`
+      : slideType === "quote"
+        ? `Created quote slide ${title}.`
       : `Created system slide ${title}.`;
   } finally {
     done();

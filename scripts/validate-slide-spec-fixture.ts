@@ -62,4 +62,27 @@ assert.throws(
   "Slide spec validation should reject unknown layout treatments"
 );
 
+assert.deepEqual(
+  validateSlideSpec({
+    attribution: "Fixture author",
+    context: "Fixture context should stay attached to the quote.",
+    quote: "Structured quote slides keep one excerpt dominant.",
+    source: "Fixture source",
+    title: "Fixture quote",
+    type: "quote"
+  }).type,
+  "quote",
+  "Slide spec validation should accept first-class quote slides"
+);
+
+assert.throws(
+  () => validateSlideSpec({
+    quote: "",
+    title: "Broken quote",
+    type: "quote"
+  }),
+  /slideSpec\.quote must be a non-empty string/,
+  "Slide spec validation should reject empty quote text"
+);
+
 process.stdout.write("Slide spec fixture validation passed.\n");

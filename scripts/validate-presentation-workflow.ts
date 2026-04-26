@@ -605,6 +605,39 @@ async function runPresentationWorkflowValidation(options: any = {}) {
           return !payload.slides.some((slide) => slide.title === "Workflow section divider");
         });
 
+        await page.selectOption("#manual-system-type", "quote");
+        await page.fill("#manual-system-title", "Workflow quote slide");
+        await page.fill("#manual-system-summary", "A structured quote slide keeps one excerpt dominant.");
+        await page.selectOption("#manual-system-after", "slide-01");
+        const createQuoteSlideResponse = waitForJsonResponse(page, "/api/slides/system", 120_000);
+        await page.click("#create-system-slide-button");
+        await createQuoteSlideResponse;
+        await page.waitForFunction(async () => {
+          const response = await fetch("/api/state");
+          const payload = await response.json();
+          return payload.slides.some((slide) => slide.title === "Workflow quote slide");
+        });
+        const stateAfterQuoteInsert = await readWorkspaceState(page);
+        const insertedQuoteSlide = stateAfterQuoteInsert.slides.find((slide) => slide.title === "Workflow quote slide");
+        assert.ok(insertedQuoteSlide, "manual quote creation should add a selectable slide");
+        await page.waitForFunction(async (slideId) => {
+          const response = await fetch(`/api/slides/${slideId}`);
+          const payload = await response.json();
+          return payload.slideSpec
+            && payload.slideSpec.type === "quote"
+            && payload.slideSpec.quote === "A structured quote slide keeps one excerpt dominant.";
+        }, insertedQuoteSlide.id);
+
+        await page.selectOption("#manual-delete-slide", insertedQuoteSlide.id);
+        const deleteQuoteSlideResponse = waitForJsonResponse(page, "/api/slides/delete", 120_000);
+        await page.click("#delete-slide-button");
+        await deleteQuoteSlideResponse;
+        await page.waitForFunction(async () => {
+          const response = await fetch("/api/state");
+          const payload = await response.json();
+          return !payload.slides.some((slide) => slide.title === "Workflow quote slide");
+        });
+
         await page.click("#show-planning-page");
         await waitForPage(page, "#planning-page");
         await page.locator(".source-details summary").click();

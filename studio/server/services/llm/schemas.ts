@@ -98,6 +98,20 @@ function getSlideSpecSchema(slideType) {
         required: ["type", "title"],
         type: "object"
       };
+    case "quote":
+      return {
+        additionalProperties: false,
+        properties: {
+          attribution: { type: "string" },
+          context: { type: "string" },
+          quote: { type: "string" },
+          source: { type: "string" },
+          title: { type: "string" },
+          type: { const: "quote", type: "string" }
+        },
+        required: ["type", "title", "quote"],
+        type: "object"
+      };
     case "cover":
       return {
         additionalProperties: false,

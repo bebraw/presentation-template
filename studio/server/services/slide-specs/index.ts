@@ -114,6 +114,14 @@ function assertMediaItem(item, label) {
   }
 }
 
+function assertOptionalString(value, label) {
+  if (value === undefined || value === null || value === "") {
+    return;
+  }
+
+  assertString(value, label);
+}
+
 function validateSlideSpec(spec) {
   assertObject(spec, "slideSpec");
   assertString(spec.type, "slideSpec.type");
@@ -123,6 +131,12 @@ function validateSlideSpec(spec) {
 
   switch (spec.type) {
     case "divider":
+      break;
+    case "quote":
+      assertString(spec.quote, "slideSpec.quote");
+      assertOptionalString(spec.attribution, "slideSpec.attribution");
+      assertOptionalString(spec.source, "slideSpec.source");
+      assertOptionalString(spec.context, "slideSpec.context");
       break;
     case "cover":
       assertString(spec.eyebrow, "slideSpec.eyebrow");
@@ -379,6 +393,8 @@ function materializeSlideSpec(source, slideSpec) {
   switch (validated.type) {
     case "divider":
       return buildDividerSource(source, validated);
+    case "quote":
+      return source;
     case "cover":
       return buildCoverSource(source, validated);
     case "toc":

@@ -1401,9 +1401,18 @@ function createManualDividerSlideSpec({ targetIndex, title }) {
   };
 }
 
+function createManualQuoteSlideSpec({ quote, targetIndex, title }) {
+  return {
+    type: "quote",
+    index: targetIndex,
+    title: sentenceValue(title, "Pull quote"),
+    quote: sentenceValue(quote, "Add a sourced quote or authored pull quote here.")
+  };
+}
+
 async function handleManualSystemSlideCreate(req, res) {
   const body = await readJsonBody(req);
-  const slideType = body.slideType === "divider" ? "divider" : "content";
+  const slideType = ["divider", "quote"].includes(body.slideType) ? body.slideType : "content";
   const title = sentenceValue(body.title, "New system");
   const summary = sentenceValue(
     body.summary,
@@ -1414,7 +1423,9 @@ async function handleManualSystemSlideCreate(req, res) {
   const targetIndex = afterSlide ? afterSlide.index + 1 : activeSlides.length + 1;
   const slideSpec = slideType === "divider"
     ? createManualDividerSlideSpec({ targetIndex, title })
-    : createManualSystemSlideSpec({ summary, targetIndex, title });
+    : slideType === "quote"
+      ? createManualQuoteSlideSpec({ quote: summary, targetIndex, title })
+      : createManualSystemSlideSpec({ summary, targetIndex, title });
   const created = insertStructuredSlide(slideSpec, targetIndex);
   const currentContext = getDeckContext();
   const outline = renumberOutlineWithInsert(currentContext.deck && currentContext.deck.outline, title, targetIndex);
@@ -1428,6 +1439,14 @@ async function handleManualSystemSlideCreate(req, res) {
         notes: "Manual divider slide created from the Slide Studio panel.",
         layoutHint: "Keep the divider title-only and centered."
       }
+    : slideType === "quote"
+      ? {
+          title,
+          intent: `Use ${title} as a focused quote or authored pull quote.`,
+          mustInclude: "One short quote, optional attribution, optional source, and compact context.",
+          notes: "Manual quote slide created from the Slide Studio panel.",
+          layoutHint: "Keep the quote dominant with attribution and source attached below."
+        }
     : {
         title,
         intent: summary,
@@ -1444,9 +1463,11 @@ async function handleManualSystemSlideCreate(req, res) {
   updateWorkflowState({
     message: slideType === "divider"
       ? `Added manual divider slide ${title}.`
+      : slideType === "quote"
+        ? `Added manual quote slide ${title}.`
       : `Added manual system slide ${title}.`,
     ok: true,
-    operation: slideType === "divider" ? "add-divider-slide" : "add-system-slide",
+    operation: slideType === "divider" ? "add-divider-slide" : slideType === "quote" ? "add-quote-slide" : "add-system-slide",
     slideId: created.id,
     stage: "completed",
     status: "completed"

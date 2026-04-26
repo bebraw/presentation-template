@@ -397,6 +397,14 @@ function buildIdeaSlideSpec(slideType, theme) {
         title: theme.title,
         type: "divider"
       });
+    case "quote":
+      return validateSlideSpec({
+        attribution: theme.eyebrow,
+        context: theme.summary,
+        quote: theme.notes || theme.summary,
+        title: theme.title,
+        type: "quote"
+      });
     case "cover":
       return validateSlideSpec({
         cards: theme.cards,
@@ -454,6 +462,13 @@ function buildChangeSummary(slideType, theme, options: any = {}) {
         `Shifted the divider toward the ${theme.label.toLowerCase()} framing.`,
         "Rewrote the section title while keeping the title-only divider structure intact.",
         "Kept the divider family instead of expanding it into a fuller content slide.",
+        modeLabel
+      ];
+    case "quote":
+      return [
+        `Shifted the quote slide toward the ${theme.label.toLowerCase()} framing.`,
+        "Reworked the quote and attached context while keeping one dominant pull quote.",
+        "Kept attribution/source fields compact so the quote remains the focal point.",
         modeLabel
       ];
     case "cover":
@@ -869,6 +884,13 @@ function buildThemeSlideSpec(slideType, theme) {
         title: theme.title,
         type: "divider"
       });
+    case "quote":
+      return validateSlideSpec({
+        context: theme.summary,
+        quote: theme.note || theme.summary,
+        title: theme.title,
+        type: "quote"
+      });
     case "cover":
     case "toc":
       return validateSlideSpec({
@@ -915,6 +937,13 @@ function buildThemeChangeSummary(slideType, theme, options: any = {}) {
         `Reframed the divider around the ${theme.label.toLowerCase()}.`,
         visualLabel,
         "Kept the title-only divider family while changing the section signal and palette.",
+        modeLabel
+      ];
+    case "quote":
+      return [
+        `Reframed the quote slide around the ${theme.label.toLowerCase()}.`,
+        visualLabel,
+        "Kept the quote family while changing the quote emphasis and attached context.",
         modeLabel
       ];
     case "cover":
@@ -1766,6 +1795,56 @@ function createLocalStructureCandidates(slide, currentSpec, context, options: an
     }));
   }
 
+  if (currentSpec.type === "quote") {
+    return [
+      {
+        label: "Claim quote",
+        notes: "Turns the pull quote into a sharper claim for the current section.",
+        promptSummary: "Uses the slide intent and surrounding titles to tighten the quote around one claim.",
+        slideSpec: validateSlideSpec({
+          ...currentSpec,
+          context: sentence(`Sets up ${structureContext.nextTitle} for ${structureContext.audience}.`, currentSpec.context || "", 16),
+          quote: sentence(structureContext.mustInclude, currentSpec.quote, 18),
+          title: sentence(structureContext.outlineCurrent, currentSpec.title, 8)
+        })
+      },
+      {
+        label: "Evidence quote",
+        notes: "Frames the quote as proof the audience should carry into the next slide.",
+        promptSummary: "Uses the saved notes to rewrite the quote as compact evidence.",
+        slideSpec: validateSlideSpec({
+          ...currentSpec,
+          context: sentence(structureContext.note, currentSpec.context || "Use this as compact evidence.", 16),
+          quote: sentence(structureContext.intent, currentSpec.quote, 18)
+        })
+      },
+      {
+        label: "Handoff quote",
+        notes: "Makes the quote point toward the next authoring or review action.",
+        promptSummary: "Uses the next-slide title to make the quote act as a handoff.",
+        slideSpec: validateSlideSpec({
+          ...currentSpec,
+          context: sentence(`Carry this into ${structureContext.nextTitle}.`, currentSpec.context || "", 14),
+          quote: sentence(`The next move is ${structureContext.nextTitle}.`, currentSpec.quote, 14)
+        })
+      }
+    ].map((variant) => ({
+      changeSummary: [
+        `Reworked the quote toward a ${variant.label.toLowerCase()}.`,
+        "Changed the quote/context while keeping the quote slide family intact.",
+        "Kept attribution and source fields attached below the dominant quote.",
+        modeLabel
+      ],
+      generator: "local",
+      label: variant.label,
+      model: null,
+      notes: variant.notes,
+      promptSummary: variant.promptSummary,
+      provider: "local",
+      slideSpec: variant.slideSpec
+    }));
+  }
+
   switch (currentSpec.type) {
     case "cover":
     case "toc":
@@ -1934,6 +2013,18 @@ function rewriteDividerSlideSpec(_baseSpec, proposedIndex, proposedTitle) {
     index: proposedIndex,
     title: proposedTitle,
     type: "divider"
+  });
+}
+
+function rewriteQuoteSlideSpec(baseSpec, proposedIndex, proposedTitle, content) {
+  return validateSlideSpec({
+    attribution: baseSpec.attribution || content.attribution,
+    context: content.context,
+    index: proposedIndex,
+    quote: content.quote,
+    source: baseSpec.source || content.source,
+    title: proposedTitle,
+    type: "quote"
   });
 }
 
@@ -3069,6 +3160,13 @@ function createLocalDeckStructureCandidates(context) {
         switch (baseSpec.type) {
           case "divider":
             return rewriteDividerSlideSpec(baseSpec, details.proposedIndex, details.proposedTitle);
+          case "quote":
+            return rewriteQuoteSlideSpec(baseSpec, details.proposedIndex, details.proposedTitle, {
+              attribution: "Decision path",
+              context: `Use this pull quote to keep ${audience} focused on the approval call.`,
+              quote: "A deck earns trust when the decision, proof, and next move stay visible.",
+              source: "Authored deck copy"
+            });
           case "cover":
             return rewriteCoverSlideSpec(baseSpec, details.proposedIndex, details.proposedTitle, {
               cards: [
@@ -3218,6 +3316,13 @@ function createLocalDeckStructureCandidates(context) {
         switch (baseSpec.type) {
           case "divider":
             return rewriteDividerSlideSpec(baseSpec, details.proposedIndex, details.proposedTitle);
+          case "quote":
+            return rewriteQuoteSlideSpec(baseSpec, details.proposedIndex, details.proposedTitle, {
+              attribution: "Operator handoff",
+              context: `Use this pull quote to keep ${objective} attached to validation and ownership.`,
+              quote: "A maintained deck keeps the source, preview, and validation path in the same loop.",
+              source: "Authored deck copy"
+            });
           case "cover":
             return rewriteCoverSlideSpec(baseSpec, details.proposedIndex, details.proposedTitle, {
               cards: [

@@ -232,6 +232,30 @@ assert.equal(
   "Favorite layout validation should keep only supported slide families"
 );
 
+const normalizedPhotoGridLayout = layoutTest.normalizeLayout({
+  definition: {
+    arrangement: "comparison",
+    captionRole: "comparison",
+    mediaOrder: [1, 0, 2],
+    type: "photoGridArrangement"
+  },
+  id: "fixture-photo-grid-layout",
+  name: "Fixture photo grid layout",
+  supportedTypes: ["photoGrid"],
+  treatment: "focus"
+});
+
+assert.equal(
+  normalizedPhotoGridLayout.definition.arrangement,
+  "comparison",
+  "Layout validation should keep schema-backed photo-grid arrangement definitions"
+);
+assert.deepEqual(
+  normalizedPhotoGridLayout.definition.mediaOrder,
+  [1, 0, 2],
+  "Layout validation should preserve bounded photo-grid media order metadata"
+);
+
 const exportedLayout = layoutTest.createLayoutExchangeDocument({
   id: "fixture-exchange",
   name: "Fixture exchange",
@@ -334,6 +358,21 @@ assert.throws(
   }),
   /Layout treatment must be one of/,
   "Layout exchange import should reject invalid layout documents"
+);
+
+assert.throws(
+  () => layoutTest.normalizeLayout({
+    definition: {
+      arrangement: "freeform",
+      type: "photoGridArrangement"
+    },
+    id: "fixture-broken-photo-grid-layout",
+    name: "Fixture broken photo grid layout",
+    supportedTypes: ["photoGrid"],
+    treatment: "focus"
+  }),
+  /Photo-grid layout arrangement must be one of/,
+  "Layout validation should reject unknown photo-grid arrangements"
 );
 
 process.stdout.write("Slide spec fixture validation passed.\n");

@@ -3776,7 +3776,7 @@ function canSaveVariantLayout(variant) {
     && variant.operation === "redo-layout"
     && variant.slideSpec
     && variant.slideSpec.type
-    && variant.slideSpec.layout;
+    && (variant.slideSpec.layout || variant.layoutDefinition);
 }
 
 function describeVariantKind(variant) {
@@ -5074,6 +5074,7 @@ async function saveVariantLayout(variant, favorite = false, button = null) {
       body: JSON.stringify({
         description: variant.notes || variant.promptSummary || "",
         favorite,
+        layoutDefinition: variant.layoutDefinition || null,
         name: layoutName,
         slideSpec: variant.slideSpec
       }),

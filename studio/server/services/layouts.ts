@@ -12,7 +12,9 @@ const schemaVersion = 1;
 const exchangeKind = "slideotter.layout";
 const packExchangeKind = "slideotter.layoutPack";
 const knownTreatments = new Set(["callout", "checklist", "focus", "standard", "steps", "strip"]);
-const supportedSlideTypes = new Set(["cover", "toc", "content", "summary"]);
+const supportedSlideTypes = new Set(["cover", "toc", "content", "summary", "photoGrid"]);
+const knownDefinitionTypes = new Set(["photoGridArrangement"]);
+const knownPhotoGridArrangements = new Set(["lead-image", "comparison", "evidence"]);
 const defaultLayouts = {
   layouts: []
 };
@@ -59,7 +61,7 @@ function normalizeLayout(layout) {
   const name = String(source.name || treatment).replace(/\s+/g, " ").trim();
   const id = String(source.id || slugPart(name, treatment)).replace(/[^a-z0-9-]/g, "-").replace(/^-+|-+$/g, "");
 
-  return {
+  const normalized: any = {
     schemaVersion,
     id: id || slugPart(treatment),
     name: name || treatment,
@@ -69,6 +71,49 @@ function normalizeLayout(layout) {
     createdAt: source.createdAt || now,
     updatedAt: source.updatedAt || now
   };
+
+  if (source.definition) {
+    normalized.definition = normalizeLayoutDefinition(source.definition, supportedTypes);
+  }
+
+  return normalized;
+}
+
+function normalizeLayoutDefinition(definition, supportedTypes = []) {
+  const source = definition && typeof definition === "object" && !Array.isArray(definition)
+    ? definition
+    : {};
+  const type = String(source.type || "").trim();
+  if (!knownDefinitionTypes.has(type)) {
+    throw new Error(`Layout definition type must be one of: ${Array.from(knownDefinitionTypes).join(", ")}`);
+  }
+
+  if (type === "photoGridArrangement") {
+    if (!supportedTypes.includes("photoGrid")) {
+      throw new Error("Photo-grid layout definitions must support photoGrid slides");
+    }
+
+    const arrangement = String(source.arrangement || "").trim();
+    if (!knownPhotoGridArrangements.has(arrangement)) {
+      throw new Error(`Photo-grid layout arrangement must be one of: ${Array.from(knownPhotoGridArrangements).join(", ")}`);
+    }
+
+    const mediaOrder = Array.isArray(source.mediaOrder)
+      ? source.mediaOrder
+        .map((value) => Number(value))
+        .filter((value) => Number.isInteger(value) && value >= 0 && value <= 3)
+      : [];
+
+    return {
+      arrangement,
+      captionRole: String(source.captionRole || "context").replace(/\s+/g, " ").trim() || "context",
+      mediaOrder: mediaOrder.length ? Array.from(new Set(mediaOrder)).slice(0, 4) : [],
+      schemaVersion,
+      type
+    };
+  }
+
+  throw new Error(`Unsupported layout definition type "${type}"`);
 }
 
 function normalizeLayoutCollectionId(layout, existingLayouts, preferredId = null) {
@@ -191,6 +236,7 @@ function createLayoutFromSlideSpec(slideSpec, fields: any = {}) {
     id: fields.id || `${slugPart(name, "layout")}-${Date.now().toString(36)}`,
     name,
     description: fields.description || `Saved ${treatment} treatment for ${slideType} slides.`,
+    definition: fields.definition,
     supportedTypes: [slideType],
     treatment,
     createdAt: now,
@@ -441,10 +487,56 @@ function applyLayoutToSlideSpec(slideSpec, layoutRef) {
     throw new Error(`Layout "${layout.name}" does not support slide type "${slideType}"`);
   }
 
-  return {
+  const nextSpec = {
     ...slideSpec,
     layout: layout.treatment
   };
+
+  if (
+    slideType === "photoGrid" &&
+    layout.definition &&
+    layout.definition.type === "photoGridArrangement" &&
+    Array.isArray(slideSpec.mediaItems)
+  ) {
+    const orderedItems = applyPhotoGridArrangement(slideSpec.mediaItems, layout.definition);
+    if (orderedItems.length >= 2) {
+      nextSpec.mediaItems = orderedItems;
+    }
+  }
+
+  return nextSpec;
+}
+
+function applyPhotoGridArrangement(mediaItems, definition) {
+  const items = Array.isArray(mediaItems) ? mediaItems.map((item) => ({ ...item })) : [];
+  if (!items.length) {
+    return [];
+  }
+
+  const used = new Set();
+  const ordered = [];
+  const order = Array.isArray(definition.mediaOrder) && definition.mediaOrder.length
+    ? definition.mediaOrder
+    : definition.arrangement === "comparison"
+      ? [1, 0, 2, 3]
+      : definition.arrangement === "evidence"
+        ? [2, 0, 1, 3]
+        : [0, 1, 2, 3];
+
+  order.forEach((index) => {
+    if (items[index] && !used.has(index)) {
+      ordered.push(items[index]);
+      used.add(index);
+    }
+  });
+
+  items.forEach((item, index) => {
+    if (!used.has(index)) {
+      ordered.push(item);
+    }
+  });
+
+  return ordered.slice(0, 4);
 }
 
 module.exports = {
@@ -460,6 +552,7 @@ module.exports = {
   deleteFavoriteLayout,
   getLayoutByRef,
   knownTreatments,
+  knownPhotoGridArrangements,
   readFavoriteLayouts,
   readLayouts,
   saveFavoriteLayout,
@@ -471,6 +564,7 @@ module.exports = {
     createLayoutPackExchangeDocument,
     readLayoutFromExchangeDocument,
     readLayoutsFromExchangeDocument,
+    normalizeLayoutDefinition,
     normalizeLayoutCollectionId,
     normalizeLayout
   }

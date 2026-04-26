@@ -7,7 +7,7 @@ const { buildIdeateSlidePrompts } = require("./llm/prompts.ts");
 const { getIdeateSlideResponseSchema } = require("./llm/schemas.ts");
 const { createStandaloneSlideHtml, withBrowser } = require("./dom-export.ts");
 const { getDomPreviewState } = require("./dom-preview.ts");
-const { readFavoriteLayouts, readLayouts } = require("./layouts.ts");
+const { applyLayoutToSlideSpec, readFavoriteLayouts, readLayouts } = require("./layouts.ts");
 const { getOutputConfig } = require("./output-config.ts");
 const { outputDir } = require("./paths.ts");
 const { getActivePresentationId } = require("./presentations.ts");
@@ -1501,9 +1501,16 @@ function createSummaryLayoutCandidates(currentSpec, layoutContext, options: any 
 function createPhotoGridLayoutCandidates(currentSpec, layoutContext, options: any = {}) {
   const modeLabel = describeVariantPersistence(options);
   const mediaItems = Array.isArray(currentSpec.mediaItems) ? currentSpec.mediaItems : [];
+  const fullOrder = mediaItems.map((_, index) => index).slice(0, 4);
 
   return [
     {
+      layoutDefinition: {
+        arrangement: "lead-image",
+        captionRole: "context",
+        mediaOrder: fullOrder,
+        type: "photoGridArrangement"
+      },
       label: "Lead image grid",
       notes: "Moves the first visual into the strongest position and keeps the set attached.",
       promptSummary: "Uses the current image set as a lead-image grid with a compact caption.",
@@ -1516,6 +1523,12 @@ function createPhotoGridLayoutCandidates(currentSpec, layoutContext, options: an
       })
     },
     {
+      layoutDefinition: {
+        arrangement: "comparison",
+        captionRole: "comparison",
+        mediaOrder: rotateItems(fullOrder, 1),
+        type: "photoGridArrangement"
+      },
       label: "Comparison grid",
       notes: "Rotates the visual order so adjacent images read as a comparison.",
       promptSummary: "Reorders the image set while keeping every existing media item.",
@@ -1528,6 +1541,12 @@ function createPhotoGridLayoutCandidates(currentSpec, layoutContext, options: an
       })
     },
     {
+      layoutDefinition: {
+        arrangement: "evidence",
+        captionRole: "evidence",
+        mediaOrder: rotateItems(fullOrder, mediaItems.length > 2 ? 2 : 1),
+        type: "photoGridArrangement"
+      },
       label: "Evidence grid",
       notes: "Frames the image set as grouped evidence with the strongest proof first.",
       promptSummary: "Reorders the image set and tightens the caption toward evidence.",
@@ -1543,11 +1562,13 @@ function createPhotoGridLayoutCandidates(currentSpec, layoutContext, options: an
     changeSummary: [
       `Reworked the photo grid toward a ${variant.label.toLowerCase()}.`,
       "Adjusted image order and caption emphasis while preserving the media item set.",
+      "Proposed a reusable photo-grid layout definition for the layout library.",
       "Kept the photo-grid family and validated two-to-four image constraint intact.",
       modeLabel
     ],
     generator: "local",
     label: variant.label,
+    layoutDefinition: variant.layoutDefinition,
     model: null,
     notes: variant.notes,
     promptSummary: variant.promptSummary,
@@ -1585,10 +1606,10 @@ function createLibraryLayoutCandidates(currentSpec, options: any = {}) {
       notes: layout.description || `Reuses the ${layout.treatment} layout treatment from the ${sourceName} layout library.`,
       promptSummary: `Applies saved ${sourceName} layout ${layout.name} to this ${slideType} slide.`,
       provider: "local",
-      slideSpec: validateSlideSpec({
-        ...currentSpec,
-        layout: layout.treatment
-      })
+      slideSpec: validateSlideSpec(applyLayoutToSlideSpec(
+        currentSpec,
+        `${sourceLabel}:${layout.id}`
+      ))
     }));
 }
 
@@ -4058,6 +4079,7 @@ async function materializeCandidatesToVariants(slideId, candidates, options: any
       generator: candidate.generator,
       kind: "generated",
       label: options.labelFormatter ? options.labelFormatter(candidate.label) : candidate.label,
+      layoutDefinition: candidate.layoutDefinition || null,
       model: candidate.model,
       notes: candidate.notes,
       operation: options.operation,
@@ -4086,6 +4108,9 @@ function createTransientVariant(options) {
     id: `candidate-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
     kind: options.kind || "generated",
     label: options.label,
+    layoutDefinition: options.layoutDefinition && typeof options.layoutDefinition === "object" && !Array.isArray(options.layoutDefinition)
+      ? options.layoutDefinition
+      : null,
     notes: options.notes || "",
     operation: options.operation || null,
     generator: options.generator || null,

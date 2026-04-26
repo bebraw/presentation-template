@@ -369,6 +369,7 @@ async function handleLayoutCandidateSave(req, res) {
     : `Saved from generated layout candidate "${name}".`;
   const deckSaved = saveLayoutFromSlideSpec(slideSpec, {
     description,
+    definition: body.layoutDefinition,
     name
   });
   let favoriteSaved = null;

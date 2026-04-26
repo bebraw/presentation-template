@@ -1109,9 +1109,31 @@ async function createLlmRedoLayoutCandidates(slide, currentSpec, source, context
   }
 
   return result.data.variants.map((variant) => {
-    const slideSpec = validateSlideSpec(variant.slideSpec);
     const declaredOldFamily = String(variant.oldFamily || currentSpec.type);
-    const declaredNewFamily = String(variant.newFamily || slideSpec.type);
+    const declaredNewFamily = String(variant.newFamily || (variant.slideSpec && variant.slideSpec.type) || currentSpec.type);
+    let repairedFamilyChange = false;
+    let slideSpec;
+
+    try {
+      slideSpec = validateSlideSpec(variant.slideSpec);
+    } catch (error) {
+      const repaired = repairLlmRedoFamilyCandidate(slide, currentSpec, context, declaredNewFamily, options);
+      if (repaired) {
+        slideSpec = repaired.slideSpec;
+        repairedFamilyChange = true;
+      } else {
+        slideSpec = validateSlideSpec(mergeLlmRedoSameFamilySpec(currentSpec, variant.slideSpec));
+      }
+    }
+
+    if (declaredNewFamily !== currentSpec.type && slideSpec.type === currentSpec.type) {
+      const repaired = repairLlmRedoFamilyCandidate(slide, currentSpec, context, declaredNewFamily, options);
+      if (repaired) {
+        slideSpec = repaired.slideSpec;
+        repairedFamilyChange = true;
+      }
+    }
+
     const oldFamily = currentSpec.type;
     const newFamily = slideSpec.type;
 
@@ -1119,6 +1141,9 @@ async function createLlmRedoLayoutCandidates(slide, currentSpec, source, context
     const preservedFields = Array.isArray(variant.preservedFields) ? variant.preservedFields.filter(Boolean) : [];
     const metadataCorrection = declaredOldFamily !== oldFamily || declaredNewFamily !== newFamily
       ? `Corrected LLM family metadata from ${declaredOldFamily} -> ${declaredNewFamily} to ${oldFamily} -> ${newFamily}.`
+      : "";
+    const repairSummary = repairedFamilyChange
+      ? `Repaired LLM ${declaredNewFamily} candidate with the validated local ${newFamily} family transform.`
       : "";
     const changeSummary = [
       oldFamily === newFamily
@@ -1130,7 +1155,7 @@ async function createLlmRedoLayoutCandidates(slide, currentSpec, source, context
       preservedFields.length
         ? `Preserved fields: ${preservedFields.slice(0, 6).join(", ")}.`
         : "Preserved the current slide title and core intent.",
-      metadataCorrection || sentence(variant.rationale, "Changed the layout family to improve the slide's reading path.", 18)
+      repairSummary || metadataCorrection || sentence(variant.rationale, "Changed the layout family to improve the slide's reading path.", 18)
     ];
 
     return {
@@ -1144,6 +1169,62 @@ async function createLlmRedoLayoutCandidates(slide, currentSpec, source, context
       slideSpec
     };
   });
+}
+
+function mergeLlmRedoSameFamilySpec(currentSpec, candidateSpec) {
+  const source = candidateSpec && typeof candidateSpec === "object" && !Array.isArray(candidateSpec)
+    ? candidateSpec
+    : {};
+  const merged = {
+    ...currentSpec,
+    ...source
+  };
+
+  Object.keys(currentSpec || {}).forEach((key) => {
+    const value = merged[key];
+    if (
+      value === null ||
+      value === undefined ||
+      (typeof value === "string" && !value.trim()) ||
+      (Array.isArray(value) && (!value.length || hasInvalidStructuredItems(value)))
+    ) {
+      merged[key] = currentSpec[key];
+    }
+  });
+
+  return merged;
+}
+
+function hasInvalidStructuredItems(items) {
+  return items.some((item) => {
+    if (!item || typeof item !== "object" || Array.isArray(item)) {
+      return true;
+    }
+
+    if (Object.hasOwn(item, "id") && !String(item.id || "").trim()) {
+      return true;
+    }
+
+    if (Object.hasOwn(item, "title") && !String(item.title || "").trim()) {
+      return true;
+    }
+
+    if (Object.hasOwn(item, "body") && !String(item.body || "").trim()) {
+      return true;
+    }
+
+    return false;
+  });
+}
+
+function repairLlmRedoFamilyCandidate(slide, currentSpec, context, declaredNewFamily, options: any = {}) {
+  if (!declaredNewFamily || declaredNewFamily === currentSpec.type) {
+    return null;
+  }
+
+  const structureContext = collectStructureContext(slide, currentSpec, context);
+  return createLocalFamilyChangeCandidates(currentSpec, structureContext, options)
+    .find((candidate) => candidate.slideSpec && candidate.slideSpec.type === declaredNewFamily) || null;
 }
 
 function normalizeSentence(value) {

@@ -163,6 +163,12 @@ Use this section for anything that does not fit one flow.
   - Result: passed.
   - Output summary: created a temporary four-slide deck through the browser staged-creation UI with Finnish visible-output constraints, hostile source text, and one starter image material. Generated slide-visible text passed prompt/copied-instruction checks. The temporary deck was cleaned up after the run.
   - Follow-up: the model did not attach the starter image to any generated slide and runtime source retrieval reported zero snippets in this browser run, so the next deterministic regression should focus on source/material propagation through the creation boundary rather than another leak-string corpus entry.
+- 2026-05-07 LM Studio browser creation fuzz, post-source-redaction rerun:
+  - Command: `npm run fuzz:lmstudio:browser`
+  - Provider/model: LM Studio, `qwen/qwen3.5-9b`
+  - Result: passed.
+  - Output summary: browser staged creation still completed a temporary four-slide deck after prompt-like source diagnostics were redacted from public runtime/source previews.
+  - Follow-up: deterministic coverage now checks hostile starter source text is not echoed through content-run state or final browser state, while starter material metadata still persists.
 
 ## Issue Template
 

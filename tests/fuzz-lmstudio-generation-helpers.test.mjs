@@ -38,6 +38,7 @@ test("LM Studio fuzz helpers format CLI help from scenario metadata", () => {
 
   assert.match(help, /Usage: npm run fuzz:lmstudio/);
   assert.match(help, /FUZZ_SCENARIOS=a,b/);
+  assert.match(help, /FUZZ_FAKE_PROVIDER=prompt-leak/);
   assert.match(help, /  - photo-grid-outline/);
   assert.match(help, /  - source-grounded-finnish/);
   assert.match(help, /  - prompt-leak-quarantine/);

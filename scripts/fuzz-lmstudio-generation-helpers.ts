@@ -39,6 +39,8 @@ export function formatFuzzHelp(scenarios: FuzzScenario[]): string {
     "  FUZZ_SCENARIOS=a,b       Run a comma-separated scenario list.",
     "  LMSTUDIO_BASE_URL=url    Override the LM Studio OpenAI-compatible base URL.",
     "  LMSTUDIO_MODEL=model     Use a specific loaded model instead of /models discovery.",
+    "  FUZZ_FAKE_PROVIDER=prompt-leak",
+    "                          Run the prompt leak containment scenario without LM Studio.",
     "",
     "Scenarios:",
     scenarioList

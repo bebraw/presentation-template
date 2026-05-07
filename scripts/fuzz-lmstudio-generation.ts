@@ -40,6 +40,34 @@ type FuzzScenario = NamedFuzzScenario & {
   incremental?: boolean;
 };
 
+type DraftedSlideSummary = JsonObject & {
+  media: boolean;
+  mediaItems: number;
+  title: unknown;
+  type: unknown;
+};
+
+type FuzzQuarantineScenarioResult = {
+  blockedByQuarantine: true;
+  blockedCode: string;
+  blockedFieldPath: string | null;
+  scenario: string;
+};
+
+type FuzzDraftScenarioResult = {
+  draftedSlides: DraftedSlideSummary[];
+  outlineTypes: Array<JsonObject & {
+    index: number;
+    title: unknown;
+    type: unknown;
+  }>;
+  photoGridCount: number;
+  scenario: string;
+  sourceSnippetCount: number;
+};
+
+type FuzzScenarioResult = FuzzDraftScenarioResult | FuzzQuarantineScenarioResult;
+
 function isJsonObject(value: unknown): value is JsonObject {
   return Boolean(value && typeof value === "object" && !Array.isArray(value));
 }
@@ -83,7 +111,7 @@ function material(id: string, title: string): FuzzMaterial {
   };
 }
 
-function slideSummary(slide: SlideSpec): JsonObject & { media: boolean; mediaItems: number; title: unknown; type: unknown } {
+function slideSummary(slide: SlideSpec): DraftedSlideSummary {
   return {
     media: Boolean(slide.media),
     mediaItems: Array.isArray(slide.mediaItems) ? slide.mediaItems.length : 0,
@@ -127,11 +155,11 @@ function assertFuzzDeckPlan(deckPlan: DeckPlan, scenarioName: string): void {
   }
 }
 
-async function runScenario(generation: GenerationModule, scenario: FuzzScenario): Promise<JsonObject> {
+async function runScenario(generation: GenerationModule, scenario: FuzzScenario): Promise<FuzzScenarioResult> {
   console.error(`Running ${scenario.name}...`);
   let outline: DeckPlanResponse;
   let deckPlan: DeckPlan;
-  let outlineTypes: JsonObject[];
+  let outlineTypes: FuzzDraftScenarioResult["outlineTypes"];
   let drafted: DraftedPresentation;
   try {
     outline = await generation.generateInitialDeckPlan(scenario.fields);

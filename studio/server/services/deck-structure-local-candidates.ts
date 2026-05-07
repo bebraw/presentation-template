@@ -257,7 +257,6 @@ export function createLocalDeckStructureCandidates(context: DeckContext): JsonOb
     createDeckWideAuthoringPlan(structureContext, {
       changeLead: "Rewrote the full deck around one explicit decision path so every live slide carries claim, proof, and next action language.",
       createSlideSpec: (currentContext: DeckStructureContext, details: DeckWideAuthoringDetails) => {
-        const objective = currentContext.objective;
         const audience = currentContext.audience;
         const baseSpec = details.currentSpec;
 
@@ -288,7 +287,7 @@ export function createLocalDeckStructureCandidates(context: DeckContext): JsonOb
                   title: "Decision"
                 },
                 {
-                  body: "Make the judging criteria visible so the audience knows how proof will be read.",
+                  body: "Name the criteria that connect each option to the proof.",
                   title: "Criteria"
                 },
                 {
@@ -298,7 +297,7 @@ export function createLocalDeckStructureCandidates(context: DeckContext): JsonOb
               ],
               eyebrow: "Decision",
               note: "Carry one claim, the evaluation criteria, and the next move through the whole deck.",
-              summary: `Frame the presentation as one decision-support path that helps ${audience} ${objective}.`
+              summary: `Frame the presentation as one decision-support path for ${audience}.`
             });
           case "toc":
             return rewriteTocSlideSpec(baseSpec, details.proposedIndex, details.proposedTitle, {
@@ -363,7 +362,7 @@ export function createLocalDeckStructureCandidates(context: DeckContext): JsonOb
                   title: "Approve the call"
                 },
                 {
-                  body: "Name the owner, timing, and apply step so the audience knows what happens next.",
+                  body: "Name the owner, timing, and apply step for the next move.",
                   title: "Assign the next move"
                 },
                 {
@@ -420,6 +419,7 @@ export function createLocalDeckStructureCandidates(context: DeckContext): JsonOb
       changeLead: "Rewrote the full deck as an operator-facing handoff so every slide carries maintenance, validation, and ownership language.",
       createSlideSpec: (currentContext: DeckStructureContext, details: DeckWideAuthoringDetails) => {
         const objective = currentContext.objective;
+        const audience = currentContext.audience;
         const baseSpec = details.currentSpec;
 
         switch (baseSpec.type) {
@@ -459,7 +459,7 @@ export function createLocalDeckStructureCandidates(context: DeckContext): JsonOb
               ],
               eyebrow: "Operator",
               note: "Treat the deck as a maintained system: source, runtime, preview, and validation stay connected.",
-              summary: `Frame the deck as an operator handoff that helps the next editor ${objective}.`
+              summary: `Frame the deck as an operator handoff for ${audience}.`
             });
           case "toc":
             return rewriteTocSlideSpec(baseSpec, details.proposedIndex, details.proposedTitle, {
@@ -483,7 +483,7 @@ export function createLocalDeckStructureCandidates(context: DeckContext): JsonOb
             });
           case "content":
             return rewriteContentSlideSpec(baseSpec, details.proposedIndex, details.proposedTitle, {
-              eyebrow: "Guardrails",
+              eyebrow: "Runtime checks",
               guardrails: [
                 {
                   body: `Keep edits scoped to the ${currentContext.slides.length} active slide files.`,

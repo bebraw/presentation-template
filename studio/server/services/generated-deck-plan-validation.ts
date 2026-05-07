@@ -1,5 +1,6 @@
 import { contentRoles, isSupportedSlideType, normalizeGeneratedSlideType, supportedPlanRoles, supportedSlideTypes } from "./generated-plan-repair.ts";
 import { cleanText, hasDanglingEnding, isKnownBadTranslation, isScaffoldLeak, isWeakLabel, normalizeVisibleText, repairKnownBadTranslations, requireVisibleText } from "./generated-text-hygiene.ts";
+import { isCopiedInstructionLikeText, isPromptLeakText } from "./visible-text-quality.ts";
 
 type JsonObject = Record<string, unknown>;
 
@@ -131,7 +132,7 @@ function deckPlanSlideSignature(planSlide: DeckPlanSlide): string {
 function firstVisibleDeckPlanValue(...values: unknown[]): string {
   for (const value of values) {
     const normalized = cleanText(repairKnownBadTranslations(value));
-    if (normalized && !isWeakLabel(normalized) && !isScaffoldLeak(normalized)) {
+    if (normalized && !isWeakLabel(normalized) && !isScaffoldLeak(normalized) && !isPromptLeakText(normalized) && !isCopiedInstructionLikeText(normalized)) {
       return normalized;
     }
   }
@@ -141,6 +142,12 @@ function firstVisibleDeckPlanValue(...values: unknown[]): string {
 
 function deckPlanText(value: unknown): string {
   return cleanText(repairKnownBadTranslations(value));
+}
+
+function assertNoPromptLikeDeckPlanText(value: unknown, fieldName: string): void {
+  if (isPromptLeakText(value) || isCopiedInstructionLikeText(value)) {
+    throw new Error(`${fieldName} contains prompt-like or copied instruction text.`);
+  }
 }
 
 function deriveDeckPlanIntent(slide: DeckPlanSlide): string {
@@ -249,9 +256,22 @@ export function collectDeckPlanIssues(plan: DeckPlan, slideCount: number): strin
   }
   try {
     requireVisibleText(plan.title, "deckPlan.title");
+    assertNoPromptLikeDeckPlanText(plan.title, "deckPlan.title");
   } catch (error) {
     issues.push(errorMessage(error));
   }
+
+  [
+    ["deckPlan.outline", plan.outline],
+    ["deckPlan.thesis", plan.thesis],
+    ["deckPlan.narrativeArc", plan.narrativeArc]
+  ].forEach(([fieldName, value]) => {
+    try {
+      assertNoPromptLikeDeckPlanText(value, String(fieldName));
+    } catch (error) {
+      issues.push(errorMessage(error));
+    }
+  });
 
   const seenSignatures = new Set<string>();
   slides.forEach((slide: DeckPlanSlide, index: number) => {
@@ -277,6 +297,7 @@ export function collectDeckPlanIssues(plan: DeckPlan, slideCount: number): strin
           if (hasDanglingEnding(value)) {
             throw new Error(`deckPlan.slides[${index}].${fieldName} appears incomplete.`);
           }
+          assertNoPromptLikeDeckPlanText(value, `deckPlan.slides[${index}].${fieldName}`);
         }
       } catch (error) {
         issues.push(errorMessage(error));

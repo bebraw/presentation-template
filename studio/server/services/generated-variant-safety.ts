@@ -1,15 +1,12 @@
 import { asRecord as asJsonObject } from "../../shared/json-utils.ts";
 import { validateSlideSpec } from "./slide-specs/index.ts";
-import { assertVisibleSlideTextQuality } from "./visible-text-quality.ts";
+import {
+  assertVisibleSlideTextQuality,
+  isCopiedInstructionLikeText,
+  isPromptLeakText
+} from "./visible-text-quality.ts";
 
 type SlideSpec = Record<string, unknown>;
-
-const unsafeGeneratedVariantTextPatterns: RegExp[] = [
-  /ignore\s+(?:all\s+)?(?:previous|prior|above)\s+instructions/iu,
-  /do\s+not\s+follow\s+(?:the\s+)?(?:system|developer|schema)/iu,
-  /<\s*script\b/iu,
-  /```/u
-];
 
 export function serializeSlideSpec(slideSpec: unknown): string {
   return `${JSON.stringify(slideSpec, null, 2)}\n`;
@@ -17,7 +14,7 @@ export function serializeSlideSpec(slideSpec: unknown): string {
 
 export function findUnsafeGeneratedVariantText(value: unknown, path = "slideSpec"): string | null {
   if (typeof value === "string") {
-    return unsafeGeneratedVariantTextPatterns.some((pattern) => pattern.test(value)) ? path : null;
+    return isCopiedInstructionLikeText(value) || isPromptLeakText(value) ? path : null;
   }
   if (Array.isArray(value)) {
     for (let index = 0; index < value.length; index += 1) {

@@ -5,7 +5,8 @@ import { formatFuzzHelp, selectedScenarioNames, selectScenarios } from "../scrip
 
 const scenarios = [
   { name: "photo-grid-outline" },
-  { name: "source-grounded-finnish" }
+  { name: "source-grounded-finnish" },
+  { name: "prompt-leak-quarantine" }
 ];
 
 test("LM Studio fuzz helpers select all scenarios by default", () => {
@@ -28,7 +29,7 @@ test("LM Studio fuzz helpers parse one or many selected scenarios", () => {
 test("LM Studio fuzz helpers report unknown scenario names", () => {
   assert.throws(
     () => selectScenarios(scenarios, ["missing"]),
-    /Unknown FUZZ_SCENARIO value: missing\. Known scenarios: photo-grid-outline, source-grounded-finnish/
+    /Unknown FUZZ_SCENARIO value: missing\. Known scenarios: photo-grid-outline, source-grounded-finnish, prompt-leak-quarantine/
   );
 });
 
@@ -39,4 +40,5 @@ test("LM Studio fuzz helpers format CLI help from scenario metadata", () => {
   assert.match(help, /FUZZ_SCENARIOS=a,b/);
   assert.match(help, /  - photo-grid-outline/);
   assert.match(help, /  - source-grounded-finnish/);
+  assert.match(help, /  - prompt-leak-quarantine/);
 });

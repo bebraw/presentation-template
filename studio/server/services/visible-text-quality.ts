@@ -12,12 +12,14 @@ import type { JsonObject, SlideItem } from "./generated-slide-types.ts";
 
 export type VisibleTextIssueCode =
   | "authoring-meta"
+  | "copied-instruction"
   | "dangling-fragment"
   | "ellipsis-truncation"
   | "fallback-scaffold"
   | "known-bad-translation"
   | "near-duplicate-visible-text"
   | "planning-language"
+  | "prompt-leak"
   | "schema-label"
   | "unsupported-bibliographic-claim"
   | "weak-label"
@@ -57,7 +59,7 @@ export class VisibleTextQualityError extends Error {
   constructor(label: string, issues: VisibleTextIssue[]) {
     const issue = issues[0];
     super(issue
-      ? `Visible text quarantine blocked ${label}: ${issue.code} at ${issue.fieldPath}: ${issue.text}`
+      ? `Visible text quarantine blocked ${label}: ${issue.code} at ${issue.fieldPath}`
       : `Visible text quarantine blocked ${label}.`);
     this.name = "VisibleTextQualityError";
     this.code = issue ? issue.code : "weak-label";
@@ -104,6 +106,26 @@ const semanticLengthLeakPatterns = [
   /\bconnects to the next slide\b/,
   /\bmoving forward\b/,
   /\bbefore the story moves on\b/
+];
+
+const promptLeakPatterns = [
+  /\b(?:system|developer|user|assistant)\s+(?:prompt|message|instruction|instructions)\b/,
+  /\b(?:developerprompt|systemprompt|userprompt|promptcontext|schemaname|response_format|json schema)\b/,
+  /\b(?:as an ai|you are chatgpt|you are an ai|large language model)\b/,
+  /\b(?:return|respond|output)\s+(?:only\s+)?(?:valid\s+)?json\b/,
+  /\b(?:use|follow|obey)\s+(?:the\s+)?(?:schema|developer instructions|system instructions)\b/,
+  /\b(?:do not|don't)\s+(?:mention|reveal|include|expose|show)\s+(?:the\s+)?(?:prompt|instructions|system message|developer message)\b/,
+  /\b(?:internal|hidden)\s+(?:prompt|instruction|instructions|context|message|messages)\b/
+];
+
+const copiedInstructionPatterns = [
+  /<\s*script\b/,
+  /```/,
+  /\bignore\s+(?:all\s+)?(?:previous|prior|above)\s+instructions\b/,
+  /\bdisregard\s+(?:all\s+)?(?:previous|prior|above)\s+instructions\b/,
+  /\boverride\s+(?:the\s+)?(?:system|developer|schema)\b/,
+  /\bdo\s+not\s+follow\s+(?:the\s+)?(?:system|developer|schema)\b/,
+  /\b(?:follow|execute|run)\s+(?:these|the following)\s+instructions\b/
 ];
 
 function comparableText(value: unknown): string {
@@ -195,6 +217,24 @@ export function isSemanticLengthLeak(value: unknown): boolean {
   return semanticLengthLeakPatterns.some((pattern) => pattern.test(normalized));
 }
 
+export function isPromptLeakText(value: unknown): boolean {
+  const text = normalizeVisibleText(value);
+  if (!text) {
+    return false;
+  }
+
+  return promptLeakPatterns.some((pattern) => pattern.test(text.toLowerCase()));
+}
+
+export function isCopiedInstructionLikeText(value: unknown): boolean {
+  const text = normalizeVisibleText(value);
+  if (!text) {
+    return false;
+  }
+
+  return copiedInstructionPatterns.some((pattern) => pattern.test(text.toLowerCase()));
+}
+
 export function classifyVisibleTextIssue(fieldEntry: VisibleTextField): VisibleTextIssue | null {
   const text = normalizeVisibleText(fieldEntry.value);
   if (!text) {
@@ -237,6 +277,26 @@ export function classifyVisibleTextIssue(fieldEntry: VisibleTextField): VisibleT
       fieldPath: fieldEntry.path,
       fieldRole: fieldEntry.role,
       message: "Visible text leaks authoring or review instructions.",
+      text
+    };
+  }
+
+  if (isPromptLeakText(text)) {
+    return {
+      code: "prompt-leak",
+      fieldPath: fieldEntry.path,
+      fieldRole: fieldEntry.role,
+      message: "Visible text leaks prompt, role, schema, or hidden instruction context.",
+      text
+    };
+  }
+
+  if (isCopiedInstructionLikeText(text)) {
+    return {
+      code: "copied-instruction",
+      fieldPath: fieldEntry.path,
+      fieldRole: fieldEntry.role,
+      message: "Visible text copied instruction-like or executable source content.",
       text
     };
   }

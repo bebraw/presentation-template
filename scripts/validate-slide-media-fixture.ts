@@ -72,7 +72,7 @@ const baseSlideSpec: FixtureSlideSpec = {
   eyebrow: "Fixture",
   summary: "A slide with an attached material.",
   signalsTitle: "Signals",
-  guardrailsTitle: "Guardrails",
+  guardrailsTitle: "Review checks",
   signals: [
     { id: "signal-1", title: "One", body: "First signal." },
     { id: "signal-2", title: "Two", body: "Second signal." },

@@ -3,8 +3,8 @@ import { isJsonObject, isSlideItem } from "./generated-slide-shape-guards.ts";
 import { validateSlideSpec } from "./slide-specs/index.ts";
 import type { GeneratedSlideSpec, JsonObject, SlideItem } from "./generated-slide-types.ts";
 import {
+  assertVisibleSlideTextQuality,
   collectVisibleItems,
-  collectVisibleTextIssues,
   visibleItemSignature
 } from "./visible-text-quality.ts";
 
@@ -23,30 +23,7 @@ function assertGeneratedSlideQuality(slideSpecs: GeneratedSlideSpec[]): Generate
   const seenItemSignatures = new Map<string, number>();
 
   slideSpecs.forEach((slideSpec: GeneratedSlideSpec, slideIndex: number) => {
-    const visibleIssues = collectVisibleTextIssues(slideSpec);
-    const weakLabels = visibleIssues
-      .filter((issue) => issue.code === "weak-label" || issue.code === "fallback-scaffold" || issue.code === "schema-label")
-      .map((issue) => issue.text);
-    if (weakLabels.length) {
-      throw new Error(`Generated slide ${slideIndex + 1} contains placeholder text: ${weakLabels.join(", ")}`);
-    }
-
-    const authoringMetaText = visibleIssues
-      .filter((issue) => issue.code === "authoring-meta" || issue.code === "planning-language")
-      .map((issue) => issue.text);
-    if (authoringMetaText.length) {
-      throw new Error(`Generated slide ${slideIndex + 1} contains authoring instructions as visible text: ${authoringMetaText.join(", ")}`);
-    }
-
-    const ellipsisText = visibleIssues.filter((issue) => issue.code === "ellipsis-truncation");
-    if (ellipsisText.length) {
-      throw new Error(`Generated slide ${slideIndex + 1} contains ellipsis-truncated text.`);
-    }
-
-    const danglingText = visibleIssues.filter((issue) => issue.code === "dangling-fragment");
-    if (danglingText.length) {
-      throw new Error(`Generated slide ${slideIndex + 1} contains incomplete visible text.`);
-    }
+    assertVisibleSlideTextQuality(slideSpec, `generated slide ${slideIndex + 1}`);
 
     const repeatedItemGroups = [
       Array.isArray(slideSpec.cards) ? slideSpec.cards.filter(isSlideItem) : [],
@@ -69,18 +46,6 @@ function assertGeneratedSlideQuality(slideSpecs: GeneratedSlideSpec[]): Generate
     });
     if (repeatedTitleItems.length) {
       throw new Error(`Generated slide ${slideIndex + 1} repeats the slide title as visible card content.`);
-    }
-
-    const fakeBibliographicClaims = visibleIssues.filter((issue) => issue.code === "unsupported-bibliographic-claim");
-    if (fakeBibliographicClaims.length) {
-      throw new Error(`Generated slide ${slideIndex + 1} contains unsourced bibliographic-looking claims.`);
-    }
-
-    const badTranslations = visibleIssues
-      .filter((issue) => issue.code === "known-bad-translation")
-      .map((issue) => issue.text);
-    if (badTranslations.length) {
-      throw new Error(`Generated slide ${slideIndex + 1} contains known bad translation text: ${badTranslations.join(", ")}`);
     }
 
     const slideSignature = normalizeVisibleText([

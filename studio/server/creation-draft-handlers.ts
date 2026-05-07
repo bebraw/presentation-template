@@ -10,6 +10,7 @@ import {
   listSavedThemes,
   savePresentationCreationDraft
 } from "./services/presentations.ts";
+import { sanitizeSourceRetrievalForRuntime } from "./services/sources.ts";
 
 type ServerRequest = http.IncomingMessage;
 type ServerResponse = http.ServerResponse;
@@ -261,7 +262,7 @@ export function createCreationDraftHandlers(deps: CreationDraftHandlerDependenci
       status: "completed"
     });
     runtimeState.lastError = null;
-    runtimeState.sourceRetrieval = result.retrieval || null;
+    runtimeState.sourceRetrieval = sanitizeSourceRetrievalForRuntime(result.retrieval);
     publishRuntimeState();
 
     createJsonResponse(res, 200, {
@@ -354,7 +355,7 @@ export function createCreationDraftHandlers(deps: CreationDraftHandlerDependenci
       status: "completed"
     });
     runtimeState.lastError = null;
-    runtimeState.sourceRetrieval = result.retrieval || null;
+    runtimeState.sourceRetrieval = sanitizeSourceRetrievalForRuntime(result.retrieval);
     publishRuntimeState();
 
     createJsonResponse(res, 200, {

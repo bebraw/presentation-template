@@ -14,7 +14,7 @@ import {
 } from "./services/presentations.ts";
 import { generatePresentationFromDeckPlanIncremental } from "./services/presentation-generation.ts";
 import { validateSlideSpec } from "./services/slide-specs/index.ts";
-import { createSource } from "./services/sources.ts";
+import { sanitizeSourceRetrievalForRuntime } from "./services/sources.ts";
 import type { ContentRunHelpers } from "./creation-content-run-helpers.ts";
 import type {
   ContentRunPatch,
@@ -162,7 +162,7 @@ function createPresentationDraftContentRetryHandler(deps: CreationContentRunRetr
         failedSlideIndex: null,
         id: runId,
         materials: run.materials || [],
-        sourceText: run.sourceText || "",
+        sourceCount: run.sourceCount || 0,
         slideCount,
         slides: nextSlides,
         startedAt: timestamp,
@@ -185,10 +185,10 @@ function createPresentationDraftContentRetryHandler(deps: CreationContentRunRetr
         const draftFields: GenerationDraftFields = {
           ...normalizeCreationFields(isJsonObject(current) ? jsonObjectOrEmpty(current.fields) : {}),
           includeActiveMaterials: false,
-          includeActiveSources: false,
+          includeActiveSources: true,
           onProgress: undefined,
           presentationMaterials: generationMaterials,
-          presentationSourceText: String(run.sourceText || "")
+          presentationSourceText: ""
         };
 
         const contentRunState = (next: ContentRunPatch): unknown => {
@@ -333,13 +333,6 @@ function createPresentationDraftContentRetryHandler(deps: CreationContentRunRetr
           }
         }
 
-        if (run.sourceText) {
-          await createSource({
-            text: run.sourceText,
-            title: "Starter sources"
-          });
-        }
-
         const materialUrlById = new Map(importedMaterials.map((material) => [String(material.id || ""), material.url]));
         const slideSpecs = Array.isArray(generated.slideSpecs)
           ? generated.slideSpecs.map((slideSpec: unknown) => replaceMaterialUrlsInSlideSpec(slideSpec, materialUrlById))
@@ -367,7 +360,7 @@ function createPresentationDraftContentRetryHandler(deps: CreationContentRunRetr
           status: "completed"
         });
         runtimeState.lastError = null;
-        runtimeState.sourceRetrieval = generated.retrieval || null;
+        runtimeState.sourceRetrieval = sanitizeSourceRetrievalForRuntime(generated.retrieval);
         publishRuntimeState();
         const resetDraft = clearPresentationCreationDraft();
         publishCreationDraftUpdate(resetDraft);

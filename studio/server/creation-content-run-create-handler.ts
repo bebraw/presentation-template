@@ -19,7 +19,7 @@ import {
 import { createLiveContentRunPlaceholderDeck } from "./services/creation-content-run-decks.ts";
 import { generatePresentationFromDeckPlanIncremental } from "./services/presentation-generation.ts";
 import { validateSlideSpec } from "./services/slide-specs/index.ts";
-import { createSource } from "./services/sources.ts";
+import { createSource, sanitizeSourceRetrievalForRuntime } from "./services/sources.ts";
 import type { ContentRunHelpers } from "./creation-content-run-helpers.ts";
 import type {
   ContentRunPatch,
@@ -294,16 +294,16 @@ function createPresentationDraftCreateHandler(deps: CreationContentRunCreateHand
 
         contentRunState({
           materials: generationMaterials,
-          sourceText: starterSourceText
+          sourceCount: starterSourceText ? 1 : 0
         });
 
         const draftFields: GenerationDraftFields = {
           ...resolvedFields,
           includeActiveMaterials: false,
-          includeActiveSources: false,
+          includeActiveSources: true,
           onProgress: undefined,
           presentationMaterials: generationMaterials,
-          presentationSourceText: starterSourceText
+          presentationSourceText: ""
         };
 
         const setSlideState = (index: number, next: ContentRunSlide): unknown => {
@@ -405,7 +405,7 @@ function createPresentationDraftCreateHandler(deps: CreationContentRunCreateHand
           status: "completed"
         });
         runtimeState.lastError = null;
-        runtimeState.sourceRetrieval = generated.retrieval || null;
+        runtimeState.sourceRetrieval = sanitizeSourceRetrievalForRuntime(generated.retrieval);
         publishRuntimeState();
         const resetDraft = clearPresentationCreationDraft();
         publishCreationDraftUpdate(resetDraft);

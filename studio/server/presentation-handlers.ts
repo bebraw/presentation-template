@@ -16,7 +16,7 @@ import {
 } from "./services/presentations.ts";
 import { generateInitialPresentation } from "./services/presentation-generation.ts";
 import { publishCreationDraftUpdate } from "./runtime-state.ts";
-import { createSource } from "./services/sources.ts";
+import { createSource, sanitizeSourceRetrievalForRuntime } from "./services/sources.ts";
 
 type ServerRequest = http.IncomingMessage;
 type ServerResponse = http.ServerResponse;
@@ -193,7 +193,7 @@ export function createPresentationHandlers(deps: PresentationHandlerDependencies
         status: "completed"
       });
       runtimeState.lastError = null;
-      runtimeState.sourceRetrieval = generated.retrieval || null;
+      runtimeState.sourceRetrieval = sanitizeSourceRetrievalForRuntime(generated.retrieval);
       publishRuntimeState();
       createJsonResponse(res, 200, createPresentationPayload({ presentation }));
     } catch (error) {
@@ -265,7 +265,7 @@ export function createPresentationHandlers(deps: PresentationHandlerDependencies
       status: "completed"
     });
     runtimeState.lastError = null;
-    runtimeState.sourceRetrieval = generated.retrieval || null;
+    runtimeState.sourceRetrieval = sanitizeSourceRetrievalForRuntime(generated.retrieval);
     publishRuntimeState();
     createJsonResponse(res, 200, createPresentationPayload({ presentation }));
   }

@@ -6,6 +6,10 @@ import {
   ensureAllowedDir,
   writeAllowedJson
 } from "./write-boundary.ts";
+import {
+  isCopiedInstructionLikeText,
+  isPromptLeakText
+} from "./visible-text-quarantine-rules.ts";
 
 const maxSourceChars = 60000;
 const maxFetchBytes = 256000;
@@ -64,6 +68,18 @@ const fetchLanguageNameTags: Record<string, string> = {
   svenska: "sv",
   swedish: "sv"
 };
+
+function isRecord(value: unknown): value is Record<string, unknown> {
+  return Boolean(value && typeof value === "object" && !Array.isArray(value));
+}
+
+function redactPromptLikeSourceText(text: unknown): string {
+  const sourceText = String(text || "");
+  if (isPromptLeakText(sourceText) || isCopiedInstructionLikeText(sourceText)) {
+    return "[redacted source instruction]";
+  }
+  return sourceText;
+}
 const commonLanguagePathSegments = new Set([
   ...Object.values(fetchLanguageNameTags),
   "en-gb",
@@ -353,15 +369,39 @@ function isSourceFetchWarningChunk(text: unknown): boolean {
 }
 
 function sourceSummary(source: SourceRecord): SourceSummary {
-  const chunks = chunkText(source.text);
+  const publicText = redactPromptLikeSourceText(source.text);
+  const chunks = chunkText(publicText);
   return {
     chunkCount: chunks.length,
     createdAt: source.createdAt,
     id: source.id,
-    preview: source.text.slice(0, 220),
+    preview: publicText.slice(0, 220),
     title: source.title,
     url: source.url,
     wordCount: countWords(source.text)
+  };
+}
+
+function sanitizeSourceRetrievalForRuntime(retrieval: unknown): unknown {
+  if (!isRecord(retrieval)) {
+    return retrieval || null;
+  }
+
+  const snippets = Array.isArray(retrieval.snippets)
+    ? retrieval.snippets.map((snippet) => {
+        if (!isRecord(snippet)) {
+          return snippet;
+        }
+        return {
+          ...snippet,
+          text: redactPromptLikeSourceText(snippet.text)
+        };
+      })
+    : retrieval.snippets;
+
+  return {
+    ...retrieval,
+    snippets
   };
 }
 
@@ -768,5 +808,6 @@ export {
   fetchSourceTextFromUrl,
   getGenerationSourceContext,
   listSources,
-  retrieveSourceSnippets
+  retrieveSourceSnippets,
+  sanitizeSourceRetrievalForRuntime
 };

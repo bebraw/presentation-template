@@ -157,6 +157,12 @@ Use this section for anything that does not fit one flow.
   - Result: passed.
   - Output summary: generated four drafted slides with distinct non-generic titles, preserved one `photoGrid` slide, and attached three media items to that drafted photo grid.
   - Follow-up: the stronger deterministic fuzz assertions also passed against the real provider for the media-heavy scenario.
+- 2026-05-07 LM Studio browser creation fuzz, hostile source/product path:
+  - Command: `npm run fuzz:lmstudio:browser`
+  - Provider/model: LM Studio, `qwen/qwen3.5-9b`
+  - Result: passed.
+  - Output summary: created a temporary four-slide deck through the browser staged-creation UI with Finnish visible-output constraints, hostile source text, and one starter image material. Generated slide-visible text passed prompt/copied-instruction checks. The temporary deck was cleaned up after the run.
+  - Follow-up: the model did not attach the starter image to any generated slide and runtime source retrieval reported zero snippets in this browser run, so the next deterministic regression should focus on source/material propagation through the creation boundary rather than another leak-string corpus entry.
 
 ## Issue Template
 

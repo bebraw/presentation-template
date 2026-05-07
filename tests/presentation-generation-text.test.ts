@@ -31,6 +31,7 @@ const {
   areNearDuplicateVisibleText
 } = require("../studio/server/services/generated-text-hygiene.ts");
 const {
+  collectDeckPlanIssueDetails,
   normalizeDeckPlanForValidation,
   validateDeckPlan
 } = require("../studio/server/services/generated-deck-plan-validation.ts");
@@ -1509,10 +1510,12 @@ test("deck plan validation rejects prompt-like outline text before review", () =
     title: "Prompt boundary"
   }, 2);
 
-  assert.throws(
-    () => validateDeckPlan(normalizedPlan, 2),
-    /prompt-like or copied instruction text/
+  const issues = collectDeckPlanIssueDetails(normalizedPlan, 2);
+  assert.ok(
+    issues.some((issue: { code?: unknown }) => issue.code === "prompt-leak"),
+    "prompt-like outline or slide text should be reported with a prompt-leak issue code"
   );
+  assert.throws(() => validateDeckPlan(normalizedPlan, 2));
 });
 
 test("LLM presentation generation preserves non-English visible structure", async () => {

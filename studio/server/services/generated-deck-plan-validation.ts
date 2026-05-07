@@ -1,5 +1,5 @@
 import { contentRoles, isSupportedSlideType, normalizeGeneratedSlideType, supportedPlanRoles, supportedSlideTypes } from "./generated-plan-repair.ts";
-import { cleanText, hasDanglingEnding, isKnownBadTranslation, isScaffoldLeak, isWeakLabel, normalizeVisibleText, repairKnownBadTranslations, requireVisibleText } from "./generated-text-hygiene.ts";
+import { cleanText, hasDanglingEnding, isKnownBadTranslation, isScaffoldLeak, isWeakLabel, normalizeVisibleText, repairKnownBadTranslations } from "./generated-text-hygiene.ts";
 import { isCopiedInstructionLikeText, isPromptLeakText } from "./visible-text-quarantine-rules.ts";
 
 type JsonObject = Record<string, unknown>;
@@ -85,29 +85,25 @@ function collectProvidedUrls(fields: GenerationFieldsForDeckPlan = {}): string[]
   ].flatMap(extractUrls);
 }
 
-function errorMessage(error: unknown): string {
-  return error instanceof Error ? error.message : String(error);
-}
-
 function deckPlanIssue(code: DeckPlanIssueCode, message: string): DeckPlanIssue {
   return { code, message };
 }
 
-function issueFromValidationError(error: unknown): DeckPlanIssue {
-  const message = errorMessage(error);
-  if (/prompt-like or copied instruction text/.test(message)) {
-    return deckPlanIssue("prompt-leak", message);
+function visibleDeckPlanIssue(value: unknown, fieldName: string): DeckPlanIssue | null {
+  const text = cleanText(value);
+  if (!text || isWeakLabel(text)) {
+    return deckPlanIssue("missing-visible-text", `Generated presentation plan is missing usable ${fieldName}.`);
   }
-  if (/known bad translation/.test(message)) {
-    return deckPlanIssue("known-bad-translation", message);
+  if (isKnownBadTranslation(value)) {
+    return deckPlanIssue("known-bad-translation", `${fieldName} contains a known bad translation.`);
   }
-  if (/appears incomplete/.test(message)) {
-    return deckPlanIssue("dangling-fragment", message);
+  if (hasDanglingEnding(value)) {
+    return deckPlanIssue("dangling-fragment", `${fieldName} appears incomplete.`);
   }
-  if (/must be one of:/.test(message)) {
-    return deckPlanIssue("unsupported-slide-type", message);
+  if (isPromptLeakText(value) || isCopiedInstructionLikeText(value)) {
+    return deckPlanIssue("prompt-leak", `${fieldName} contains prompt-like or copied instruction text.`);
   }
-  return deckPlanIssue("missing-visible-text", message);
+  return null;
 }
 
 export function isDeckPlanSlide(value: unknown): value is DeckPlanSlide {
@@ -179,12 +175,6 @@ function firstVisibleDeckPlanValue(...values: unknown[]): string {
 
 function deckPlanText(value: unknown): string {
   return cleanText(repairKnownBadTranslations(value));
-}
-
-function assertNoPromptLikeDeckPlanText(value: unknown, fieldName: string): void {
-  if (isPromptLeakText(value) || isCopiedInstructionLikeText(value)) {
-    throw new Error(`${fieldName} contains prompt-like or copied instruction text.`);
-  }
 }
 
 function deriveDeckPlanIntent(slide: DeckPlanSlide): string {
@@ -291,11 +281,9 @@ export function collectDeckPlanIssueDetails(plan: DeckPlan, slideCount: number):
   if (slides.length !== slideCount) {
     issues.push(deckPlanIssue("slide-count", `Plan has ${slides.length} slides but needs exactly ${slideCount}.`));
   }
-  try {
-    requireVisibleText(plan.title, "deckPlan.title");
-    assertNoPromptLikeDeckPlanText(plan.title, "deckPlan.title");
-  } catch (error) {
-    issues.push(issueFromValidationError(error));
+  const titleIssue = visibleDeckPlanIssue(plan.title, "deckPlan.title");
+  if (titleIssue) {
+    issues.push(titleIssue);
   }
 
   [
@@ -303,10 +291,8 @@ export function collectDeckPlanIssueDetails(plan: DeckPlan, slideCount: number):
     ["deckPlan.thesis", plan.thesis],
     ["deckPlan.narrativeArc", plan.narrativeArc]
   ].forEach(([fieldName, value]) => {
-    try {
-      assertNoPromptLikeDeckPlanText(value, String(fieldName));
-    } catch (error) {
-      issues.push(issueFromValidationError(error));
+    if (isPromptLeakText(value) || isCopiedInstructionLikeText(value)) {
+      issues.push(deckPlanIssue("prompt-leak", `${fieldName} contains prompt-like or copied instruction text.`));
     }
   });
 
@@ -321,23 +307,15 @@ export function collectDeckPlanIssueDetails(plan: DeckPlan, slideCount: number):
       ["type", slide && slide.type],
       ["visualNeed", slide && slide.visualNeed]
     ].forEach(([fieldName, value]) => {
-      try {
-        if (fieldName === "type") {
-          if (!isSupportedSlideType(value)) {
-            throw new Error(`deckPlan.slides[${index}].type must be one of: ${supportedSlideTypes.join(", ")}.`);
-          }
-        } else {
-          requireVisibleText(value, `deckPlan.slides[${index}].${fieldName}`);
-          if (isKnownBadTranslation(value)) {
-            throw new Error(`deckPlan.slides[${index}].${fieldName} contains a known bad translation.`);
-          }
-          if (hasDanglingEnding(value)) {
-            throw new Error(`deckPlan.slides[${index}].${fieldName} appears incomplete.`);
-          }
-          assertNoPromptLikeDeckPlanText(value, `deckPlan.slides[${index}].${fieldName}`);
+      if (fieldName === "type") {
+        if (!isSupportedSlideType(value)) {
+          issues.push(deckPlanIssue("unsupported-slide-type", `deckPlan.slides[${index}].type must be one of: ${supportedSlideTypes.join(", ")}.`));
         }
-      } catch (error) {
-        issues.push(issueFromValidationError(error));
+      } else {
+        const issue = visibleDeckPlanIssue(value, `deckPlan.slides[${index}].${fieldName}`);
+        if (issue) {
+          issues.push(issue);
+        }
       }
     });
 

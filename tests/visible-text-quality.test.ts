@@ -145,7 +145,7 @@ test("visible text quarantine errors expose structured issue diagnostics", () =>
       const diagnostic = error as {
         code?: unknown;
         fieldPath?: unknown;
-        issues?: Array<{ code?: unknown; fieldPath?: unknown }>;
+        issues?: Array<{ code?: unknown; fieldPath?: unknown; text?: unknown }>;
         name?: unknown;
       };
       assert.equal(diagnostic.name, "VisibleTextQualityError");
@@ -153,6 +153,7 @@ test("visible text quarantine errors expose structured issue diagnostics", () =>
       assert.equal(diagnostic.fieldPath, "guardrails.0.title");
       assert.equal(diagnostic.issues?.[0]?.code, "authoring-meta");
       assert.equal(diagnostic.issues?.[0]?.fieldPath, "guardrails.0.title");
+      assert.equal(diagnostic.issues?.[0]?.text, undefined);
       return true;
     }
   );

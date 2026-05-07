@@ -67,7 +67,7 @@ export class VisibleTextQualityError extends Error {
   code: VisibleTextIssueCode;
   fieldPath: string;
   fieldRole: VisibleFieldRole;
-  issues: VisibleTextIssue[];
+  issues: PublicVisibleTextIssue[];
   publicIssues: PublicVisibleTextIssue[];
 
   constructor(label: string, issues: VisibleTextIssue[]) {
@@ -79,8 +79,8 @@ export class VisibleTextQualityError extends Error {
     this.code = issue ? issue.code : "weak-label";
     this.fieldPath = issue ? issue.fieldPath : "";
     this.fieldRole = issue ? issue.fieldRole : "body";
-    this.issues = issues;
     this.publicIssues = issues.map(({ text: _text, ...publicIssue }) => publicIssue);
+    this.issues = this.publicIssues;
   }
 
   toJSON(): {

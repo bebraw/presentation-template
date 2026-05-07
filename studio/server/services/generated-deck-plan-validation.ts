@@ -65,6 +65,10 @@ type GenerationFieldsForDeckPlan = JsonObject & {
   title?: unknown;
 };
 
+function isJsonObject(value: unknown): value is JsonObject {
+  return Boolean(value && typeof value === "object" && !Array.isArray(value));
+}
+
 function extractUrls(value: unknown): string[] {
   return String(value || "").match(/https?:\/\/[^\s),\]]+/g) || [];
 }
@@ -216,11 +220,11 @@ function deriveDeckPlanVisualNeed(_fields: GenerationFieldsForDeckPlan, slide: D
 }
 
 export function normalizeDeckPlanForValidation(fields: GenerationFieldsForDeckPlan, plan: unknown, slideCount: number): DeckPlan {
-  if (!plan || typeof plan !== "object" || Array.isArray(plan)) {
+  if (!isJsonObject(plan)) {
     return { slides: [] };
   }
 
-  const sourcePlan = plan as JsonObject;
+  const sourcePlan = plan;
 
   if (!Array.isArray(sourcePlan.slides)) {
     return {

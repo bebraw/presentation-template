@@ -62,6 +62,7 @@
     "desktop:pack": "npm run package:build && npm run desktop:browsers && electron-builder --mac --dir",
     "desktop:dist": "npm run package:build && npm run desktop:browsers && electron-builder --mac",
     "fuzz:fixtures": "FUZZ_FAKE_PROVIDER=fixtures node scripts/fuzz-lmstudio-generation.ts",
+    "fuzz:lmstudio:browser": "npm run studio:client:build && node scripts/fuzz-lmstudio-browser-creation.ts",
     "fuzz:lmstudio": "node scripts/fuzz-lmstudio-generation.ts",
     "prepack": "npm run package:build",
     "prepare": "node ./scripts/setup-git-hooks.mts",

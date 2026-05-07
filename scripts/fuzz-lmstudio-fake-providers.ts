@@ -1,30 +1,8 @@
 import { assertVisibleSlideTextQuality } from "../studio/server/services/visible-text-quality.ts";
 import type { DeckPlan } from "../studio/server/services/generated-deck-plan-validation.ts";
+import type { GenerationModule, DraftedPresentation } from "./fuzz-lmstudio-generation-types.ts";
 
-type JsonObject = Record<string, unknown>;
-
-type FuzzFields = JsonObject;
-
-type DeckPlanResponse = JsonObject & {
-  plan?: DeckPlan | undefined;
-};
-
-type SlideSpec = JsonObject;
-
-type DraftedPresentation = JsonObject & {
-  retrieval?: {
-    snippets?: unknown;
-  };
-  slideSpecs: SlideSpec[];
-};
-
-export type FakeGenerationModule = {
-  generateInitialDeckPlan: (fields: FuzzFields) => Promise<DeckPlanResponse>;
-  generatePresentationFromDeckPlan: (fields: FuzzFields, deckPlan: DeckPlan, deckPlanResponse: DeckPlanResponse) => Promise<DraftedPresentation>;
-  generatePresentationFromDeckPlanIncremental: (fields: FuzzFields, deckPlan: DeckPlan, deckPlanResponse: DeckPlanResponse) => Promise<DraftedPresentation>;
-};
-
-export function createFakePromptLeakGeneration(): FakeGenerationModule {
+export function createFakePromptLeakGeneration(): GenerationModule {
   const fakeDeckPlan: DeckPlan = {
     outline: "1. Prompt boundary\n2. Draft quarantine",
     slides: [

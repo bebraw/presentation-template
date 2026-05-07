@@ -1,6 +1,15 @@
 import { formatFuzzHelp, promptLeakFakeProvider, selectedFakeProvider, selectedScenarioNames, selectScenarios } from "./fuzz-lmstudio-generation-helpers.ts";
 import { createFakePromptLeakGeneration } from "./fuzz-lmstudio-fake-providers.ts";
 import type { FuzzScenario as NamedFuzzScenario } from "./fuzz-lmstudio-generation-helpers.ts";
+import type {
+  DeckPlanResponse,
+  DraftedPresentation,
+  FuzzFields,
+  FuzzMaterial,
+  GenerationModule,
+  JsonObject,
+  SlideSpec
+} from "./fuzz-lmstudio-generation-types.ts";
 import {
   collectVisibleTextFields,
   collectVisibleTextIssues,
@@ -16,62 +25,6 @@ import type { DeckPlan } from "../studio/server/services/generated-deck-plan-val
 
 const lmStudioBaseUrl = (process.env.LMSTUDIO_BASE_URL || process.env.STUDIO_LLM_BASE_URL || "http://127.0.0.1:1234/v1").replace(/\/+$/, "");
 const fakeProviderMode = selectedFakeProvider();
-
-type JsonObject = Record<string, unknown>;
-
-type FuzzMaterial = {
-  alt: string;
-  id: string;
-  title: string;
-  url: string;
-};
-
-type FuzzFields = JsonObject & {
-  audience: string;
-  constraints: string;
-  objective: string;
-  presentationMaterials?: FuzzMaterial[];
-  presentationSources?: Array<JsonObject & {
-    id: string;
-    text: string;
-    title: string;
-    url: string;
-  }>;
-  targetSlideCount: number;
-  title: string;
-  tone: string;
-};
-
-type DeckPlanResponse = JsonObject & {
-  plan?: DeckPlan | undefined;
-};
-
-type SlideSpec = JsonObject & {
-  bullets?: Array<JsonObject>;
-  cards?: Array<JsonObject>;
-  guardrails?: Array<JsonObject>;
-  media?: unknown;
-  mediaItems?: unknown;
-  note?: unknown;
-  resources?: Array<JsonObject>;
-  signals?: Array<JsonObject>;
-  summary?: unknown;
-  title?: unknown;
-  type?: unknown;
-};
-
-type DraftedPresentation = JsonObject & {
-  retrieval?: {
-    snippets?: unknown;
-  };
-  slideSpecs: SlideSpec[];
-};
-
-type GenerationModule = {
-  generateInitialDeckPlan: (fields: FuzzFields) => Promise<DeckPlanResponse>;
-  generatePresentationFromDeckPlan: (fields: FuzzFields, deckPlan: DeckPlan, deckPlanResponse: DeckPlanResponse) => Promise<DraftedPresentation>;
-  generatePresentationFromDeckPlanIncremental: (fields: FuzzFields, deckPlan: DeckPlan, deckPlanResponse: DeckPlanResponse) => Promise<DraftedPresentation>;
-};
 
 type LmStudioModelsResponse = JsonObject & {
   data?: Array<JsonObject & {

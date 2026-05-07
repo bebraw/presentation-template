@@ -2,6 +2,7 @@ import { formatFuzzHelp, selectedScenarioNames, selectScenarios } from "./fuzz-l
 import type { FuzzScenario as NamedFuzzScenario } from "./fuzz-lmstudio-generation-helpers.ts";
 import {
   assertVisibleSlideTextQuality,
+  collectVisibleTextFields,
   collectVisibleTextIssues,
   type VisibleTextIssue
 } from "../studio/server/services/visible-text-quality.ts";
@@ -194,18 +195,6 @@ function slideSummary(slide: SlideSpec): JsonObject & { media: boolean; mediaIte
   };
 }
 
-function collectVisibleText(slide: SlideSpec): string[] {
-  return [
-    slide.title,
-    slide.summary,
-    slide.note,
-    ...(["cards", "signals", "guardrails", "bullets", "resources"] as const).flatMap((field) => {
-      const items = Array.isArray(slide[field]) ? slide[field] : [];
-      return items.flatMap((item) => [item.title, item.body]);
-    })
-  ].filter((value): value is string => typeof value === "string" && Boolean(value.trim()));
-}
-
 function assertFuzzVisibleText(slides: SlideSpec[], scenarioName: string): void {
   const promptLeakIssues = slides
     .flatMap((slide, slideIndex) => collectVisibleTextIssues(slide).map((issue: VisibleTextIssue) => ({
@@ -219,7 +208,9 @@ function assertFuzzVisibleText(slides: SlideSpec[], scenarioName: string): void 
   }
 
   const badTranslation = slides
-    .flatMap(collectVisibleText)
+    .flatMap((slide) => collectVisibleTextFields(slide))
+    .map((fieldEntry) => fieldEntry.value)
+    .filter((value): value is string => typeof value === "string" && Boolean(value.trim()))
     .find((text) => /\buloste(?:en|tta|et|iden|ista|isiin|e)?\b/i.test(text));
   if (badTranslation) {
     throw new Error(`${scenarioName} produced known bad translation text: ${badTranslation}`);

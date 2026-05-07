@@ -95,7 +95,7 @@ Do not reintroduce a second long-lived rendering path beside the shared DOM runt
 ## Next Focus
 
 The next useful work should come from real studio usage, especially across multiple presentations and media-heavy decks.
-When generation or media-family behavior changes and a local LM Studio model is loaded, run `npm run fuzz:lmstudio` as an optional real-provider check; keep CI on deterministic mocked validation.
+When generation or media-family behavior changes and a local LM Studio model is loaded, run `npm run fuzz:lmstudio` as an optional real-provider check; keep CI on deterministic mocked validation. For context-leak hardening, run `FUZZ_SCENARIO=prompt-leak-quarantine npm run fuzz:lmstudio` against LM Studio or `FUZZ_FAKE_PROVIDER=prompt-leak npm run fuzz:lmstudio` for the deterministic containment check; a quarantine block is an expected pass when no prompt-like text reaches visible output.
 
 1. Keep layout growth aligned with ADR 0049: improve user-defined layout authoring, validation, and reuse before adding new built-in layouts.
 2. Evolve source retrieval from observed generation misses. Current retrieval is intentionally lightweight keyword matching over presentation-scoped source chunks. Add embeddings, ranking controls, citation placement, or global source staging only when real decks show where the simpler model fails.

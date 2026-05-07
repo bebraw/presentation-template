@@ -1,5 +1,6 @@
 import { formatFuzzHelp, promptLeakFakeProvider, selectedFakeProvider, selectedScenarioNames, selectScenarios } from "./fuzz-lmstudio-generation-helpers.ts";
 import { createFakePromptLeakGeneration } from "./fuzz-lmstudio-fake-providers.ts";
+import { FuzzDeckPlanQuarantineError, promptLeakQuarantineResult } from "./fuzz-lmstudio-quarantine.ts";
 import type { FuzzScenario as NamedFuzzScenario } from "./fuzz-lmstudio-generation-helpers.ts";
 import type {
   DeckPlanResponse,
@@ -13,7 +14,6 @@ import type {
 import {
   collectVisibleTextFields,
   collectVisibleTextIssues,
-  VisibleTextQualityError,
   type VisibleTextIssue
 } from "../studio/server/services/visible-text-quality.ts";
 import {
@@ -39,35 +39,6 @@ type FuzzScenario = NamedFuzzScenario & {
   fields: FuzzFields;
   incremental?: boolean;
 };
-
-class FuzzDeckPlanQuarantineError extends Error {
-  code = "deck-plan-prompt-leak";
-
-  constructor(scenarioName: string) {
-    super(`${scenarioName} produced prompt-like leaked text in the deck plan.`);
-    this.name = "FuzzDeckPlanQuarantineError";
-  }
-}
-
-function promptLeakQuarantineResult(error: unknown): JsonObject | null {
-  if (error instanceof VisibleTextQualityError && (error.code === "prompt-leak" || error.code === "copied-instruction")) {
-    return {
-      blockedByQuarantine: true,
-      blockedCode: error.code,
-      blockedFieldPath: error.fieldPath || null
-    };
-  }
-
-  if (error instanceof FuzzDeckPlanQuarantineError) {
-    return {
-      blockedByQuarantine: true,
-      blockedCode: error.code,
-      blockedFieldPath: null
-    };
-  }
-
-  return null;
-}
 
 function isJsonObject(value: unknown): value is JsonObject {
   return Boolean(value && typeof value === "object" && !Array.isArray(value));

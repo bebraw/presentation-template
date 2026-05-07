@@ -132,31 +132,38 @@ test("prompt leak quarantine recognizes Finnish and Swedish prompt terms", () =>
   );
 });
 
-for (const fixture of redTeamCorpus) {
-  for (const fieldPath of redTeamFieldPaths) {
-    test(`visible text red-team corpus blocks ${fixture.name} at ${fieldPath}`, () => {
+test("visible text red-team corpus blocks prompt-like text across visible fields", () => {
+  const failures: string[] = [];
+
+  for (const fixture of redTeamCorpus) {
+    for (const fieldPath of redTeamFieldPaths) {
       const issues = collectVisibleTextIssues(createRedTeamSlideSpec(fieldPath, fixture.text));
 
-      assert.ok(
-        issues.some((issue: { code: string; fieldPath: string }) => issue.code === fixture.code && issue.fieldPath === fieldPath),
-        `expected ${fixture.code} at ${fieldPath}; got ${issues.map((issue: { code: string; fieldPath: string }) => `${issue.code}:${issue.fieldPath}`).join(", ") || "none"}`
-      );
-    });
+      if (!issues.some((issue: { code: string; fieldPath: string }) => issue.code === fixture.code && issue.fieldPath === fieldPath)) {
+        failures.push(`${fixture.name} at ${fieldPath}: expected ${fixture.code}; got ${issues.map((issue: { code: string; fieldPath: string }) => `${issue.code}:${issue.fieldPath}`).join(", ") || "none"}`);
+      }
+    }
   }
-}
 
-for (const fixture of safeVisibleTextCorpus) {
-  for (const fieldPath of redTeamFieldPaths) {
-    test(`visible text safe corpus allows ${fixture.name} at ${fieldPath}`, () => {
+  assert.deepEqual(failures, []);
+});
+
+test("visible text safe corpus allows prompt-adjacent product language across visible fields", () => {
+  const failures: string[] = [];
+
+  for (const fixture of safeVisibleTextCorpus) {
+    for (const fieldPath of redTeamFieldPaths) {
       const issues = collectVisibleTextIssues(createRedTeamSlideSpec(fieldPath, fixture.text));
+      const issueSummaries = issues.map((issue: { code: string; fieldPath: string }) => `${issue.code}:${issue.fieldPath}`);
 
-      assert.deepEqual(
-        issues.map((issue: { code: string; fieldPath: string }) => `${issue.code}:${issue.fieldPath}`),
-        []
-      );
-    });
+      if (issueSummaries.length) {
+        failures.push(`${fixture.name} at ${fieldPath}: got ${issueSummaries.join(", ")}`);
+      }
+    }
   }
-}
+
+  assert.deepEqual(failures, []);
+});
 
 test("visible text quarantine errors expose structured issue diagnostics", () => {
   assert.throws(

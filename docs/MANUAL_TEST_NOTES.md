@@ -132,6 +132,13 @@ Use this section for anything that does not fit one flow.
   - Result: passed.
   - Output summary: generated four drafted slides and preserved one `photoGrid` slide from the approved outline.
   - Follow-up: the earlier repeated nearby card-content failure did not recur.
+- 2026-05-07 LM Studio fuzz, full real-provider run:
+  - Command: `npm run fuzz:lmstudio`
+  - Provider/model: LM Studio, `qwen/qwen3.5-9b`
+  - Result: passed.
+  - Scenarios: `photo-grid-outline`, `source-grounded-finnish`, `prompt-leak-quarantine`.
+  - Output summary: photo-grid generation preserved one `photoGrid` slide; Finnish source-grounded generation used one source snippet; prompt-leak scenario was blocked by quarantine with `blockedCode: prompt-leak` at `guardrailsTitle`.
+  - Follow-up: no user-visible prompt text reached drafted output in this run.
 
 ## Issue Template
 

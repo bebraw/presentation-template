@@ -181,6 +181,98 @@ test("LLM presentation generation semantically shortens overlong visible text", 
   }
 });
 
+test("LLM presentation generation repairs repeated nearby items in whole-deck drafting", async () => {
+  llmRuntime.clearEnv();
+  process.env.STUDIO_LLM_PROVIDER = "lmstudio";
+  process.env.LMSTUDIO_MODEL = "nearby-duplicate-model";
+
+  const schemaNames: string[] = [];
+  global.fetch = async (_url, init) => {
+    const requestBody = parseMockChatRequest(init);
+    schemaNames.push(requestBody.response_format.json_schema.name);
+
+    if (requestBody.response_format.json_schema.name === "initial_presentation_deck_plan") {
+      return createLmStudioStreamResponse(createGeneratedDeckPlan("Photo Grid", 4));
+    }
+
+    if (requestBody.response_format.json_schema.name === "presentation_semantic_text_repairs") {
+      return createLmStudioStreamResponse({ repairs: [] });
+    }
+
+    assert.equal(requestBody.response_format.json_schema.name, "initial_presentation_plan");
+    return createLmStudioStreamResponse({
+      outline: "1. Open\n2. Layout\n3. Details\n4. Close",
+      references: [],
+      slides: [
+        withVisiblePlanFields({
+          keyPoints: [
+            { body: "Open with the goal for the generated photo grid.", title: "Goal" },
+            { body: "Name the viewer need before showing examples.", title: "Viewer" },
+            { body: "Preview the image selection workflow.", title: "Workflow" }
+          ],
+          role: "opening",
+          summary: "Open with the goal for the photo grid.",
+          title: "Photo Grid"
+        }, { eyebrow: "Opening" }),
+        withVisiblePlanFields({
+          keyPoints: [
+            { body: "Align crops before arranging captions.", title: "Crop ratios" },
+            { body: "Group related photos into rows that share a clear purpose.", title: "Row logic" },
+            { body: "Leave enough whitespace around captions for scanning.", title: "Caption space" }
+          ],
+          role: "concept",
+          summary: "Explain how crop and row choices make the grid scannable.",
+          title: "Layout choices"
+        }, { eyebrow: "Layout" }),
+        withVisiblePlanFields({
+          keyPoints: [
+            { body: "Choose a lead image that anchors the comparison.", title: "Lead image" },
+            { body: "Use source notes only when they help the viewer trust the image.", title: "Source notes" },
+            { body: "Keep secondary images quieter than the lead.", title: "Hierarchy" }
+          ],
+          role: "example",
+          summary: "Show how the lead image controls the visual hierarchy.",
+          title: "Image details"
+        }, { eyebrow: "Details" }),
+        withVisiblePlanFields({
+          keyPoints: [
+            { body: "Align crops before arranging captions.", title: "Crop ratios" },
+            { body: "Close by naming one review pass before exporting.", title: "Review pass" },
+            { body: "Check the captions after the image order is final.", title: "Caption check" }
+          ],
+          role: "handoff",
+          summary: "Close with a review pass that catches repeated layout advice.",
+          title: "Review the grid"
+        }, { eyebrow: "Close" })
+      ],
+      summary: "Photo grid generation plan"
+    });
+  };
+
+  try {
+    const generated = await generateInitialPresentation({
+      includeActiveSources: false,
+      targetSlideCount: 4,
+      title: "Photo Grid"
+    });
+    const repairedSlide = generated.slideSpecs[3] as GeneratedSlideSpec | undefined;
+    const repairedBullet = repairedSlide?.bullets?.[0];
+
+    assert.equal(
+      schemaNames.filter((schemaName) => schemaName === "initial_presentation_plan").length,
+      1,
+      "whole-deck generation should draft once after deck planning"
+    );
+    assert.ok(
+      repairedBullet?.body !== "Align crops before arranging captions."
+        && /Close with a review pass that catches repeated layout advice/i.test(String(repairedBullet?.body || "")),
+      "nearby duplicate repair should preserve the generated item while making the later slide distinct"
+    );
+  } finally {
+    llmRuntime.restore();
+  }
+});
+
 test("LLM presentation generation repairs scaffold panel titles from generated points", () => {
   const fields = {
     audience: "Workshop participants",

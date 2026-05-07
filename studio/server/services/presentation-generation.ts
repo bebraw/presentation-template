@@ -388,7 +388,8 @@ async function generatePresentationFromDeckPlan(fields: GenerationFields = {}, d
   });
   const plan = preserveApprovedOutlineSlideTypes(repairedPlan, deckPlan);
   const slideSpecs = finalizeGeneratedSlideSpecs(materializePlan(generationFields, plan), {
-    onProgress: fields.onProgress
+    onProgress: fields.onProgress,
+    repairNearbyDuplicateItems: true
   });
 
   return {

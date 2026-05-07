@@ -139,6 +139,13 @@ Use this section for anything that does not fit one flow.
   - Scenarios: `photo-grid-outline`, `source-grounded-finnish`, `prompt-leak-quarantine`.
   - Output summary: photo-grid generation preserved one `photoGrid` slide; Finnish source-grounded generation used one source snippet; prompt-leak scenario was blocked by quarantine with `blockedCode: prompt-leak` at `guardrailsTitle`.
   - Follow-up: no user-visible prompt text reached drafted output in this run.
+- 2026-05-07 LM Studio fuzz, post-fixture/corpus real-provider run:
+  - Command: `npm run fuzz:lmstudio`
+  - Provider/model: LM Studio, `qwen/qwen3.5-9b`
+  - Result: passed.
+  - Scenarios: `photo-grid-outline`, `source-grounded-finnish`, `prompt-leak-quarantine`.
+  - Output summary: matched deterministic fixture expectations; photo-grid generation preserved one `photoGrid` slide, Finnish source-grounded generation used one source snippet, and prompt-leak scenario was blocked by quarantine with `blockedCode: prompt-leak` at `guardrailsTitle`.
+  - Follow-up: no new real-provider drift found after adding deterministic fuzz fixtures and visible-text corpora.
 
 ## Issue Template
 

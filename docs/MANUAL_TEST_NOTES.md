@@ -146,6 +146,11 @@ Use this section for anything that does not fit one flow.
   - Scenarios: `photo-grid-outline`, `source-grounded-finnish`, `prompt-leak-quarantine`.
   - Output summary: matched deterministic fixture expectations; photo-grid generation preserved one `photoGrid` slide, Finnish source-grounded generation used one source snippet, and prompt-leak scenario was blocked by quarantine with `blockedCode: prompt-leak` at `guardrailsTitle`.
   - Follow-up: no new real-provider drift found after adding deterministic fuzz fixtures and visible-text corpora.
+- 2026-05-07 browser studio validation, post-safety hardening pass:
+  - Command: `npm run validate:browser`
+  - Result: passed.
+  - Output summary: Vite client build completed, presentation workflow validation passed, and Studio layout validation passed.
+  - Follow-up: no browser workflow or layout regression found after the visible-text and fuzz-fixture hardening changes.
 
 ## Issue Template
 

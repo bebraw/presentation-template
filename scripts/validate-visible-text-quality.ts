@@ -3,6 +3,7 @@ import {
   createRedTeamSlideSpec,
   redTeamCorpus,
   redTeamFieldPaths,
+  safeVisibleTextCorpus,
   type JsonRecord
 } from "../tests/helpers/visible-text-red-team.ts";
 
@@ -172,6 +173,16 @@ for (const fixture of redTeamCorpus) {
   }
 }
 
+for (const fixture of safeVisibleTextCorpus) {
+  for (const fieldPath of redTeamFieldPaths) {
+    const issues = collectVisibleTextIssues(createRedTeamSlideSpec(fieldPath, fixture.text));
+    if (issues.length) {
+      failures += 1;
+      process.stderr.write(`Visible text safe fixture "${fixture.name}" was incorrectly blocked at ${fieldPath}. Reported: ${issues.map((issue) => `${issue.code}:${issue.fieldPath}`).join(", ")}\n`);
+    }
+  }
+}
+
 if (!isSemanticLengthLeak("Semantic length planning added detail where the deck had room to expand.")) {
   failures += 1;
   process.stderr.write("Semantic length leak fixture was not classified as a leak.\n");
@@ -186,4 +197,4 @@ if (failures > 0) {
   process.exit(1);
 }
 
-process.stdout.write(`Visible text quality validation passed for ${negativeFixtures.length} negative fixtures and ${redTeamCorpus.length} red-team corpus entries across ${redTeamFieldPaths.length} field paths.\n`);
+process.stdout.write(`Visible text quality validation passed for ${negativeFixtures.length} negative fixtures, ${redTeamCorpus.length} red-team corpus entries, and ${safeVisibleTextCorpus.length} safe corpus entries across ${redTeamFieldPaths.length} field paths.\n`);

@@ -10,6 +10,29 @@ export type RedTeamFixture = {
 
 export const redTeamCorpus = JSON.parse(readFileSync(new URL("../fixtures/visible-text-red-team-corpus.json", import.meta.url), "utf8")) as RedTeamFixture[];
 
+export const safeVisibleTextCorpus = [
+  {
+    name: "review boundary",
+    text: "The review boundary keeps draft changes visible before approval."
+  },
+  {
+    name: "source schema as domain language",
+    text: "The source schema groups title, date, and owner fields for the archive."
+  },
+  {
+    name: "json export as user feature",
+    text: "JSON export helps reviewers compare slide data between versions."
+  },
+  {
+    name: "prompt as presentation cue",
+    text: "The workshop prompt asks each group to name one customer risk."
+  },
+  {
+    name: "instruction as learning material",
+    text: "The instruction sheet gives participants three setup steps."
+  }
+] as const;
+
 export const redTeamFieldPaths = [
   "title",
   "summary",

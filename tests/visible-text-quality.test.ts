@@ -6,7 +6,8 @@ import "./helpers/isolated-user-data.mjs";
 import {
   createRedTeamSlideSpec,
   redTeamCorpus,
-  redTeamFieldPaths
+  redTeamFieldPaths,
+  safeVisibleTextCorpus
 } from "./helpers/visible-text-red-team.ts";
 
 const require = createRequire(import.meta.url);
@@ -139,6 +140,19 @@ for (const fixture of redTeamCorpus) {
       assert.ok(
         issues.some((issue: { code: string; fieldPath: string }) => issue.code === fixture.code && issue.fieldPath === fieldPath),
         `expected ${fixture.code} at ${fieldPath}; got ${issues.map((issue: { code: string; fieldPath: string }) => `${issue.code}:${issue.fieldPath}`).join(", ") || "none"}`
+      );
+    });
+  }
+}
+
+for (const fixture of safeVisibleTextCorpus) {
+  for (const fieldPath of redTeamFieldPaths) {
+    test(`visible text safe corpus allows ${fixture.name} at ${fieldPath}`, () => {
+      const issues = collectVisibleTextIssues(createRedTeamSlideSpec(fieldPath, fixture.text));
+
+      assert.deepEqual(
+        issues.map((issue: { code: string; fieldPath: string }) => `${issue.code}:${issue.fieldPath}`),
+        []
       );
     });
   }

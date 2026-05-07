@@ -11,7 +11,7 @@ import {
   normalizeDeckPlanForValidation
 } from "../studio/server/services/generated-deck-plan-validation.ts";
 import { isKnownBadTranslation } from "../studio/server/services/generated-text-hygiene.ts";
-import type { DeckPlan as ValidatedDeckPlan } from "../studio/server/services/generated-deck-plan-validation.ts";
+import type { DeckPlan } from "../studio/server/services/generated-deck-plan-validation.ts";
 
 const lmStudioBaseUrl = (process.env.LMSTUDIO_BASE_URL || process.env.STUDIO_LLM_BASE_URL || "http://127.0.0.1:1234/v1").replace(/\/+$/, "");
 const fakeProviderMode = selectedFakeProvider();
@@ -39,18 +39,6 @@ type FuzzFields = JsonObject & {
   targetSlideCount: number;
   title: string;
   tone: string;
-};
-
-type DeckPlanSlide = JsonObject & {
-  intent?: unknown;
-  keyMessage?: unknown;
-  title?: unknown;
-  type?: unknown;
-  value?: unknown;
-};
-
-type DeckPlan = JsonObject & {
-  slides?: DeckPlanSlide[];
 };
 
 type DeckPlanResponse = JsonObject & {
@@ -220,7 +208,7 @@ function assertFuzzVisibleText(slides: SlideSpec[], scenarioName: string): void 
 }
 
 function assertFuzzDeckPlan(deckPlan: DeckPlan, scenarioName: string): void {
-  const planIssues = collectDeckPlanIssues(deckPlan as ValidatedDeckPlan, (deckPlan.slides || []).length);
+  const planIssues = collectDeckPlanIssues(deckPlan, (deckPlan.slides || []).length);
   const promptLeakIssue = planIssues.find((issue) => /prompt-like or copied instruction text/.test(issue));
   if (promptLeakIssue) {
     throw new Error(`${scenarioName} produced prompt-like leaked text in the deck plan.`);
@@ -244,7 +232,7 @@ async function runScenario(generation: GenerationModule, scenario: FuzzScenario)
       scenario.fields,
       outline.plan || { slides: [] },
       scenario.fields.targetSlideCount
-    ) as DeckPlan;
+    );
     assertFuzzDeckPlan(deckPlan, scenario.name);
     outlineTypes = (deckPlan.slides || []).map((slide, index) => ({
       index: index + 1,

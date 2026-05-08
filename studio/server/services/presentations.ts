@@ -216,7 +216,7 @@ function normalizeTargetSlideCount(value: unknown): number | null {
     return null;
   }
 
-  return Math.min(Math.max(1, parsed), 200);
+  return Math.max(1, parsed);
 }
 
 function normalizeCompactText(value: unknown, fallback = ""): string {

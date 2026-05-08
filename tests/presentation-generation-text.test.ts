@@ -22,7 +22,8 @@ const require = createRequire(import.meta.url);
 
 const {
   generateInitialPresentation,
-  materializePlan
+  materializePlan,
+  normalizeSlideCount
 } = require("../studio/server/services/presentation-generation.ts");
 const {
   finalizeGeneratedSlideSpecs
@@ -47,6 +48,12 @@ type MockProgressEvent = JsonRecord & {
 
 test.after(() => {
   llmRuntime.restore();
+});
+
+test("presentation generation slide targets are not capped", () => {
+  assert.equal(normalizeSlideCount(75), 75);
+  assert.equal(normalizeSlideCount(250), 250);
+  assert.equal(normalizeSlideCount(0), 1);
 });
 
 test("generated text shortening avoids incomplete conjunction tails", () => {

@@ -255,6 +255,21 @@ test("outline plans can store alternate flow length and density for one presenta
   assert.equal(listOutlinePlans(presentation.id).length, 57, "flow storage should not cap users at 50 flows");
 });
 
+test("outline flow targets are not capped", () => {
+  const presentation = createCoveragePresentation("uncapped-outline-flow", { targetSlideCount: 250 });
+  const largeFlow = createOutlinePlanFromPresentation(presentation.id, {
+    name: "Coverage uncapped flow",
+    targetSlideCount: 250
+  });
+
+  assert.equal(largeFlow.targetSlideCount, 250);
+  assert.equal(
+    largeFlow.sections.reduce((count: number, section: { slides: JsonRecord[] }) => count + section.slides.length, 0),
+    250,
+    "flow generation should preserve large requested slide counts"
+  );
+});
+
 test("outline plan storage rejects malformed plans before derivation", () => {
   const presentation = createCoveragePresentation("outline-plan-validation");
 

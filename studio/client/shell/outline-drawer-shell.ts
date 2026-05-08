@@ -51,7 +51,7 @@ const outlineDrawerMarkup = `
           <div class="field-grid outline-flow-grid">
             <label class="field">
               <span>Flow target slides</span>
-              <input id="outline-plan-target-slides" type="number" min="1" max="50" step="1" placeholder="Current deck">
+              <input id="outline-plan-target-slides" type="number" min="1" step="1" placeholder="Current deck">
             </label>
             <label class="field">
               <span>Flow density</span>

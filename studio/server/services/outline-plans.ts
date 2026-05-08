@@ -68,7 +68,7 @@ function normalizeTargetSlideCount(value: unknown): number | null {
     return null;
   }
 
-  return Math.min(Math.max(1, parsed), 200);
+  return Math.max(1, parsed);
 }
 
 function normalizePresentationDensity(value: unknown): "spacious" | "balanced" | "dense" {

@@ -1003,6 +1003,44 @@ export namespace StudioClientDeckPlanningWorkbench {
         const archiveButton = createDomElement("button", { attributes: { type: "button" }, className: "secondary outline-plan-archive-button", text: "Archive" }) as HTMLButtonElement;
         const deleteButton = createDomElement("button", { attributes: { type: "button" }, className: "secondary outline-plan-delete-button", text: "Delete" }) as HTMLButtonElement;
         const comparison = renderOutlinePlanComparison(plan);
+        const nameInput = createDomElement("input", {
+          attributes: {
+            type: "text"
+          },
+          className: "outline-plan-settings-input"
+        }) as HTMLInputElement;
+        nameInput.value = plan.name || "";
+        const targetInput = createDomElement("input", {
+          attributes: {
+            min: "1",
+            step: "1",
+            type: "number"
+          },
+          className: "outline-plan-settings-input"
+        }) as HTMLInputElement;
+        targetInput.value = Number.isFinite(Number(plan.targetSlideCount)) ? String(plan.targetSlideCount) : "";
+        const densitySelect = createDomElement("select", { className: "outline-plan-settings-input" }) as HTMLSelectElement;
+        (["spacious", "balanced", "dense"] as const).forEach((density) => {
+          const label = density.charAt(0).toUpperCase() + density.slice(1);
+          const option = createDomElement("option", {
+            attributes: { value: density },
+            text: label
+          }) as HTMLOptionElement;
+          option.selected = plan.presentationDensity === density || (!plan.presentationDensity && density === "balanced");
+          densitySelect.appendChild(option);
+        });
+        const purposeInput = createDomElement("textarea", {
+          attributes: {
+            rows: "3"
+          },
+          className: "outline-plan-settings-input"
+        }) as HTMLTextAreaElement;
+        purposeInput.value = plan.purpose || "";
+        const settingsSaveButton = createDomElement("button", {
+          attributes: { type: "button" },
+          className: "secondary outline-plan-settings-save-button",
+          text: "Save settings"
+        }) as HTMLButtonElement;
         const textarea = createDomElement("textarea", {
           attributes: {
             spellcheck: "false"
@@ -1036,6 +1074,28 @@ export namespace StudioClientDeckPlanningWorkbench {
             comparison
           ]),
           createDomElement("details", {}, [
+            createDomElement("summary", { text: "Edit flow settings" }),
+            createDomElement("div", { className: "outline-plan-settings-grid" }, [
+              createDomElement("label", { className: "field" }, [
+                createDomElement("span", { text: "Name" }),
+                nameInput
+              ]),
+              createDomElement("label", { className: "field" }, [
+                createDomElement("span", { text: "Target slides" }),
+                targetInput
+              ]),
+              createDomElement("label", { className: "field" }, [
+                createDomElement("span", { text: "Density" }),
+                densitySelect
+              ]),
+              createDomElement("label", { className: "field outline-plan-settings-purpose" }, [
+                createDomElement("span", { text: "Purpose" }),
+                purposeInput
+              ]),
+              settingsSaveButton
+            ])
+          ]),
+          createDomElement("details", {}, [
             createDomElement("summary", { text: "Edit structured plan" }),
             textarea
           ])
@@ -1046,6 +1106,12 @@ export namespace StudioClientDeckPlanningWorkbench {
         stageButton.addEventListener("click", () => stageOutlinePlanCreation(plan, stageButton).catch((error: unknown) => window.alert(errorMessage(error))));
         proposeButton.addEventListener("click", () => proposeOutlinePlanChanges(plan, proposeButton).catch((error: unknown) => window.alert(errorMessage(error))));
         duplicateButton.addEventListener("click", () => duplicateOutlinePlan(plan, duplicateButton).catch((error: unknown) => window.alert(errorMessage(error))));
+        settingsSaveButton.addEventListener("click", () => saveOutlinePlanSettings(plan, {
+          densitySelect,
+          nameInput,
+          purposeInput,
+          targetInput
+        }, settingsSaveButton).catch((error: unknown) => window.alert(errorMessage(error))));
         saveButton.addEventListener("click", () => saveOutlinePlanJson(textarea, saveButton).catch((error: unknown) => window.alert(errorMessage(error))));
         archiveButton.addEventListener("click", () => archiveOutlinePlan(plan, archiveButton).catch((error: unknown) => window.alert(errorMessage(error))));
         deleteButton.addEventListener("click", () => deleteOutlinePlan(plan, deleteButton).catch((error: unknown) => window.alert(errorMessage(error))));
@@ -1099,6 +1165,43 @@ export namespace StudioClientDeckPlanningWorkbench {
         applyOutlinePlanPayload(payload);
         renderOutlinePlans();
         elements.operationStatus.textContent = `Saved outline plan "${payload.outlinePlan?.name || "Outline plan"}".`;
+      } finally {
+        if (done) {
+          done();
+        }
+      }
+    }
+
+    async function saveOutlinePlanSettings(plan: OutlinePlan, fields: {
+      densitySelect: HTMLSelectElement;
+      nameInput: HTMLInputElement;
+      purposeInput: HTMLTextAreaElement;
+      targetInput: HTMLInputElement;
+    }, button: HTMLButtonElement | null = null): Promise<void> {
+      const targetSlideCount = Number.parseInt(fields.targetInput.value, 10);
+      if (!Number.isFinite(targetSlideCount) || targetSlideCount < 1) {
+        throw new Error("Flow target slides must be 1 or higher.");
+      }
+      const presentationDensity = fields.densitySelect.value === "spacious" || fields.densitySelect.value === "dense"
+        ? fields.densitySelect.value
+        : "balanced";
+      const nextPlan: OutlinePlan = {
+        ...plan,
+        name: fields.nameInput.value.trim() || plan.name || "Outline plan",
+        presentationDensity,
+        purpose: fields.purposeInput.value.trim(),
+        targetSlideCount
+      };
+
+      const done = button ? setBusy(button, "Saving...") : null;
+      try {
+        const payload = await request<OutlinePlanPayload>("/api/v1/outline-plans", {
+          method: "POST",
+          body: JSON.stringify({ outlinePlan: nextPlan })
+        });
+        applyOutlinePlanPayload(payload);
+        renderOutlinePlans();
+        elements.operationStatus.textContent = `Saved flow settings for "${payload.outlinePlan?.name || nextPlan.name}".`;
       } finally {
         if (done) {
           done();

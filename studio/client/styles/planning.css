@@ -217,6 +217,25 @@
   gap: 0.55rem;
 }
 
+.outline-plan-settings-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(9rem, 1fr));
+  gap: 0.65rem;
+  margin-top: 0.6rem;
+}
+
+.outline-plan-settings-input {
+  width: 100%;
+}
+
+.outline-plan-settings-purpose {
+  grid-column: 1 / -1;
+}
+
+.outline-plan-settings-save-button {
+  align-self: end;
+}
+
 .outline-plan-compare,
 .outline-plan-compare-slides {
   display: grid;

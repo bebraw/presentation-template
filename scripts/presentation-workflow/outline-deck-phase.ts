@@ -46,6 +46,19 @@ type WorkflowStatePayload = {
       visualTheme?: unknown;
     };
   };
+  creationDraft?: {
+    contentRun?: {
+      slideCount?: number;
+    } | null;
+    createdPresentationId?: string | null;
+    deckPlan?: {
+      slides?: unknown[];
+    };
+    fields?: {
+      presentationDensity?: string;
+      targetSlideCount?: number;
+    };
+  } | null;
   materials?: WorkflowMaterial[];
   outlinePlans?: WorkflowOutlinePlan[];
   presentations?: {
@@ -287,6 +300,88 @@ async function validateDerivedDeckCreationFromFlow(page: Page): Promise<void> {
   });
 }
 
+async function validateLiveDraftFromActiveFlow(page: Page): Promise<void> {
+  await page.evaluate(() => {
+    window.prompt = () => "Temporary workflow smoke copy";
+  });
+  const sourceState = await readWorkflowState(page);
+  const sourcePresentationId = sourceState.presentations?.activePresentationId || "";
+  const sourceActivePlanId = sourceState.activeOutlinePlanId || "";
+  const sourceActivePlan = sourceState.outlinePlans?.find((plan) => plan.id === sourceActivePlanId);
+  const sourceBeatCount = planSlideCount(sourceActivePlan);
+  assert.ok(sourcePresentationId, "live draft validation needs a source presentation");
+  assert.ok(sourceActivePlan, "live draft validation needs an active source flow");
+  assert.ok(sourceBeatCount > 0, "live draft validation needs flow beats");
+
+  const stageResponse = waitForJsonResponse(page, "/api/v1/outline-plans/stage-creation", 60_000);
+  await page.locator(".outline-plan-active-panel button", { hasText: "Live draft active" }).click();
+  await stageResponse;
+  await page.waitForFunction(() => {
+    const element = document.querySelector("#presentations-page") as HTMLElement | null;
+    return element instanceof HTMLElement && !element.hidden;
+  });
+  await page.waitForFunction((expectedCount: number) => {
+    const targetInput = document.querySelector("#presentation-target-slides") as HTMLInputElement | null;
+    const densitySelect = document.querySelector("#presentation-density") as HTMLSelectElement | null;
+    return targetInput?.value === String(expectedCount)
+      && densitySelect?.value === "dense"
+      && document.querySelectorAll("#presentation-outline-list .creation-outline-item").length === expectedCount;
+  }, sourceBeatCount);
+  const stagedState = await readWorkflowState(page);
+  assert.equal(stagedState.creationDraft?.fields?.targetSlideCount, sourceBeatCount, "staged live draft should inherit the active flow beat count");
+  assert.equal(stagedState.creationDraft?.fields?.presentationDensity, sourceActivePlan?.presentationDensity, "staged live draft should inherit active flow density");
+  assert.equal(stagedState.creationDraft?.deckPlan?.slides?.length || 0, sourceBeatCount, "staged live draft should include one outline item per flow beat");
+
+  const createResponse = waitForJsonResponse(page, "/api/v1/presentations/draft/create", 120_000);
+  await page.evaluate(() => {
+    const details = document.querySelector(".presentation-create-details") as HTMLDetailsElement | null;
+    if (details) {
+      details.open = true;
+    }
+  });
+  await page.click("[data-creation-stage='content']");
+  await page.waitForFunction(() => {
+    const contentStage = document.querySelector("#creation-stage-content") as HTMLElement | null;
+    return Boolean(contentStage && !contentStage.hidden);
+  });
+  await page.click("#create-presentation-button");
+  await createResponse;
+  await page.waitForFunction((expectedCount: number) => {
+    return fetch("/api/v1/state")
+      .then((response) => response.json())
+      .then((payload) => payload.creationDraft?.createdPresentationId
+        && Array.isArray(payload.slides)
+        && payload.slides.length === expectedCount
+        && payload.creationDraft?.contentRun?.slideCount === expectedCount);
+  }, sourceBeatCount);
+  const liveState = await readWorkflowState(page);
+  const livePresentationId = liveState.presentations?.activePresentationId || "";
+  const liveActivePlan = liveState.outlinePlans?.find((plan) => plan.id === liveState.activeOutlinePlanId);
+  assert.ok(livePresentationId, "live draft should activate the created presentation");
+  assert.notEqual(livePresentationId, sourcePresentationId, "live draft should create a separate deck");
+  assert.equal(liveState.creationDraft?.createdPresentationId, livePresentationId, "creation draft should point to the live deck");
+  assert.equal(liveState.slides?.length || 0, sourceBeatCount, "live deck should contain one slide per flow beat");
+  assert.equal(liveActivePlan?.targetSlideCount, sourceBeatCount, "live deck should keep an active flow with the staged target count");
+  assert.equal(liveActivePlan?.presentationDensity, sourceActivePlan?.presentationDensity, "live deck active flow should keep the staged density");
+  assert.equal(planSlideCount(liveActivePlan), sourceBeatCount, "live deck active flow should keep the staged outline beat count");
+
+  await selectPresentation(page, sourcePresentationId);
+  await deletePresentation(page, livePresentationId);
+  await page.reload({ waitUntil: "domcontentloaded" });
+  await page.click("#show-studio-page");
+  await page.waitForFunction(() => {
+    const element = document.querySelector("#studio-page") as HTMLElement | null;
+    return element instanceof HTMLElement && !element.hidden;
+  });
+  await page.click("#outline-drawer-toggle");
+  await page.waitForSelector("#outline-drawer[data-open='true']");
+  await page.click("#outline-mode-plans-tab");
+  await page.waitForFunction(() => {
+    const plansPanel = document.querySelector("#outline-mode-plans") as HTMLElement | null;
+    return Boolean(plansPanel && !plansPanel.hidden);
+  });
+}
+
 async function validateOutlineDeckStructurePhase(page: Page): Promise<void> {
   await page.click("#show-studio-page");
   await page.waitForFunction(() => {
@@ -366,6 +461,7 @@ async function validateOutlineDeckStructurePhase(page: Page): Promise<void> {
   );
   await validateFlowLifecycleActions(page);
   await validateDerivedDeckCreationFromFlow(page);
+  await validateLiveDraftFromActiveFlow(page);
 
   await page.click("#outline-mode-changes-tab");
   await page.waitForFunction(() => {

@@ -1,5 +1,7 @@
 # UI Validation Plan
 
+Status: Completed on 2026-05-09.
+
 This plan captures browser UI validation gaps that are worth addressing when there is focused time for test work. The current `npm run validate:browser` path already covers presentation creation, outline editing, source-backed regeneration, material attachment, deck length shrink/restore, flow target editing, and basic Studio layout checks. The items below are the next useful slices.
 
 ## Goal

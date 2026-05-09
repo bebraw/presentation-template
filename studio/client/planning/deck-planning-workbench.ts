@@ -1048,7 +1048,10 @@ export namespace StudioClientDeckPlanningWorkbench {
           className: "outline-plan-json"
         }) as HTMLTextAreaElement;
         textarea.value = JSON.stringify(plan, null, 2);
-        const item = createDomElement("article", { className: `outline-plan-card${isActivePlan ? " is-active" : ""}` }, [
+        const item = createDomElement("article", {
+          className: `outline-plan-card${isActivePlan ? " is-active" : ""}`,
+          dataset: { planId: plan.id }
+        }, [
           createDomElement("div", { className: "outline-plan-card__header" }, [
             createDomElement("div", {}, [
               createDomElement("div", { className: "outline-plan-card__title-row" }, [

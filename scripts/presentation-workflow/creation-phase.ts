@@ -41,6 +41,15 @@ async function waitForPage(page: Page, selector: string): Promise<void> {
   }, selector);
 }
 
+async function openPresentationCreationDetails(page: Page): Promise<void> {
+  await page.evaluate(() => {
+    const details = document.querySelector(".presentation-create-details") as HTMLDetailsElement | null;
+    if (details) {
+      details.open = true;
+    }
+  });
+}
+
 async function waitForJsonResponse<T = unknown>(page: Page, pathPart: string, timeout = 30_000): Promise<T | null> {
   const response = await page.waitForResponse((candidate) => candidate.url().includes(pathPart), {
     timeout
@@ -169,6 +178,24 @@ async function createSmokePresentationFromBrief(page: Page): Promise<string> {
       && payload.creationDraft.outlineLocks
       && payload.creationDraft.outlineLocks["0"] === true;
   });
+  await page.reload({ waitUntil: "domcontentloaded" });
+  await page.click("#show-presentations-page");
+  await waitForPage(page, "#presentations-page");
+  await openPresentationCreationDetails(page);
+  await page.waitForFunction(() => {
+    const outlineItems = document.querySelectorAll("#presentation-outline-list .creation-outline-item").length;
+    const lockButton = document.querySelector("[data-outline-lock-slide-index='0']");
+    const titleInput = document.querySelector("[data-outline-slide-index='0'][data-outline-slide-field='title']") as HTMLTextAreaElement | null;
+    const approve = document.querySelector("#approve-presentation-outline-button") as HTMLButtonElement | null;
+    const activeStage = document.querySelector("[data-creation-stage='structure'].active");
+    const status = document.querySelector("#presentation-creation-status")?.textContent || "";
+    return outlineItems === 7
+      && lockButton?.getAttribute("aria-pressed") === "true"
+      && titleInput?.value === "Edited workflow opener"
+      && approve?.disabled === false
+      && activeStage
+      && /approve it to create slides/i.test(status);
+  });
 
   await page.fill("[data-outline-slide-index='1'][data-outline-slide-field='title']", "Needs focused regeneration");
   const slideRegenerateResponse = waitForJsonResponse<CreationDraftResponse>(page, "/api/v1/presentations/draft/outline/slide", 60_000);
@@ -222,6 +249,26 @@ async function createSmokePresentationFromBrief(page: Page): Promise<string> {
     const run = draft.contentRun;
     return run && typeof run.completed === "number" && run.completed >= 1;
   }, undefined, { timeout: 120_000 });
+  await page.reload({ waitUntil: "domcontentloaded" });
+  await page.click("#show-presentations-page");
+  await waitForPage(page, "#presentations-page");
+  await openPresentationCreationDetails(page);
+  await page.waitForFunction(() => {
+    const contentStage = document.querySelector("#creation-stage-content") as HTMLElement | null;
+    const summary = document.querySelector("#content-run-summary")?.textContent || "";
+    return contentStage
+      && !contentStage.hidden
+      && !/No slides generated yet/i.test(summary);
+  });
+  await page.waitForFunction(async () => {
+    const response = await fetch("/api/v1/state");
+    const payload = await response.json();
+    return payload.creationDraft
+      && payload.creationDraft.createdPresentationId
+      && payload.creationDraft.contentRun
+      && typeof payload.creationDraft.contentRun.slideCount === "number"
+      && payload.creationDraft.contentRun.slideCount === 7;
+  });
   await page.waitForFunction(async () => {
     const response = await fetch("/api/v1/state");
     const payload = await response.json();
@@ -234,6 +281,7 @@ async function createSmokePresentationFromBrief(page: Page): Promise<string> {
       && slide.intent === "Edited workflow opener validates custom outline wording."
       && slide.sourceNotes === "Slide-specific source: the opener should cite the workflow smoke source only for this outline beat.";
   }, { timeout: 60_000 });
+  await page.click("#show-studio-page");
   await waitForPage(page, "#studio-page");
   await page.waitForFunction(async () => {
     const response = await fetch("/api/v1/state");

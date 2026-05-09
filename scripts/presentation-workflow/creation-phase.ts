@@ -10,6 +10,11 @@ type WorkflowSnippet = {
   text?: string;
 };
 
+const starterImage = Buffer.from(
+  "iVBORw0KGgoAAAANSUhEUgAAAAIAAAACCAYAAABytg0kAAAAFklEQVR42mN8z8DwnwEJMDGgAcQBAH3kAweoKjmtAAAAAElFTkSuQmCC",
+  "base64"
+);
+
 type CreationDraftResponse = {
   creationDraft: {
     deckPlan: {
@@ -63,7 +68,19 @@ async function createSmokePresentationFromBrief(page: Page): Promise<string> {
       }
     });
   });
+  await page.fill("#presentation-source-urls", "https://example.com/workflow-brief-source");
+  await page.waitForFunction(() => {
+    const briefUrls = document.querySelector("#presentation-source-urls") as HTMLTextAreaElement | null;
+    const outlineUrls = document.querySelector("#presentation-outline-source-urls") as HTMLTextAreaElement | null;
+    return outlineUrls?.value === briefUrls?.value && /workflow-brief-source/.test(outlineUrls?.value || "");
+  });
+  await page.fill("#presentation-source-urls", "");
   await page.fill("#presentation-source-text", "Initial workflow source: first outline generation can use pasted source material from the brief.");
+  await page.waitForFunction(() => {
+    const briefText = document.querySelector("#presentation-source-text") as HTMLTextAreaElement | null;
+    const outlineText = document.querySelector("#presentation-outline-source-text") as HTMLTextAreaElement | null;
+    return outlineText?.value === briefText?.value && /first outline generation/.test(outlineText?.value || "");
+  });
   await page.click("#generate-presentation-outline-button");
   await page.waitForSelector("#presentation-outline-list .creation-outline-item", {
     timeout: 60_000
@@ -71,7 +88,19 @@ async function createSmokePresentationFromBrief(page: Page): Promise<string> {
   await page.waitForFunction(() => {
     return /first outline generation/i.test(document.querySelector("#presentation-source-evidence")?.textContent || "");
   });
+  await page.fill("#presentation-outline-source-urls", "https://example.com/workflow-outline-source");
+  await page.waitForFunction(() => {
+    const briefUrls = document.querySelector("#presentation-source-urls") as HTMLTextAreaElement | null;
+    const outlineUrls = document.querySelector("#presentation-outline-source-urls") as HTMLTextAreaElement | null;
+    return briefUrls?.value === outlineUrls?.value && /workflow-outline-source/.test(briefUrls?.value || "");
+  });
+  await page.fill("#presentation-outline-source-urls", "");
   await page.fill("#presentation-outline-source-text", "Workflow validation source: browser UI management should cover presentation creation, source persistence, and grounded generation diagnostics.");
+  await page.setInputFiles("#presentation-material-file", {
+    buffer: starterImage,
+    mimeType: "image/png",
+    name: "workflow-starter-material.png"
+  });
   await page.click("#regenerate-presentation-outline-with-sources-button");
   await page.waitForFunction(() => {
     return /browser UI management/i.test(document.querySelector("#presentation-source-evidence")?.textContent || "");
@@ -242,6 +271,8 @@ async function createSmokePresentationFromBrief(page: Page): Promise<string> {
       && payload.context.deck.lengthProfile.targetCount === 7
       && payload.slides.length === 7
       && payload.sources.length === 1
+      && Array.isArray(payload.materials)
+      && payload.materials.some((material: { title?: string }) => material.title === "workflow-starter-material.png")
       && payload.outlinePlans.some((plan: { id?: string; presentationDensity?: string; sections?: Array<{ slides?: unknown[] }>; targetSlideCount?: number }) => plan.id === payload.activeOutlinePlanId
         && plan.presentationDensity === "dense"
         && plan.targetSlideCount === 7

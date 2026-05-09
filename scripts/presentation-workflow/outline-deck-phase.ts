@@ -19,6 +19,7 @@ type WorkflowOutlinePlan = {
   id?: string;
   name?: string;
   presentationDensity?: string;
+  purpose?: string;
   sourceScope?: {
     sources?: unknown[];
   };
@@ -113,6 +114,19 @@ async function deletePresentation(page: Page, presentationId: string): Promise<v
 
 function planSlideCount(plan: WorkflowOutlinePlan | undefined): number {
   return plan?.sections?.reduce((count, section) => count + (section.slides?.length || 0), 0) || 0;
+}
+
+function stablePlanSignature(plan: WorkflowOutlinePlan | undefined): string {
+  return JSON.stringify({
+    archivedAt: plan?.archivedAt || null,
+    id: plan?.id || "",
+    name: plan?.name || "",
+    presentationDensity: plan?.presentationDensity || "",
+    purpose: plan?.purpose || "",
+    sectionCount: plan?.sections?.length || 0,
+    slideCount: planSlideCount(plan),
+    targetSlideCount: plan?.targetSlideCount || 0
+  });
 }
 
 async function assertActiveFlowUi(page: Page, expectedPlanId: string): Promise<void> {
@@ -382,6 +396,83 @@ async function validateLiveDraftFromActiveFlow(page: Page): Promise<void> {
   });
 }
 
+async function validateOutlineJsonEditor(page: Page): Promise<void> {
+  await page.evaluate(() => {
+    window.alert = (message?: unknown) => {
+      document.body.dataset.lastAlert = String(message || "");
+    };
+  });
+  const before = await readWorkflowState(page);
+  const activePlanId = before.activeOutlinePlanId || "";
+  const activePlan = before.outlinePlans?.find((plan) => plan.id === activePlanId);
+  assert.ok(activePlan, "JSON editor validation needs an active outline plan");
+  const editedPlan = {
+    ...activePlan,
+    name: "Workflow JSON edited flow",
+    presentationDensity: "spacious",
+    purpose: "Power-user JSON edit updates the saved flow summary deterministically.",
+    targetSlideCount: 8
+  };
+
+  const activeCard = page.locator(`.outline-plan-card[data-plan-id="${activePlanId}"]`);
+  await activeCard.locator("summary").filter({ hasText: "Edit structured plan" }).click();
+  await activeCard.locator(".outline-plan-json").fill(JSON.stringify(editedPlan, null, 2));
+  const saveJsonResponse = waitForJsonResponse<WorkflowOutlinePlanPayload>(page, "/api/v1/outline-plans", 60_000);
+  await activeCard.locator(".outline-plan-save-button").click();
+  const saveJsonPayload = await saveJsonResponse;
+  assert.equal(saveJsonPayload?.outlinePlan?.targetSlideCount, 8, "valid JSON edit should save target slide count");
+  assert.equal(saveJsonPayload?.outlinePlan?.presentationDensity, "spacious", "valid JSON edit should save density");
+  assert.equal(planSlideCount(saveJsonPayload?.outlinePlan), 8, "valid JSON edit should resize structured plan beats");
+  await page.waitForFunction((planName: string) => {
+    return document.querySelector(".outline-plan-card.is-active")?.textContent?.includes(planName);
+  }, "Workflow JSON edited flow");
+
+  const afterValidSave = await readWorkflowState(page);
+  const savedActivePlan = afterValidSave.outlinePlans?.find((plan) => plan.id === activePlanId);
+  assert.equal(afterValidSave.activeOutlinePlanId, activePlanId, "JSON editing should keep the active flow active");
+  assert.equal(savedActivePlan?.targetSlideCount, 8, "persisted flow target count should match valid JSON");
+  assert.equal(savedActivePlan?.presentationDensity, "spacious", "persisted flow density should match valid JSON");
+
+  const proposedJsonFlowResponse = waitForJsonResponse<WorkflowOutlinePlanPayload>(page, "/api/v1/outline-plans/propose", 60_000);
+  await page.locator(".outline-plan-active-panel button", { hasText: "Propose active flow" }).click();
+  const proposedJsonFlowPayload = await proposedJsonFlowResponse;
+  assert.equal(
+    proposedJsonFlowPayload?.deckStructureCandidates?.[0]?.slides?.length,
+    8,
+    "proposal from a JSON-edited active flow should use the saved target count"
+  );
+
+  const stableAfterValidSave = await readWorkflowState(page);
+  const stablePlan = stableAfterValidSave.outlinePlans?.find((plan) => plan.id === activePlanId);
+  await page.locator(`.outline-plan-card[data-plan-id="${activePlanId}"] summary`).filter({ hasText: "Edit structured plan" }).click();
+  await page.locator(`.outline-plan-card[data-plan-id="${activePlanId}"] .outline-plan-json`).fill("{ malformed json");
+  await page.locator(`.outline-plan-card[data-plan-id="${activePlanId}"] .outline-plan-save-button`).click();
+  await page.waitForFunction(() => /invalid/i.test(document.body.dataset.lastAlert || ""));
+  const afterMalformed = await readWorkflowState(page);
+  assert.equal(
+    stablePlanSignature(afterMalformed.outlinePlans?.find((plan) => plan.id === activePlanId)),
+    stablePlanSignature(stablePlan),
+    "malformed JSON should not mutate persisted flow state"
+  );
+
+  const invalidPlan = {
+    ...stablePlan,
+    sections: []
+  };
+  await page.evaluate(() => {
+    document.body.dataset.lastAlert = "";
+  });
+  await page.locator(`.outline-plan-card[data-plan-id="${activePlanId}"] .outline-plan-json`).fill(JSON.stringify(invalidPlan, null, 2));
+  await page.locator(`.outline-plan-card[data-plan-id="${activePlanId}"] .outline-plan-save-button`).click();
+  await page.waitForFunction(() => /section|slide intent|outline plan/i.test(document.body.dataset.lastAlert || ""));
+  const afterInvalidStructure = await readWorkflowState(page);
+  assert.equal(
+    stablePlanSignature(afterInvalidStructure.outlinePlans?.find((plan) => plan.id === activePlanId)),
+    stablePlanSignature(stablePlan),
+    "structurally invalid JSON should not mutate persisted flow state"
+  );
+}
+
 async function validateOutlineDeckStructurePhase(page: Page): Promise<void> {
   await page.click("#show-studio-page");
   await page.waitForFunction(() => {
@@ -462,6 +553,7 @@ async function validateOutlineDeckStructurePhase(page: Page): Promise<void> {
   await validateFlowLifecycleActions(page);
   await validateDerivedDeckCreationFromFlow(page);
   await validateLiveDraftFromActiveFlow(page);
+  await validateOutlineJsonEditor(page);
 
   await page.click("#outline-mode-changes-tab");
   await page.waitForFunction(() => {

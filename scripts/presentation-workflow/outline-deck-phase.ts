@@ -6,6 +6,10 @@ type WorkflowSource = {
   title?: string;
 };
 
+type WorkflowMaterial = {
+  id?: string;
+};
+
 type WorkflowOutlinePlanSection = {
   slides?: unknown[];
 };
@@ -14,6 +18,7 @@ type WorkflowOutlinePlan = {
   archivedAt?: unknown;
   id?: string;
   name?: string;
+  presentationDensity?: string;
   sourceScope?: {
     sources?: unknown[];
   };
@@ -32,7 +37,22 @@ type WorkflowOutlinePlanPayload = {
 
 type WorkflowStatePayload = {
   activeOutlinePlanId?: string;
+  context?: {
+    deck?: {
+      lineage?: {
+        outlinePlanId?: string;
+        sourcePresentationId?: string;
+      };
+      visualTheme?: unknown;
+    };
+  };
+  materials?: WorkflowMaterial[];
   outlinePlans?: WorkflowOutlinePlan[];
+  presentations?: {
+    activePresentationId?: string;
+    presentations?: Array<{ id?: string; title?: string }>;
+  };
+  slides?: Array<{ id?: string; title?: string }>;
   sources?: WorkflowSource[];
 };
 
@@ -50,6 +70,32 @@ async function readWorkflowState(page: Page): Promise<WorkflowStatePayload> {
     const response = await fetch("/api/v1/state");
     return await response.json();
   });
+}
+
+async function selectPresentation(page: Page, presentationId: string): Promise<void> {
+  await page.evaluate(async (targetPresentationId: string) => {
+    const response = await fetch("/api/v1/presentations/select", {
+      body: JSON.stringify({ presentationId: targetPresentationId }),
+      headers: { "Content-Type": "application/json" },
+      method: "POST"
+    });
+    if (!response.ok) {
+      throw new Error(await response.text());
+    }
+  }, presentationId);
+}
+
+async function deletePresentation(page: Page, presentationId: string): Promise<void> {
+  await page.evaluate(async (targetPresentationId: string) => {
+    const response = await fetch("/api/v1/presentations/delete", {
+      body: JSON.stringify({ presentationId: targetPresentationId }),
+      headers: { "Content-Type": "application/json" },
+      method: "POST"
+    });
+    if (!response.ok) {
+      throw new Error(await response.text());
+    }
+  }, presentationId);
 }
 
 function planSlideCount(plan: WorkflowOutlinePlan | undefined): number {
@@ -176,6 +222,71 @@ async function validateFlowLifecycleActions(page: Page): Promise<void> {
   assert.equal(afterDelete.sources?.length || 0, originalSourceCount, "flow lifecycle actions should keep sources presentation-shared");
 }
 
+async function validateDerivedDeckCreationFromFlow(page: Page): Promise<void> {
+  await page.evaluate(() => {
+    window.confirm = () => true;
+    window.prompt = () => "Temporary workflow smoke copy";
+  });
+  const sourceState = await readWorkflowState(page);
+  const sourcePresentationId = sourceState.presentations?.activePresentationId || "";
+  const sourceActivePlanId = sourceState.activeOutlinePlanId || "";
+  const sourceActivePlan = sourceState.outlinePlans?.find((plan) => plan.id === sourceActivePlanId);
+  const sourceSlideCount = sourceState.slides?.length || 0;
+  const sourceSourceCount = sourceState.sources?.length || 0;
+  const sourceMaterialCount = sourceState.materials?.length || 0;
+  assert.ok(sourcePresentationId, "derived deck validation needs an active source presentation");
+  assert.ok(sourceActivePlan, "derived deck validation needs an active source flow");
+  assert.equal(sourceActivePlan?.targetSlideCount, 9, "derived deck validation should start from the edited non-default target length");
+
+  const deriveResponse = waitForJsonResponse(page, "/api/v1/outline-plans/derive", 60_000);
+  await page.locator(".outline-plan-card.is-active .outline-plan-derive-button").click();
+  await deriveResponse;
+  await page.waitForFunction((previousPresentationId: string) => {
+    return fetch("/api/v1/state")
+      .then((response) => response.json())
+      .then((payload) => payload.presentations?.activePresentationId
+        && payload.presentations.activePresentationId !== previousPresentationId
+        && Array.isArray(payload.slides));
+  }, sourcePresentationId);
+
+  const derivedState = await readWorkflowState(page);
+  const derivedPresentationId = derivedState.presentations?.activePresentationId || "";
+  const derivedActivePlan = derivedState.outlinePlans?.find((plan) => plan.id === derivedState.activeOutlinePlanId);
+  assert.ok(derivedPresentationId, "derive deck should activate the derived presentation");
+  assert.notEqual(derivedPresentationId, sourcePresentationId, "derive deck should create a separate presentation");
+  assert.equal(derivedState.slides?.length || 0, planSlideCount(sourceActivePlan), "derived deck should use one placeholder slide per source flow beat");
+  assert.equal(derivedActivePlan?.targetSlideCount, sourceActivePlan?.targetSlideCount, "derived deck should seed its active flow from the source flow target");
+  assert.equal(derivedActivePlan?.presentationDensity, sourceActivePlan?.presentationDensity, "derived deck should seed its active flow density from the source flow");
+  assert.equal(planSlideCount(derivedActivePlan), planSlideCount(sourceActivePlan), "derived deck active flow should preserve the source flow beat count");
+  assert.equal(derivedState.context?.deck?.lineage?.sourcePresentationId, sourcePresentationId, "derived deck lineage should record the source presentation");
+  assert.equal(derivedState.context?.deck?.lineage?.outlinePlanId, sourceActivePlanId, "derived deck lineage should record the source flow");
+  assert.equal(derivedState.sources?.length || 0, sourceSourceCount, "derive deck copy options should copy source records");
+  assert.equal(derivedState.materials?.length || 0, sourceMaterialCount, "derive deck copy options should copy material records");
+  assert.ok(derivedState.context?.deck?.visualTheme, "derive deck copy options should copy the active theme");
+
+  await selectPresentation(page, sourcePresentationId);
+  const restoredSourceState = await readWorkflowState(page);
+  assert.equal(restoredSourceState.presentations?.activePresentationId, sourcePresentationId, "source presentation should be selectable after deriving");
+  assert.equal(restoredSourceState.slides?.length || 0, sourceSlideCount, "deriving a deck should not mutate the source deck slides");
+  assert.equal(restoredSourceState.activeOutlinePlanId, sourceActivePlanId, "deriving a deck should not mutate the source active flow");
+  assert.equal(restoredSourceState.sources?.length || 0, sourceSourceCount, "deriving a deck should not mutate source deck sources");
+  await deletePresentation(page, derivedPresentationId);
+
+  await page.reload({ waitUntil: "domcontentloaded" });
+  await page.click("#show-studio-page");
+  await page.waitForFunction(() => {
+    const element = document.querySelector("#studio-page") as HTMLElement | null;
+    return element instanceof HTMLElement && !element.hidden;
+  });
+  await page.click("#outline-drawer-toggle");
+  await page.waitForSelector("#outline-drawer[data-open='true']");
+  await page.click("#outline-mode-plans-tab");
+  await page.waitForFunction(() => {
+    const plansPanel = document.querySelector("#outline-mode-plans") as HTMLElement | null;
+    return Boolean(plansPanel && !plansPanel.hidden);
+  });
+}
+
 async function validateOutlineDeckStructurePhase(page: Page): Promise<void> {
   await page.click("#show-studio-page");
   await page.waitForFunction(() => {
@@ -254,6 +365,7 @@ async function validateOutlineDeckStructurePhase(page: Page): Promise<void> {
     "proposing an edited stretched flow should produce one current-deck step per target slide"
   );
   await validateFlowLifecycleActions(page);
+  await validateDerivedDeckCreationFromFlow(page);
 
   await page.click("#outline-mode-changes-tab");
   await page.waitForFunction(() => {

@@ -226,7 +226,7 @@ async function validateSemanticGrowthAfterFlowProposal(page: Page): Promise<void
 async function validateFlowLifecycleActions(page: Page): Promise<void> {
   await page.evaluate(() => {
     window.confirm = () => true;
-    window.prompt = (_message: string, defaultValue?: string) => defaultValue || "Workflow validation flow";
+    window.prompt = (_message?: string, defaultValue?: string) => defaultValue || "Workflow validation flow";
   });
   const before = await readWorkflowState(page);
   const originalActivePlanId = before.activeOutlinePlanId || "";

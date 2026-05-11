@@ -278,6 +278,7 @@ async function createSmokePresentationFromBrief(page: Page): Promise<string> {
       && payload.runtime.workflow.status === "completed";
     return Boolean(liveDraft || completedDeck);
   }, createdPresentationId, { timeout: 120_000 });
+  await waitForPage(page, "#studio-page");
   await reloadToStudioPage(page, "presentations");
   await openPresentationCreationDetails(page);
   await page.waitForFunction(async (presentationId: string) => {

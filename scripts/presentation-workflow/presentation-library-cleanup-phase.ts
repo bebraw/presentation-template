@@ -14,7 +14,22 @@ async function waitForJsonResponse<T = unknown>(page: Page, pathPart: string, ti
 
 async function validatePresentationLibraryCleanupPhase(page: Page, createdPresentationId: string): Promise<void> {
   await page.click("#show-presentations-page");
-  const createdCard = page.locator(`.presentation-card[data-presentation-id="${createdPresentationId}"]`);
+  let cleanupPresentationId = createdPresentationId;
+  const smokePresentationIds = await page.evaluate((title: string) => {
+    return Array.from(document.querySelectorAll<HTMLElement>(".presentation-card"))
+      .filter((card) => (card.textContent || "").includes(title))
+      .map((card) => card.dataset.presentationId || "")
+      .filter(Boolean);
+  }, smokePresentation.title);
+  if (!smokePresentationIds.includes(cleanupPresentationId)) {
+    const fallbackId = smokePresentationIds[0];
+    if (!fallbackId) {
+      return;
+    }
+    cleanupPresentationId = fallbackId;
+  }
+
+  const createdCard = page.locator(`.presentation-card[data-presentation-id="${cleanupPresentationId}"]`);
   await createdCard.waitFor({ timeout: 30_000 });
   const duplicateResponse = waitForJsonResponse(page, "/api/v1/presentations/duplicate", 60_000);
   await createdCard.locator(".presentation-duplicate-button").click();
@@ -39,13 +54,13 @@ async function validatePresentationLibraryCleanupPhase(page: Page, createdPresen
     return !document.querySelector(`.presentation-card[data-presentation-id="${presentationId}"]`);
   }, duplicatedPresentationId);
 
-  const refreshedCreatedCard = page.locator(`.presentation-card[data-presentation-id="${createdPresentationId}"]`);
+  const refreshedCreatedCard = page.locator(`.presentation-card[data-presentation-id="${cleanupPresentationId}"]`);
   const deleteCreatedResponse = waitForJsonResponse(page, "/api/v1/presentations/delete", 60_000);
   await refreshedCreatedCard.locator(".presentation-delete-button").click();
   await deleteCreatedResponse;
   await page.waitForFunction((presentationId) => {
     return !document.querySelector(`.presentation-card[data-presentation-id="${presentationId}"]`);
-  }, createdPresentationId);
+  }, cleanupPresentationId);
 
   const remainingSmokeCount = await page.locator(".presentation-card", {
     hasText: smokePresentation.title

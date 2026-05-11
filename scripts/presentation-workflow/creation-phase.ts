@@ -27,6 +27,21 @@ type CreationDraftResponse = {
   };
 };
 
+type CreationCreateResponse = {
+  creationDraft?: {
+    createdPresentationId?: string | null;
+  };
+  presentation?: {
+    id?: string | null;
+  };
+};
+
+type BuildResponse = {
+  previews?: {
+    pages?: unknown[];
+  };
+};
+
 function requireValue<T>(value: T | null | undefined, message: string): T {
   if (value === null || value === undefined) {
     throw new Error(message);
@@ -230,67 +245,108 @@ async function createSmokePresentationFromBrief(page: Page): Promise<string> {
   }, { timeout: 60_000 });
 
   const approveOutlineResponse = waitForJsonResponse(page, "/api/v1/presentations/draft/approve", 60_000);
-  const createPresentationResponse = waitForJsonResponse(page, "/api/v1/presentations/draft/create", 120_000);
+  const createPresentationResponse = waitForJsonResponse<CreationCreateResponse>(page, "/api/v1/presentations/draft/create", 120_000);
   await page.click("#approve-presentation-outline-button");
   await approveOutlineResponse;
-  await createPresentationResponse;
-  await page.waitForFunction(async () => {
+  const createPresentationPayload = requireValue(
+    await createPresentationResponse,
+    "presentation creation should return a payload"
+  );
+  const createdPresentationId = requireValue(
+    createPresentationPayload.creationDraft?.createdPresentationId || createPresentationPayload.presentation?.id,
+    "presentation creation should return the created presentation id"
+  );
+  assert.match(createdPresentationId, createdSmokePresentationIdPattern, "staged creation should activate a smoke presentation");
+  await page.waitForFunction(async (presentationId: string) => {
     const response = await fetch("/api/v1/state");
     const payload = await response.json();
     const draft = payload.creationDraft;
-    if (!draft) {
-      return false;
-    }
-
-    if (draft.createdPresentationId) {
-      return true;
-    }
-
-    const run = draft.contentRun;
-    return run && typeof run.completed === "number" && run.completed >= 1;
-  }, undefined, { timeout: 120_000 });
+    const run = draft?.createdPresentationId === presentationId ? draft.contentRun : null;
+    const liveDraft = run
+      && run.status === "running"
+      && typeof run.completed === "number"
+      && run.completed >= 1;
+    const completedDeck = payload.presentations?.activePresentationId === presentationId
+      && Array.isArray(payload.slides)
+      && payload.slides.length === 7
+      && payload.runtime?.workflow?.operation === "create-presentation-from-outline"
+      && payload.runtime.workflow.status === "completed";
+    return Boolean(liveDraft || completedDeck);
+  }, createdPresentationId, { timeout: 120_000 });
   await page.reload({ waitUntil: "domcontentloaded" });
   await page.click("#show-presentations-page");
   await waitForPage(page, "#presentations-page");
   await openPresentationCreationDetails(page);
-  await page.waitForFunction(() => {
-    const contentStage = document.querySelector("#creation-stage-content") as HTMLElement | null;
-    const summary = document.querySelector("#content-run-summary")?.textContent || "";
-    return contentStage
-      && !contentStage.hidden
-      && !/No slides generated yet/i.test(summary);
-  });
-  await page.waitForFunction(async () => {
+  await page.waitForFunction(async (presentationId: string) => {
     const response = await fetch("/api/v1/state");
     const payload = await response.json();
-    return payload.creationDraft
-      && payload.creationDraft.createdPresentationId
+    const draft = payload.creationDraft;
+    const liveDraft = draft
+      && draft.createdPresentationId === presentationId
+      && draft.contentRun
+      && typeof draft.contentRun.slideCount === "number"
+      && draft.contentRun.slideCount === 7;
+    const completedDeck = payload.presentations
+      && payload.presentations.activePresentationId === presentationId
+      && Array.isArray(payload.slides)
+      && payload.slides.length === 7;
+    return Boolean(liveDraft || completedDeck);
+  }, createdPresentationId, { timeout: 120_000 });
+  const hasLiveCreationDraft = await page.evaluate(async (presentationId: string) => {
+    const response = await fetch("/api/v1/state");
+    const payload = await response.json();
+    return Boolean(
+      payload.creationDraft
+      && payload.creationDraft.createdPresentationId === presentationId
       && payload.creationDraft.contentRun
       && typeof payload.creationDraft.contentRun.slideCount === "number"
-      && payload.creationDraft.contentRun.slideCount === 7;
-  });
+      && payload.creationDraft.contentRun.slideCount === 7
+    );
+  }, createdPresentationId);
+  if (hasLiveCreationDraft) {
+    await page.waitForFunction(() => {
+      const contentStage = document.querySelector("#creation-stage-content") as HTMLElement | null;
+      const summary = document.querySelector("#content-run-summary")?.textContent || "";
+      return contentStage
+        && !contentStage.hidden
+        && !/No slides generated yet/i.test(summary);
+    });
+  }
   await page.waitForFunction(async () => {
     const response = await fetch("/api/v1/state");
     const payload = await response.json();
     const slide = payload.creationDraft && payload.creationDraft.deckPlan && payload.creationDraft.deckPlan.slides
       ? payload.creationDraft.deckPlan.slides[0]
       : null;
-    return payload.creationDraft
+    const draftOutlineMatches = payload.creationDraft
       && slide
       && slide.title === "Edited workflow opener"
       && slide.intent === "Edited workflow opener validates custom outline wording."
       && slide.sourceNotes === "Slide-specific source: the opener should cite the workflow smoke source only for this outline beat.";
+    const activeOutlinePlan = Array.isArray(payload.outlinePlans)
+      ? payload.outlinePlans.find((plan: { id?: string }) => plan.id === payload.activeOutlinePlanId)
+      : null;
+    const activeOutlineSlide = activeOutlinePlan
+      && Array.isArray(activeOutlinePlan.sections)
+      && activeOutlinePlan.sections[0]
+      && Array.isArray(activeOutlinePlan.sections[0].slides)
+      ? activeOutlinePlan.sections[0].slides[0]
+      : null;
+    const persistedOutlineMatches = activeOutlineSlide
+      && activeOutlineSlide.workingTitle === "Edited workflow opener"
+      && activeOutlineSlide.intent === "Edited workflow opener validates custom outline wording.";
+    return Boolean(draftOutlineMatches || persistedOutlineMatches);
   }, { timeout: 60_000 });
   await page.click("#show-studio-page");
   await waitForPage(page, "#studio-page");
-  await page.waitForFunction(async () => {
+  await page.waitForFunction(async (presentationId: string) => {
     const response = await fetch("/api/v1/state");
     const payload = await response.json();
-    return payload.creationDraft
-      && payload.creationDraft.createdPresentationId
+    return payload.presentations
+      && payload.presentations.activePresentationId === presentationId
       && Array.isArray(payload.slides)
       && payload.slides.length === 7;
-  }, { timeout: 120_000 });
+  }, createdPresentationId, { timeout: 120_000 });
   await page.waitForFunction(async () => {
     const response = await fetch("/api/v1/state");
     const payload = await response.json();
@@ -329,12 +385,61 @@ async function createSmokePresentationFromBrief(page: Page): Promise<string> {
       && payload.runtime.sourceRetrieval
       && payload.runtime.sourceRetrieval.snippets.some((snippet: WorkflowSnippet) => /browser UI management/i.test(snippet.text || ""));
   });
+  await page.evaluate(async (presentationId: string) => {
+    const response = await fetch("/api/v1/presentations/select", {
+      body: JSON.stringify({ presentationId }),
+      headers: { "Content-Type": "application/json" },
+      method: "POST"
+    });
+    if (!response.ok) {
+      throw new Error(await response.text());
+    }
+  }, createdPresentationId);
   const createdPresentationIdAfterCreate = await page.evaluate(async () => {
     const response = await fetch("/api/v1/state");
     const payload = await response.json();
     return payload.presentations.activePresentationId;
   });
-  assert.match(createdPresentationIdAfterCreate, createdSmokePresentationIdPattern, "staged creation should activate the new presentation");
+  assert.equal(createdPresentationIdAfterCreate, createdPresentationId, "staged creation should keep the new presentation active");
+  await page.waitForFunction(async (presentationId: string) => {
+    const response = await fetch("/api/v1/state");
+    const payload = await response.json();
+    const run = payload.creationDraft?.createdPresentationId === presentationId
+      ? payload.creationDraft.contentRun
+      : null;
+    const workflowComplete = payload.runtime?.workflow?.operation === "create-presentation-from-outline"
+      && payload.runtime.workflow.status === "completed";
+    const runComplete = (!run || run.status !== "running") && workflowComplete;
+    return payload.presentations?.activePresentationId === presentationId
+      && Array.isArray(payload.slides)
+      && payload.slides.length === 7
+      && runComplete;
+  }, createdPresentationId, { timeout: 120_000 });
+  const buildResponse = await page.evaluate(async () => {
+    const response = await fetch("/api/v1/build", {
+      method: "POST"
+    });
+    const responseText = await response.text();
+    if (!response.ok) {
+      throw new Error(responseText);
+    }
+    return responseText ? JSON.parse(responseText) as BuildResponse : {};
+  });
+  assert.equal(buildResponse.previews?.pages?.length, 7, "created smoke deck should have rendered preview pages");
+  await page.reload({ waitUntil: "domcontentloaded" });
+  await page.click("#show-studio-page");
+  await waitForPage(page, "#studio-page");
+  await page.waitForFunction(async (presentationId: string) => {
+    const response = await fetch("/api/v1/state");
+    const payload = await response.json();
+    return payload.presentations?.activePresentationId === presentationId
+      && Array.isArray(payload.slides)
+      && payload.slides.length === 7;
+  }, createdPresentationId);
+  if (await page.locator("#theme-drawer[data-open='true']").count() === 0) {
+    await page.click("#theme-drawer-toggle");
+    await page.waitForSelector("#theme-drawer[data-open='true']");
+  }
 
   return createdPresentationIdAfterCreate;
 }

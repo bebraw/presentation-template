@@ -17,6 +17,7 @@ import { StudioClientPreviewActions } from "./preview/preview-actions.ts";
 import { StudioClientRuntimeStatusActions } from "./runtime/runtime-status-actions.ts";
 import { StudioClientStartupActions } from "./shell/startup-actions.ts";
 import { StudioClientWorkspaceRefreshActions } from "./shell/workspace-refresh-actions.ts";
+import { mountStudioTestApi } from "./testing/studio-test-api.ts";
 import { StudioClientValidationReportActions } from "./runtime/validation-report-actions.ts";
 import { StudioClientWorkflowActions } from "./runtime/workflow-actions.ts";
 import { StudioClientSlideEditorActions } from "./editor/slide-editor-actions.ts";
@@ -400,6 +401,11 @@ const navigationShell = StudioClientNavigationShell.createNavigationShell({
   windowRef: window
 });
 registry.setNavigationShell(navigationShell);
+mountStudioTestApi({
+  documentRef: document,
+  navigationShell,
+  windowRef: window
+});
 const previewActions = StudioClientPreviewActions.createPreviewActions({
   customLayoutWorkbench: customLayoutActions,
   elements,

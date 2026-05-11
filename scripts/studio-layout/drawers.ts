@@ -1,4 +1,5 @@
 import assert from "node:assert/strict";
+import { listDrawerSelectors, listDrawerTools } from "../../studio/client/shell/drawer-tool-model.ts";
 
 type Page = import("playwright").Page;
 type Browser = import("playwright").Browser;
@@ -28,14 +29,14 @@ function requireRect(rect: RectMetrics | null, message: string): RectMetrics {
 }
 
 const drawerShortcuts: DrawerShortcut[] = [
-  { drawer: "#outline-drawer", key: "1", label: "Outline", toggle: "#outline-drawer-toggle" },
-  { drawer: "#context-drawer", key: "2", label: "Context", toggle: "#context-drawer-toggle" },
-  { drawer: "#layout-drawer", key: "3", label: "Layout", toggle: "#layout-drawer-toggle" },
-  { drawer: "#debug-drawer", key: "4", label: "Diagnostics", toggle: "#debug-drawer-toggle" },
-  { drawer: "#structured-draft-drawer", key: "5", label: "Structured Draft", toggle: "#structured-draft-toggle" },
-  { drawer: "#theme-drawer", key: "6", label: "Theme", toggle: "#theme-drawer-toggle" },
-  { drawer: "#assistant-drawer", key: "7", label: "Assistant", toggle: "#assistant-toggle" }
+  ...listDrawerTools().map((tool) => ({
+    drawer: tool.drawerSelector,
+    key: tool.shortcut,
+    label: tool.label,
+    toggle: tool.toggleSelector
+  }))
 ];
+const drawerSelectorList = listDrawerSelectors();
 
 function isMobileViewport(viewport: ViewportSize): boolean {
   return viewport.width <= 760;
@@ -86,13 +87,11 @@ async function validateInitialDrawerPreferenceConflict(browser: Browser, port: n
       timeout: 30_000
     });
 
-    const openDrawers = await page.evaluate(() => {
-      return Array.from(document.querySelectorAll(
-        "#outline-drawer, #context-drawer, #layout-drawer, #debug-drawer, #structured-draft-drawer, #theme-drawer, #assistant-drawer"
-      ))
+    const openDrawers = await page.evaluate((selectors) => {
+      return Array.from(document.querySelectorAll(selectors.join(", ")))
         .filter((drawer) => drawer.getAttribute("data-open") === "true")
         .map((drawer) => drawer.id);
-    });
+    }, drawerSelectorList);
 
     assert.deepEqual(openDrawers, ["assistant-drawer"], "Persisted drawer preferences should normalize to one open drawer on startup");
   } finally {

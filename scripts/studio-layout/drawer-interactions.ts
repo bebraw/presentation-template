@@ -1,27 +1,19 @@
 import assert from "node:assert/strict";
+import { listDrawerSelectors } from "../../studio/client/shell/drawer-tool-model.ts";
 import {
   clickDrawerControl,
   drawerShortcuts,
   type DrawerShortcut
 } from "./drawers.ts";
+import { normalizeStudioForLayoutValidation } from "./studio-test-api.ts";
 
 type Page = import("playwright").Page;
 type ViewportSize = import("playwright").ViewportSize;
 
-async function closeOpenDrawers(page: Page): Promise<void> {
-  for (const shortcut of drawerShortcuts) {
-    const isOpen = await page.evaluate((drawerSelector: string) => {
-      return document.querySelector(drawerSelector)?.getAttribute("data-open") === "true";
-    }, shortcut.drawer);
-    if (!isOpen) {
-      continue;
-    }
+const drawerSelectorList = listDrawerSelectors();
 
-    await page.keyboard.press("Escape");
-    await page.waitForFunction((drawerSelector: string) => {
-      return document.querySelector(drawerSelector)?.getAttribute("data-open") !== "true";
-    }, shortcut.drawer);
-  }
+async function closeOpenDrawers(page: Page): Promise<void> {
+  await normalizeStudioForLayoutValidation(page);
 }
 
 async function validateDrawerHoverLabels(page: Page): Promise<void> {
@@ -110,15 +102,13 @@ async function validateDrawerClickSwitching(page: Page, viewport: ViewportSize):
         return document.querySelector(drawerSelector)?.getAttribute("data-open") === "true";
       }, nextShortcut.drawer);
 
-      const metrics = await page.evaluate((activeShortcut: DrawerShortcut) => {
-        return Array.from(document.querySelectorAll(
-          "#outline-drawer, #context-drawer, #layout-drawer, #debug-drawer, #structured-draft-drawer, #theme-drawer, #assistant-drawer"
-        )).map((drawer) => ({
+      const metrics = await page.evaluate(({ activeShortcut, selectors }: { activeShortcut: DrawerShortcut; selectors: string[] }) => {
+        return Array.from(document.querySelectorAll(selectors.join(", "))).map((drawer) => ({
           id: drawer.id,
           open: drawer.getAttribute("data-open"),
           active: drawer.id === activeShortcut.drawer.slice(1)
         }));
-      }, nextShortcut);
+      }, { activeShortcut: nextShortcut, selectors: drawerSelectorList });
 
       metrics.forEach((drawerState) => {
         const expectedOpen = drawerState.active ? "true" : "false";
@@ -143,17 +133,15 @@ async function validateDrawerKeyboardShortcuts(page: Page, viewport: ViewportSiz
       return document.querySelector(drawerSelector)?.getAttribute("data-open") === "true";
     }, shortcut.drawer);
 
-    const metrics = await page.evaluate((activeShortcut: DrawerShortcut) => {
+    const metrics = await page.evaluate(({ activeShortcut, selectors }: { activeShortcut: DrawerShortcut; selectors: string[] }) => {
       return {
         activeExpanded: document.querySelector(activeShortcut.toggle)?.getAttribute("aria-expanded") || "",
-        drawerStates: Array.from(document.querySelectorAll(
-          "#outline-drawer, #context-drawer, #layout-drawer, #debug-drawer, #structured-draft-drawer, #theme-drawer, #assistant-drawer"
-        )).map((drawer) => ({
+        drawerStates: Array.from(document.querySelectorAll(selectors.join(", "))).map((drawer) => ({
           id: drawer.id,
           open: drawer.getAttribute("data-open")
         }))
       };
-    }, shortcut);
+    }, { activeShortcut: shortcut, selectors: drawerSelectorList });
 
     assert.equal(metrics.activeExpanded, "true", `${shortcut.label} drawer shortcut should set aria-expanded at ${viewport.width}x${viewport.height}`);
     metrics.drawerStates.forEach((drawerState) => {

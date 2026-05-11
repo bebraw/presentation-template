@@ -1,5 +1,5 @@
 import { StudioClientDrawers } from "./drawers.ts";
-import { listDrawerShortcutOrder, listMobileDrawerTools } from "./drawer-tool-model.ts";
+import { listDrawerShortcutOrder, listMobileDrawerTools, requireDrawerTool } from "./drawer-tool-model.ts";
 import { StudioClientPreferences } from "./preferences.ts";
 import {
   getAdjacentSlideIndex,
@@ -68,6 +68,15 @@ export namespace StudioClientNavigationShell {
     windowRef: Window;
   };
 
+  export type DrawerRailState = {
+    bodyClass: string;
+    bodyClassOpen: boolean;
+    drawerId: string;
+    key: string;
+    open: boolean;
+    toggleId: string;
+  };
+
   export function createNavigationShell(dependencies: NavigationShellDependencies) {
     const {
       customLayoutWorkbench,
@@ -100,29 +109,36 @@ export namespace StudioClientNavigationShell {
       preferences.persistDrawerOpen("context", state.ui.contextDrawerOpen);
     }
 
+    const assistantDrawer = requireDrawerTool("assistant");
+    const contextDrawer = requireDrawerTool("context");
+    const debugDrawer = requireDrawerTool("debug");
+    const layoutDrawer = requireDrawerTool("layout");
+    const outlineDrawer = requireDrawerTool("outline");
+    const structuredDraftDrawer = requireDrawerTool("structuredDraft");
+    const themeDrawer = requireDrawerTool("theme");
     const drawerConfigs = {
       assistant: {
-        bodyClass: "assistant-open",
+        bodyClass: assistantDrawer.bodyClass,
         drawer: () => elements.assistantDrawer,
         closedLabel: "Open workflow assistant",
         hideWhenUnavailable: true,
         ...(onAssistantOpen ? { onOpen: onAssistantOpen } : {}),
         openLabel: "Close workflow assistant",
         persist: persistAssistantDrawerPreference,
-        stateKey: "assistantOpen",
+        stateKey: assistantDrawer.stateKey,
         toggle: () => elements.assistantToggle
       },
       context: {
-        bodyClass: "context-drawer-open",
+        bodyClass: contextDrawer.bodyClass,
         drawer: () => elements.contextDrawer,
         closedLabel: "Open slide context",
         openLabel: "Close slide context",
         persist: persistContextDrawerPreference,
-        stateKey: "contextDrawerOpen",
+        stateKey: contextDrawer.stateKey,
         toggle: () => elements.contextDrawerToggle
       },
       debug: {
-        bodyClass: "debug-drawer-open",
+        bodyClass: debugDrawer.bodyClass,
         drawer: () => elements.debugDrawer,
         closedLabel: "Open generation diagnostics",
         onOpen: () => {
@@ -133,13 +149,13 @@ export namespace StudioClientNavigationShell {
           }
         },
         openLabel: "Close generation diagnostics",
-        stateKey: "debugDrawerOpen",
+        stateKey: debugDrawer.stateKey,
         toggle: () => elements.debugDrawerToggle
       },
       layout: {
         afterRender: customLayoutWorkbench.renderEditor,
         afterSet: renderPreviews,
-        bodyClass: "layout-drawer-open",
+        bodyClass: layoutDrawer.bodyClass,
         drawer: () => elements.layoutDrawer,
         closedLabel: "Open layout controls",
         onBeforeSet: () => {
@@ -150,35 +166,35 @@ export namespace StudioClientNavigationShell {
           elements.customLayoutStatus.textContent = customLayoutWorkbench.isSupported() ? "Draft" : "Content and cover slides only";
         },
         openLabel: "Close layout controls",
-        stateKey: "layoutDrawerOpen",
+        stateKey: layoutDrawer.stateKey,
         toggle: () => elements.layoutDrawerToggle
       },
       outline: {
-        bodyClass: "outline-drawer-open",
+        bodyClass: outlineDrawer.bodyClass,
         drawer: () => elements.outlineDrawer,
         closedLabel: "Open outline planning",
         ...(onOutlineOpen ? { onOpen: onOutlineOpen } : {}),
         openLabel: "Close outline planning",
-        stateKey: "outlineDrawerOpen",
+        stateKey: outlineDrawer.stateKey,
         toggle: () => elements.outlineDrawerToggle
       },
       structuredDraft: {
-        bodyClass: "structured-draft-open",
+        bodyClass: structuredDraftDrawer.bodyClass,
         drawer: () => elements.structuredDraftDrawer,
         closedLabel: "Open structured draft editor",
         openLabel: "Close structured draft editor",
         persist: persistStructuredDraftDrawerPreference,
-        stateKey: "structuredDraftOpen",
+        stateKey: structuredDraftDrawer.stateKey,
         toggle: () => elements.structuredDraftToggle
       },
       theme: {
         afterRender: renderCreationThemeStage,
-        bodyClass: "theme-drawer-open",
+        bodyClass: themeDrawer.bodyClass,
         drawer: () => elements.themeDrawer,
         closedLabel: "Open theme control",
         hideWhenUnavailable: true,
         openLabel: "Close theme control",
-        stateKey: "themeDrawerOpen",
+        stateKey: themeDrawer.stateKey,
         toggle: () => elements.themeDrawerToggle
       }
     } satisfies Record<string, StudioClientDrawers.DrawerConfig>;
@@ -333,6 +349,40 @@ export namespace StudioClientNavigationShell {
 
     function getOpenDrawerKey(): string {
       return mobileToolOrder.find((key) => Boolean(state.ui[drawerConfigs[key].stateKey])) || "";
+    }
+
+    function closeAllDrawers(): void {
+      drawerOrder.forEach((key) => {
+        const config = drawerConfigs[key];
+        state.ui[config.stateKey] = false;
+        persistDrawerPreference(key);
+      });
+      state.ui.mobileToolsOpen = false;
+      renderAllDrawers();
+    }
+
+    function persistDrawerPreference(key: DrawerKey): void {
+      const config: StudioClientDrawers.DrawerConfig = drawerConfigs[key];
+      const persist = config.persist;
+      if (persist) {
+        persist();
+      }
+    }
+
+    function getDrawerRailState(): DrawerRailState[] {
+      return drawerOrder.map((key) => {
+        const config = drawerConfigs[key];
+        const drawer = config.drawer();
+        const toggle = config.toggle();
+        return {
+          bodyClass: config.bodyClass,
+          bodyClassOpen: documentRef.body.classList.contains(config.bodyClass),
+          drawerId: drawer.id,
+          key,
+          open: drawer.getAttribute("data-open") === "true",
+          toggleId: toggle.id
+        };
+      });
     }
 
     function setMobileToolsOpen(open: boolean): void {
@@ -552,6 +602,8 @@ export namespace StudioClientNavigationShell {
     }
 
     return {
+      closeAllDrawers,
+      getDrawerRailState,
       initializeState,
       mount,
       mountGlobalEvents,

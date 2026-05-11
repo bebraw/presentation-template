@@ -1,4 +1,6 @@
 import assert from "node:assert/strict";
+import { listRightRailDrawerTools } from "../../studio/client/shell/drawer-tool-model.ts";
+import { normalizeStudioForLayoutValidation } from "./studio-test-api.ts";
 
 type Page = import("playwright").Page;
 type ViewportSize = import("playwright").ViewportSize;
@@ -12,56 +14,36 @@ function isMobileViewport(viewport: ViewportSize): boolean {
   return viewport.width <= 760;
 }
 
-async function normalizeDrawerRailState(page: Page): Promise<void> {
-  await page.evaluate(() => {
-    (document.activeElement as HTMLElement | null)?.blur();
-  });
-  await page.keyboard.press("Escape");
-  await page.mouse.move(0, 0);
-  await page.waitForFunction(() => {
-    const drawersClosed = Array.from(document.querySelectorAll(
-      "#outline-drawer, #context-drawer, #layout-drawer, #debug-drawer, #structured-draft-drawer, #theme-drawer, #assistant-drawer"
-    )).every((drawer) => drawer.getAttribute("data-open") !== "true");
-    const bodyClassesClosed = [
-      "outline-drawer-open",
-      "context-drawer-open",
-      "layout-drawer-open",
-      "debug-drawer-open",
-      "structured-draft-open",
-      "theme-drawer-open",
-      "assistant-open",
-      "drawer-switching"
-    ].every((className) => !document.body.classList.contains(className));
-    return drawersClosed && bodyClassesClosed;
-  });
-}
+const rightRailDrawerTools = listRightRailDrawerTools();
+const rightRailToggleSelector = rightRailDrawerTools.map((tool) => tool.toggleSelector).join(", ");
 
 async function validateCurrentSlideWorkbench(
   page: Page,
   viewport: ViewportSize,
   metrics: StudioViewportMetrics
 ): Promise<void> {
-  await normalizeDrawerRailState(page);
+  await normalizeStudioForLayoutValidation(page);
 
-  const initialWorkbenchMetrics = await page.evaluate(() => ({
+  const initialWorkbenchMetrics = await page.evaluate((drawerToggleSelector) => ({
     contextAriaExpanded: document.querySelector("#context-drawer-toggle")?.getAttribute("aria-expanded"),
     contextDrawerHidden: (document.querySelector("#context-drawer") as HTMLElement | null)?.hidden,
     contextInsideCurrentPanel: Boolean(document.querySelector("#current-slide-panel #slide-context-panel")),
     contextPanelPresent: Boolean(document.querySelector("#context-drawer #slide-context-panel")),
     contextTabIcon: Boolean(document.querySelector("#context-drawer-toggle .drawer-toggle-icon")),
-    drawerToggleAriaLabels: Array.from(document.querySelectorAll("#context-drawer-toggle, #layout-drawer-toggle, #debug-drawer-toggle, #structured-draft-toggle, #theme-drawer-toggle, #assistant-toggle"))
+    drawerToggleAriaLabels: Array.from(document.querySelectorAll(drawerToggleSelector))
       .map((button) => button.getAttribute("aria-label") || ""),
-    drawerToggleIconCount: document.querySelectorAll("#context-drawer-toggle .drawer-toggle-icon, #layout-drawer-toggle .drawer-toggle-icon, #debug-drawer-toggle .drawer-toggle-icon, #structured-draft-toggle .drawer-toggle-icon, #theme-drawer-toggle .drawer-toggle-icon, #assistant-toggle .drawer-toggle-icon").length,
+    drawerToggleIconCount: Array.from(document.querySelectorAll(drawerToggleSelector))
+      .filter((button) => Boolean(button.querySelector(".drawer-toggle-icon"))).length,
     drawerToggleMaxRight: Math.max(
-      ...Array.from(document.querySelectorAll("#context-drawer-toggle, #layout-drawer-toggle, #debug-drawer-toggle, #structured-draft-toggle, #theme-drawer-toggle, #assistant-toggle"))
+      ...Array.from(document.querySelectorAll(drawerToggleSelector))
         .map((button) => button.getBoundingClientRect().right)
     ),
     drawerToggleMinRight: Math.min(
-      ...Array.from(document.querySelectorAll("#context-drawer-toggle, #layout-drawer-toggle, #debug-drawer-toggle, #structured-draft-toggle, #theme-drawer-toggle, #assistant-toggle"))
+      ...Array.from(document.querySelectorAll(drawerToggleSelector))
         .map((button) => button.getBoundingClientRect().right)
     ),
     drawerToggleMaxHeight: Math.max(
-      ...Array.from(document.querySelectorAll("#context-drawer-toggle, #layout-drawer-toggle, #debug-drawer-toggle, #structured-draft-toggle, #theme-drawer-toggle, #assistant-toggle"))
+      ...Array.from(document.querySelectorAll(drawerToggleSelector))
         .map((button) => button.getBoundingClientRect().height)
     ),
     manualDeleteInOperations: Boolean(document.querySelector(".slide-operations-panel .manual-delete-details")),
@@ -91,7 +73,7 @@ async function validateCurrentSlideWorkbench(
     variantControlsHidden: (document.querySelector("#variant-generation-panel") as HTMLElement | null)?.hidden,
     variantDetailsOpen: (document.querySelector(".variant-generation-details") as HTMLDetailsElement | null)?.open,
     variantRailDisplay: window.getComputedStyle(document.querySelector(".variant-rail-panel") as HTMLElement).display
-  }));
+  }), rightRailToggleSelector);
   assert.equal(initialWorkbenchMetrics.separateContextTabPresent, false, "Slide context should not return as a separate studio tab");
   assert.equal(initialWorkbenchMetrics.contextDrawerHidden, false, "Slide context drawer should be available on the Studio page");
   assert.equal(initialWorkbenchMetrics.contextPanelPresent, true, "Slide context should live in the left Context drawer");
@@ -103,7 +85,7 @@ async function validateCurrentSlideWorkbench(
   assert.equal(initialWorkbenchMetrics.slideRailDeleteButton, true, "Slide rail should expose a compact remove-slide control");
   assert.equal(initialWorkbenchMetrics.slideRailReorderButton, true, "Slide rail should expose a compact reorder control");
   assert.equal(initialWorkbenchMetrics.contextTabIcon, true, "Context drawer should expose an icon on the left rail");
-  assert.equal(initialWorkbenchMetrics.drawerToggleIconCount, 6, "Studio drawers should use icons instead of obscure rail abbreviations");
+  assert.equal(initialWorkbenchMetrics.drawerToggleIconCount, rightRailDrawerTools.length, "Studio drawers should use icons instead of obscure rail abbreviations");
   assert.deepEqual(
     initialWorkbenchMetrics.drawerToggleAriaLabels,
     [

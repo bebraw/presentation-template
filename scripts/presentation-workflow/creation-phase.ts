@@ -56,6 +56,13 @@ async function waitForPage(page: Page, selector: string): Promise<void> {
   }, selector);
 }
 
+async function reloadToStudioPage(page: Page, pageName: "presentations" | "studio"): Promise<void> {
+  const nextUrl = new URL(page.url());
+  nextUrl.hash = pageName;
+  await page.goto(nextUrl.toString(), { waitUntil: "domcontentloaded" });
+  await waitForPage(page, pageName === "presentations" ? "#presentations-page" : "#studio-page");
+}
+
 async function openPresentationCreationDetails(page: Page): Promise<void> {
   await page.evaluate(() => {
     const details = document.querySelector(".presentation-create-details") as HTMLDetailsElement | null;
@@ -193,9 +200,7 @@ async function createSmokePresentationFromBrief(page: Page): Promise<string> {
       && payload.creationDraft.outlineLocks
       && payload.creationDraft.outlineLocks["0"] === true;
   });
-  await page.reload({ waitUntil: "domcontentloaded" });
-  await page.click("#show-presentations-page");
-  await waitForPage(page, "#presentations-page");
+  await reloadToStudioPage(page, "presentations");
   await openPresentationCreationDetails(page);
   await page.waitForFunction(() => {
     const outlineItems = document.querySelectorAll("#presentation-outline-list .creation-outline-item").length;
@@ -273,9 +278,7 @@ async function createSmokePresentationFromBrief(page: Page): Promise<string> {
       && payload.runtime.workflow.status === "completed";
     return Boolean(liveDraft || completedDeck);
   }, createdPresentationId, { timeout: 120_000 });
-  await page.reload({ waitUntil: "domcontentloaded" });
-  await page.click("#show-presentations-page");
-  await waitForPage(page, "#presentations-page");
+  await reloadToStudioPage(page, "presentations");
   await openPresentationCreationDetails(page);
   await page.waitForFunction(async (presentationId: string) => {
     const response = await fetch("/api/v1/state");
@@ -416,9 +419,7 @@ async function createSmokePresentationFromBrief(page: Page): Promise<string> {
     return responseText ? JSON.parse(responseText) as BuildResponse : {};
   });
   assert.equal(buildResponse.previews?.pages?.length, 7, "created smoke deck should have rendered preview pages");
-  await page.reload({ waitUntil: "domcontentloaded" });
-  await page.click("#show-studio-page");
-  await waitForPage(page, "#studio-page");
+  await reloadToStudioPage(page, "studio");
   await page.waitForFunction(async (presentationId: string) => {
     const response = await fetch("/api/v1/state");
     const payload = await response.json();

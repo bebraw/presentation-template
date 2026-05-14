@@ -418,7 +418,14 @@ async function validateLiveDraftFromActiveFlow(page: Page): Promise<void> {
   assert.equal(stagedState.creationDraft?.fields?.presentationDensity, sourceActivePlan?.presentationDensity, "staged live draft should inherit active flow density");
   assert.equal(stagedState.creationDraft?.deckPlan?.slides?.length || 0, sourceBeatCount, "staged live draft should include one outline item per flow beat");
 
-  const createResponse = waitForJsonResponse(page, "/api/v1/presentations/draft/create", 120_000);
+  const createResponse = waitForJsonResponse<{
+    creationDraft?: {
+      createdPresentationId?: string | null;
+    };
+    presentation?: {
+      id?: string;
+    };
+  }>(page, "/api/v1/presentations/draft/create", 120_000);
   await page.evaluate(() => {
     const details = document.querySelector(".presentation-create-details") as HTMLDetailsElement | null;
     if (details) {
@@ -431,21 +438,32 @@ async function validateLiveDraftFromActiveFlow(page: Page): Promise<void> {
     return Boolean(contentStage && !contentStage.hidden);
   });
   await page.click("#create-presentation-button");
-  await createResponse;
-  await page.waitForFunction((expectedCount: number) => {
+  const createPayload = await createResponse;
+  const createdPresentationId = createPayload?.creationDraft?.createdPresentationId || createPayload?.presentation?.id || "";
+  assert.ok(createdPresentationId, "live draft creation should return the created presentation id");
+  await page.waitForFunction((expected: { count: number; presentationId: string }) => {
     return fetch("/api/v1/state")
       .then((response) => response.json())
-      .then((payload) => payload.creationDraft?.createdPresentationId
-        && Array.isArray(payload.slides)
-        && payload.slides.length === expectedCount
-        && payload.creationDraft?.contentRun?.slideCount === expectedCount);
-  }, sourceBeatCount);
+      .then((payload) => {
+        const liveDraft = payload.creationDraft?.createdPresentationId === expected.presentationId
+          && Array.isArray(payload.slides)
+          && payload.slides.length === expected.count
+          && payload.creationDraft?.contentRun?.slideCount === expected.count;
+        const completedDeck = payload.presentations?.activePresentationId === expected.presentationId
+          && Array.isArray(payload.slides)
+          && payload.slides.length === expected.count;
+        return Boolean(liveDraft || completedDeck);
+      });
+  }, { count: sourceBeatCount, presentationId: createdPresentationId });
   const liveState = await readWorkflowState(page);
   const livePresentationId = liveState.presentations?.activePresentationId || "";
   const liveActivePlan = liveState.outlinePlans?.find((plan) => plan.id === liveState.activeOutlinePlanId);
   assert.ok(livePresentationId, "live draft should activate the created presentation");
+  assert.equal(livePresentationId, createdPresentationId, "live draft should activate the returned presentation");
   assert.notEqual(livePresentationId, sourcePresentationId, "live draft should create a separate deck");
-  assert.equal(liveState.creationDraft?.createdPresentationId, livePresentationId, "creation draft should point to the live deck");
+  if (liveState.creationDraft?.createdPresentationId) {
+    assert.equal(liveState.creationDraft.createdPresentationId, livePresentationId, "creation draft should point to the live deck while generation is active");
+  }
   assert.equal(liveState.slides?.length || 0, sourceBeatCount, "live deck should contain one slide per flow beat");
   assert.equal(liveActivePlan?.targetSlideCount, sourceBeatCount, "live deck should keep an active flow with the staged target count");
   assert.equal(liveActivePlan?.presentationDensity, sourceActivePlan?.presentationDensity, "live deck active flow should keep the staged density");

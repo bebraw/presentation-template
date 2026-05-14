@@ -28,6 +28,14 @@ type WorkflowOutlinePlan = {
 };
 
 type WorkflowDeckStructureCandidate = {
+  diff?: {
+    counts?: {
+      afterSlides?: number;
+    };
+  };
+  preview?: {
+    proposedSequence?: unknown[];
+  };
   slides?: unknown[];
 };
 
@@ -526,8 +534,14 @@ async function validateOutlineJsonEditor(page: Page): Promise<void> {
   const proposedJsonFlowResponse = waitForJsonResponse<WorkflowOutlinePlanPayload>(page, "/api/v1/outline-plans/propose", 60_000);
   await page.locator(".outline-plan-active-panel button", { hasText: "Propose active flow" }).click();
   const proposedJsonFlowPayload = await proposedJsonFlowResponse;
+  const proposedJsonFlowCandidate = proposedJsonFlowPayload?.deckStructureCandidates?.[0];
   assert.equal(
-    proposedJsonFlowPayload?.deckStructureCandidates?.[0]?.slides?.length,
+    proposedJsonFlowCandidate?.diff?.counts?.afterSlides,
+    8,
+    "proposal from a JSON-edited active flow should use the saved target count"
+  );
+  assert.equal(
+    proposedJsonFlowCandidate?.preview?.proposedSequence?.length,
     8,
     "proposal from a JSON-edited active flow should use the saved target count"
   );

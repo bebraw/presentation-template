@@ -12,6 +12,7 @@ const config = {
   tsconfigFile: "tsconfig.json",
   mutate: [
     "cloud/worker-provider-policy.ts",
+    "studio/server/services/design-constraints.ts",
     "studio/server/services/generated-json-path.ts",
     "studio/server/services/generated-variant-safety.ts",
     "studio/server/services/validation-settings.ts",

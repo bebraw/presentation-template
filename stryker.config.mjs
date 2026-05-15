@@ -14,6 +14,7 @@ const config = {
     "cloud/worker-provider-policy.ts",
     "studio/server/services/generated-json-path.ts",
     "studio/server/services/generated-variant-safety.ts",
+    "studio/server/services/validation-settings.ts",
     "studio/shared/json-utils.ts",
     "studio/shared/outline-locks.ts",
     "!**/*.test.ts",

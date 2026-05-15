@@ -16,6 +16,7 @@ const customLayoutValidationModel = require("../studio/client/creation/custom-la
 const creationStageModel = require("../studio/client/creation/creation-stage-model.ts");
 const editableOutlineModel = require("../studio/client/creation/editable-outline-model.ts");
 const sourceOutlineModel = require("../studio/client/creation/source-outline-model.ts");
+const creationFormState = require("../studio/client/creation/creation-form-state.ts");
 const slideReorderModel = require("../studio/client/editor/slide-reorder-model.ts");
 const slideKeyboardNavigationModel = require("../studio/client/shell/slide-keyboard-navigation-model.ts");
 const variantComparisonModel = require("../studio/client/variants/variant-comparison-model.ts");
@@ -68,6 +69,42 @@ test("workflow status model treats local and runtime slide work as active", () =
       slideWorkflowAbortController: null
     }),
     false
+  );
+});
+
+test("creation form treats theme context inputs as generated theme dependencies", () => {
+  const elementIds = [
+    "presentationTitle",
+    "presentationAudience",
+    "presentationTone",
+    "presentationObjective",
+    "presentationConstraints",
+    "presentationThemeBrief",
+    "presentationSourceUrls",
+    "presentationOutlineSourceUrls",
+    "presentationSourceText",
+    "presentationOutlineSourceText",
+    "presentationSavedTheme",
+    "presentationFontFamily",
+    "presentationThemePrimary",
+    "presentationThemeSecondary",
+    "presentationThemeAccent",
+    "presentationThemeBg",
+    "presentationThemePanel"
+  ];
+  const elements = Object.fromEntries(elementIds.map((id) => [id, { id }]));
+
+  elementIds.forEach((id) => {
+    assert.equal(
+      creationFormState.isCreationThemeElement(elements, elements[id]),
+      true,
+      `${id} should clear stale generated theme candidates`
+    );
+  });
+  assert.equal(
+    creationFormState.isCreationThemeElement(elements, { id: "presentationTargetSlides" }),
+    false,
+    "slide count alone should not clear generated theme candidates"
   );
 });
 

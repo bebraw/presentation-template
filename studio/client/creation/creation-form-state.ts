@@ -145,6 +145,17 @@ export function isOutlineRelevantInput(elements: StudioClientElements.Elements, 
 
 export function isCreationThemeElement(elements: StudioClientElements.Elements, element: CreationInputElement): boolean {
   return [
+    elements.presentationTitle,
+    elements.presentationAudience,
+    elements.presentationTone,
+    elements.presentationObjective,
+    elements.presentationConstraints,
+    elements.presentationThemeBrief,
+    elements.presentationSourceUrls,
+    elements.presentationOutlineSourceUrls,
+    elements.presentationSourceText,
+    elements.presentationOutlineSourceText,
+    elements.presentationSavedTheme,
     elements.presentationFontFamily,
     elements.presentationThemePrimary,
     elements.presentationThemeSecondary,
